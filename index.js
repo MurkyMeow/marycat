@@ -47,7 +47,8 @@
       }
     })
     const wire = template => props => template({
-      props, state,
+      props,
+      state: new Proxy(state, { get: (_, key) => get(key) }),
       view: state._view,
       action: state._action
     })

@@ -40,7 +40,7 @@ const _app = ({ state, action }) =>
       (counter()('Whoa!'))
     )
     (article('app__content')
-      (state.text)
+      (div()(state.text))
       (input(onInput(action.setText)))
     )
 
