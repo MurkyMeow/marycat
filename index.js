@@ -1,13 +1,18 @@
 (() => {
-  const attr = name => value => {
+  const attr = (name, value) => {
     const attr = document.createAttribute(name)
-    attr.value = value
+    if (value._type === getter) {
+      value.subscribe(newval => attr.value = newval)
+    } else {
+      attr.value = value
+    }
     return attr
   }
 
   const text = data => document.createTextNode(data)
 
   const event = Symbol()
+  const getter = Symbol()
   const $ = Symbol()
 
   const on = (name, handler) => ({
@@ -16,13 +21,42 @@
     _type: event,
   })
 
+  const makeState = obj => {
+    const observers = {}
+    const state = new Proxy(obj, {
+      set(target, key, value) {
+        target[key] = value
+        observers[key].forEach(observer => observer(value))
+      }
+    })
+    const get = (key, callback) => {
+      observers[key] = observers[key] || []
+      return {
+        _type: getter,
+        subscribe: f => {
+          const produce = callback
+            ? value => f(callback(value))
+            : f
+          produce(state[key])
+          observers[key].push(produce)
+        },
+      }
+    }
+    const set = (key, value) => {
+      const newval = typeof value === 'function' ? value(state[key]) : value
+      state[key] = newval
+    }
+    const wire = template => props => template({ props, get, set })
+    return { set, wire }
+  }
+
   const el = name => (...attrs) => {
     const children = []
     const $el = document.createElement(name)
-    attrs.forEach(attr => {
-      if (typeof attr === 'string') $el.classList.add(attr)
-      else if (attr._type === event) $el.addEventListener(attr.name, attr.handler)
-      else $el.setAttributeNode(attr)
+    attrs.forEach($attr => {
+      if (typeof $attr === 'string') $el.classList.add($attr)
+      else if ($attr._type === event) $el.addEventListener($attr.name, $attr.handler)
+      else $el.setAttributeNode($attr)
     })
     const populate = child => {
       if (child !== $) {
@@ -30,8 +64,14 @@
         return populate
       }
       children.forEach(_child => {
-        if (typeof _child === 'string') $el.appendChild(text(_child))
-        else $el.appendChild(_child($))
+        if (typeof _child === 'string') return $el.appendChild(text(_child))
+        if (_child._type !== getter) {
+          $el.appendChild(_child($))
+        } else {
+          const $child = text()
+          _child.subscribe(newval => $child.textContent = newval)
+          $el.appendChild($child)
+        }
       })
       return $el
     }
@@ -53,4 +93,5 @@
   window.on = on
   window.attr = attr
   window.render = render
+  window.makeState = makeState
 })()
