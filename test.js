@@ -1,18 +1,22 @@
-const counterState = makeState({
+const counterState = makeState((get, set) => ({
   count: 0,
-})
+  _view: {
+    get count() {
+      return get('count', v => `Current value: ${v}`);
+    },
+  },
+  _action: {
+    increment() {
+      set('count', v => v + 1);
+    },
+  },
+}))
 
-setInterval(() => counterState.set('count', v => v + 10), 1500)
+const _counter = ({ state, view, action }) =>
+  div('counter', attr('data-count', state.count))
+    (div('counter__text')(view.count))
+    (button('counter__button', on('click', action.increment))('increment'))
 
-const _counter = ({ get, set }) => {
-  const countView = get('count', v => `Current value: ${v}`)
-  const increment = () => set('count', v => v + 1)
-  return (
-    div('counter', attr('data-count', get('count')))
-      (div('counter__text')(countView))
-      (button('counter__button', on('click', increment))('increment'))
-  )
-}
 const counter = counterState.wire(_counter)
 
 const app = () =>
@@ -24,9 +28,7 @@ const app = () =>
     (article('app__content')
       (section('app__content-a')('content-a'))
       (section('app__content-b')('content-b'))
-      (counter()
-        (div()('Whoa!'))
-      )
+      (counter()('Whoa!'))
     )
 
 render(app(), document.body);

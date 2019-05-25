@@ -23,12 +23,6 @@
 
   const makeState = obj => {
     const observers = {}
-    const state = new Proxy(obj, {
-      set(target, key, value) {
-        target[key] = value
-        observers[key].forEach(observer => observer(value))
-      }
-    })
     const get = (key, callback) => {
       observers[key] = observers[key] || []
       return {
@@ -46,7 +40,17 @@
       const newval = typeof value === 'function' ? value(state[key]) : value
       state[key] = newval
     }
-    const wire = template => props => template({ props, get, set })
+    const state = new Proxy(obj(get, set), {
+      set(target, key, value) {
+        target[key] = value
+        observers[key].forEach(observer => observer(value))
+      }
+    })
+    const wire = template => props => template({
+      props, state,
+      view: state._view,
+      action: state._action
+    })
     return { set, wire }
   }
 
