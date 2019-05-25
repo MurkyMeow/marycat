@@ -15,7 +15,7 @@
   const getter = Symbol()
   const $ = Symbol()
 
-  const on = (name, handler) => ({
+  const on = name => handler => ({
     name,
     handler,
     _type: event,
@@ -88,10 +88,15 @@
   }
 
   window.div = el('div')
+  window.input = el('input')
   window.button = el('button')
   window.header = el('header')
   window.article = el('article')
   window.section = el('section')
+
+  window.click = on('click')
+  window.submit = on('submit')
+  window.onInput = on('input')
 
   window.el = el
   window.on = on
