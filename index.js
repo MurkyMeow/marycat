@@ -11,8 +11,8 @@
 
   const text = data => document.createTextNode(data)
 
-  const event = Symbol()
-  const getter = Symbol()
+  const event = Symbol('Event')
+  const getter = Symbol('Getter')
   const $ = Symbol()
 
   const on = name => handler => ({
