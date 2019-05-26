@@ -1,4 +1,8 @@
 (() => {
+  function assert(exp, message) {
+    if (!exp) throw new Error(message)
+  }
+
   const attr = (name, value) => {
     const attr = document.createAttribute(name)
     if (value._type === getter) {
@@ -13,12 +17,18 @@
 
   const event = Symbol('Event')
   const getter = Symbol('Getter')
+  const condition = Symbol('Condition')
   const $ = Symbol()
 
   const on = name => handler => ({
     name,
     handler,
     _type: event,
+  })
+
+  const cond = value => ({
+    value,
+    _type: condition,
   })
 
   const makeState = obj => {
@@ -61,6 +71,10 @@
     attrs.forEach($attr => {
       if (typeof $attr === 'string') $el.classList.add($attr)
       else if ($attr._type === event) $el.addEventListener($attr.name, $attr.handler)
+      else if ($attr._type === condition) {
+        assert($attr.value && $attr.value.subscribe, 'cond got an incorrect getter')
+        $attr.value.subscribe(newval => $el.hidden = !newval)
+      }
       else $el.setAttributeNode($attr)
     })
     const populate = child => {
@@ -102,6 +116,7 @@
   window.el = el
   window.on = on
   window.attr = attr
+  window.cond = cond
   window.render = render
   window.makeState = makeState
 })()

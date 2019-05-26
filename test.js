@@ -4,11 +4,13 @@ const counterState = makeState((get, set) => ({
     get count() {
       return get('count', v => `Current value: ${v}`);
     },
+    get unclocked() {
+      return get('count', v => v >= 5);
+    }
   },
   _action: {
-    increment() {
-      set('count', v => v + 1);
-    },
+    increment: () => set('count', v => v + 1),
+    decrement: () => set('count', v => v - 1),
   },
 }))
 
@@ -17,6 +19,12 @@ const _counter = ({ state, view, action }) =>
     (div('counter__text')(view.count))
     (button('counter__button', click(action.increment))
       ('increment')
+    )
+    (button('counter__button', click(action.decrement))
+      ('decrement')
+    )
+    (div('counter__extra', cond(view.unclocked))
+      ('You have unlocked a secret div')
     )
 
 const counter = counterState.wire(_counter)
