@@ -3,7 +3,7 @@
     if (!exp) throw new Error(message)
   }
 
-  const attr = (name, value) => {
+  const attr = name => value => {
     const attr = document.createAttribute(name)
     if (value._type === getter) {
       value.subscribe(newval => attr.value = newval)
@@ -17,6 +17,7 @@
 
   const event = Symbol('Event')
   const getter = Symbol('Getter')
+  const iterator = Symbol('Iterator')
   const condition = Symbol('Condition')
   const $ = Symbol()
 
@@ -30,6 +31,35 @@
     value,
     _type: condition,
   })
+
+  const iter = value => ({
+    value,
+    _type: iterator,
+  })
+
+  const array = (...items) => {
+    const $refs = []
+    const append = $el => {
+      const $clone = $el.parentElement.appendChild($el.cloneNode(true))
+      $refs[items.length] = $clone
+    }
+    return {
+      items,
+      push(value) {
+        items.push(value)
+        return { ...this, action: 'push', append }
+      },
+      remove(index) {
+        const [$el] = $refs.splice(index, 1)
+        if ($el) $el.remove()
+        items.splice(index, 1)
+        return { ...this, action: 'remove' }
+      },
+      pop() {
+        return this.remove(items.length - 1)
+      },
+    }
+  }
 
   const makeState = obj => {
     const observers = {}
@@ -74,6 +104,11 @@
       else if ($attr._type === condition) {
         assert($attr.value && $attr.value.subscribe, 'cond got an incorrect getter')
         $attr.value.subscribe(newval => $el.hidden = !newval)
+      } else if ($attr._type === iterator) {
+        $attr.value.subscribe(info => {
+          if (info.action !== 'push') return
+          info.append($el)
+        })
       }
       else $el.setAttributeNode($attr)
     })
@@ -103,6 +138,7 @@
   }
 
   window.div = el('div')
+  window.img = el('img')
   window.input = el('input')
   window.button = el('button')
   window.header = el('header')
@@ -113,10 +149,14 @@
   window.submit = on('submit')
   window.onInput = on('input')
 
+  window.src = attr('src')
+
   window.el = el
   window.on = on
   window.attr = attr
   window.cond = cond
+  window.iter = iter
+  window.array = array
   window.render = render
   window.makeState = makeState
 })()

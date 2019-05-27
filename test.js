@@ -1,5 +1,6 @@
 const counterState = makeState((get, set) => ({
   count: 0,
+  items: array(),
   _view: {
     get count() {
       return get('count', v => `Current value: ${v}`);
@@ -9,13 +10,19 @@ const counterState = makeState((get, set) => ({
     }
   },
   _action: {
-    increment: () => set('count', v => v + 1),
-    decrement: () => set('count', v => v - 1),
+    increment() {
+      set('count', v => v + 1)
+      set('items', v => v.push(''))
+    },
+    decrement() {
+      set('count', v => v - 1)
+      set('items', v => v.pop())
+    },
   },
 }))
 
 const _counter = ({ state, view, action }) =>
-  div('counter', attr('data-count', state.count))
+  div('counter', attr('data-count')(state.count))
     (div('counter__text')(view.count))
     (button('counter__button', click(action.increment))
       ('increment')
@@ -25,6 +32,9 @@ const _counter = ({ state, view, action }) =>
     )
     (div('counter__extra', cond(view.unlocked))
       ('You have unlocked a secret div')
+    ) 
+    (div('counter__iter-item', iter(state.items))
+      (div()('thats an iterator\'s item!'))
     )
 
 const counter = counterState.wire(_counter)
