@@ -2,12 +2,8 @@ const counterState = makeState((get, set) => ({
   count: 0,
   items: array(),
   _view: {
-    get count() {
-      return get('count', v => `Current value: ${v}`);
-    },
-    get unlocked() {
-      return get('count', v => v >= 5);
-    }
+    count: get('count', v => `Current value: ${v}`),
+    unlocked: get('count', v => v >= 5),
   },
   _action: {
     increment() {
@@ -27,12 +23,16 @@ const _counter = ({ state, view, action }) =>
     (button('counter__button', click(action.increment))
       ('increment')
     )
+    (button('counter__button', click(action.increment)(action.increment))
+      ('double increment')
+    )
     (button('counter__button', click(action.decrement))
       ('decrement')
     )
-    (div('counter__extra', cond(view.unlocked))
-      ('You have unlocked a secret div')
-    ) 
+    (when(view.unlocked)
+      (div('counter__extra')('You have unlocked'))
+      (div('counter__extra')('a secret'))
+    )
     (div('counter__iter-item', iter(state.items))
       (div()('thats an iterator\'s item!'))
     )

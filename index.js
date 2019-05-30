@@ -15,21 +15,51 @@
 
   const text = data => document.createTextNode(data)
 
-  const event = Symbol('Event')
   const getter = Symbol('Getter')
   const iterator = Symbol('Iterator')
-  const condition = Symbol('Condition')
   const $ = Symbol()
 
-  const on = name => handler => ({
-    name,
-    handler,
-    _type: event,
+  function chainable(type, produce) {
+    const chained = []
+    function chain(...args) {
+      const [head, ...rest] = args
+      if (head === $) return produce(chained, ...rest)
+      chained.push(head)
+      return chain
+    }
+    chain._type = type
+    return chain
+  }
+
+  const populate = $el => chainable('populate', children => {
+    children.forEach(_child => {
+      if (typeof _child === 'string') $el.appendChild(text(_child))
+      switch (_child._type) {
+        case 'populate':
+          $el.append(_child($))
+          break;
+        case 'when':
+          $el.append(..._child($))
+          break;
+        case getter:
+          const $child = text()
+          _child.subscribe(newval => $child.textContent = newval)
+          $el.appendChild($child)
+          break;
+      }
+    })
+    return $el
   })
 
-  const cond = value => ({
-    value,
-    _type: condition,
+  const on = name => first => chainable('on', (handlers, el) => {
+    [first, ...handlers]
+      .forEach(handler => el.addEventListener(name, e => handler(e)))
+  })
+
+  const when = exp => chainable('when', elements => {
+    const $elements = elements.flatMap(el => el($))
+    $elements.forEach(el => exp.subscribe(value => el.hidden = !value))
+    return $elements
   })
 
   const iter = value => ({
@@ -96,15 +126,11 @@
   }
 
   const el = name => (...attrs) => {
-    const children = []
     const $el = document.createElement(name)
     attrs.forEach($attr => {
       if (typeof $attr === 'string') $el.classList.add($attr)
-      else if ($attr._type === event) $el.addEventListener($attr.name, $attr.handler)
-      else if ($attr._type === condition) {
-        assert($attr.value && $attr.value.subscribe, 'cond got an incorrect getter')
-        $attr.value.subscribe(newval => $el.hidden = !newval)
-      } else if ($attr._type === iterator) {
+      else if ($attr._type === 'on') $attr($, $el)
+      else if ($attr._type === iterator) {
         $attr.value.subscribe(info => {
           if (info.action !== 'push') return
           info.append($el)
@@ -112,24 +138,7 @@
       }
       else $el.setAttributeNode($attr)
     })
-    const populate = child => {
-      if (child !== $) {
-        children.push(child)
-        return populate
-      }
-      children.forEach(_child => {
-        if (typeof _child === 'string') return $el.appendChild(text(_child))
-        if (_child._type !== getter) {
-          $el.appendChild(_child($))
-        } else {
-          const $child = text()
-          _child.subscribe(newval => $child.textContent = newval)
-          $el.appendChild($child)
-        }
-      })
-      return $el
-    }
-    return populate
+    return populate($el)
   }
 
   const render = (vnode, $node) => {
@@ -154,7 +163,7 @@
   window.el = el
   window.on = on
   window.attr = attr
-  window.cond = cond
+  window.when = when
   window.iter = iter
   window.array = array
   window.render = render
