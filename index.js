@@ -32,18 +32,18 @@
   }
 
   const populate = $el => chainable('populate', children => {
-    children.forEach(_child => {
-      if (typeof _child === 'string') $el.appendChild(text(_child))
-      switch (_child._type) {
+    children.forEach(child => {
+      if (typeof child === 'string') $el.appendChild(text(child))
+      switch (child._type) {
         case 'populate':
-          $el.append(_child($))
+          $el.append(child($))
           break;
         case 'when':
-          $el.append(..._child($))
+          $el.append(...child($))
           break;
         case getter:
           const $child = text()
-          _child.subscribe(newval => $child.textContent = newval)
+          child.subscribe(newval => $child.textContent = newval)
           $el.appendChild($child)
           break;
       }
