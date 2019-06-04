@@ -6,6 +6,7 @@
     function chain(...entities) {
       for (const entity of entities) {
         if (entity === $) return $el
+        if (Array.isArray(entity)) return chain(...entity)
         if (typeof entity === 'string') {
           if (entity.startsWith('.')) $el.classList.add(entity.slice(1))
           else if (entity.startsWith('#')) $el.id = entity.slice(1)
