@@ -66,7 +66,7 @@
     function subscribe(cb) {
       cb(current)
       observers.push(cb)
-      return f => subscribe(value => f(cb(value)))
+      return subscribe
     }
     Object.defineProperty(subscribe, 'value', {
       get: () => current,
@@ -75,6 +75,12 @@
         observers.forEach(cb => cb(value))
       }
     })
+    subscribe.after = f => {
+      if (typeof f !== 'function') throw new Error('after expects a function')
+      const newState = makeState(current)
+      subscribe(value => newState.value = f(value))
+      return newState
+    }
     return subscribe
   }
 
@@ -96,6 +102,7 @@
     el, mount,
     makeState, get,
     elements: {
+      h3: el('h3'),
       div: el('div'),
       form: el('form'),
       input: el('input'),

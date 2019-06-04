@@ -1,5 +1,5 @@
 const { makeState, get, mount } = marycat
-const { div, header, article, section, input } = marycat.elements
+const { div, header, article, section, input, h3 } = marycat.elements
 
 const upper = str => str.toUpperCase()
 const reverse = str => [...str].reverse().join('')
@@ -9,11 +9,11 @@ const text = makeState('')
 const show = makeState(true)
 const show2 = makeState(true)
 
-setInterval(() => show.value = !show.value, 500)
+setInterval(() => show.value = !show.value, 1000)
 
 // This will fire after every update
 // and wont affect the original value
-text(reverse)(upper)(console.log)
+text.after(reverse).after(upper)(console.log)
 
 const Article = (title, ...slot) =>
   article()
@@ -41,8 +41,10 @@ const app =
       .type('password')
       .bind(text) // Is this Vue xddd?
     )
-    (get`${text(reverse)}`)
+    (get`${text.after(reverse)}`)
+    (h3('George Boole\'s hall of fame'))
     (div('This works like OR').when(show, show2))
     (div('And this is about AND').when(show).when(show2))
+    (div('An example of inversion').when(show.after(x => !x)))
 
 mount(document.body, app)
