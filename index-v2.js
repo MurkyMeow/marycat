@@ -46,6 +46,13 @@
       return chain
     }
 
+    chain.when = (...states) => {
+      states.forEach(state => {
+        state(() => $el.hidden = !states.some(x => x.value))
+      })
+      return chain
+    }
+
     return chain(...entities)
   }
 
