@@ -1,5 +1,5 @@
 const { makeState, get, mount } = marycat
-const { div, header, article, section, input, h3 } = marycat.elements
+const { div, header, article, section, input, h3, form, button } = marycat.elements
 
 const upper = str => str.toUpperCase()
 const reverse = str => [...str].reverse().join('')
@@ -46,5 +46,12 @@ const app =
     (div('This works like OR').when(show, show2))
     (div('And this is about AND').when(show).when(show2))
     (div('An example of inversion').when(show.after(x => !x)))
+    (h3('Form struggles'))
+    (form()
+      (button('I will reload the page =('))
+    )
+    (form().submit.prevent(() => console.log('submitted!'))
+      (button('`prevent` modifier to the rescue!'))
+    )
 
 mount(document.body, app)

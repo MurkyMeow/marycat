@@ -30,12 +30,24 @@
     ].forEach(name => chain[name] = value => attr({ [name]: value }))
 
     const on = name => handler => {
-      $el.addEventListener(name, handler)
+      const [eventName, ...modifiers] = name.split('.')
+      $el.addEventListener(eventName, e => {
+        modifiers.forEach(mod => {
+          if (mod === 'prevent') e.preventDefault()
+          else if (mod === 'stop') e.stopPropagation()
+          else console.error(`Unknown event modifier: "${mod}"`)
+        })
+        handler(e)
+      })
       return chain
     }
     [ 'click', 'input', 'submit',
       'focus', 'blur', 'keydown',
-    ].forEach(name => chain[name] = on(name))
+    ].forEach(name => {
+      chain[name] = on(name)
+      chain[name].stop = on(`${name}.stop`)
+      chain[name].prevent = on(`${name}.prevent`)
+    })
 
     chain.attr = attr
     chain.on = (name, handler) => on(name)(handler)
@@ -106,6 +118,7 @@
       div: el('div'),
       form: el('form'),
       input: el('input'),
+      button: el('button'),
       header: el('header'),
       article: el('article'),
     },
