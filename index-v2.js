@@ -39,6 +39,13 @@
 
     chain.attr = attr
     chain.on = (name, handler) => on(name)(handler)
+
+    chain.bind = state => {
+      state(value => $el.value = value)
+      chain.input(() => state.value = $el.value)
+      return chain
+    }
+
     return chain(...entities)
   }
 
@@ -46,8 +53,41 @@
     $node.append(vnode($))
   }
 
+  function makeState(initial) {
+    let current = initial
+    const observers = []
+    function subscribe(cb) {
+      cb(current)
+      observers.push(cb)
+      return f => subscribe(value => f(cb(value)))
+    }
+    Object.defineProperty(subscribe, 'value', {
+      get: () => current,
+      set(value) {
+        current = value
+        observers.forEach(cb => cb(value))
+      }
+    })
+    return subscribe
+  }
+
+  function get(strings, ...keys) {
+    const $nodes = strings.map((str, i) => {
+      const state = keys[i]
+      if (!state) return str
+      const text = document.createTextNode(str)
+      state(value => text.textContent = str + value)
+      return entity => {
+        if (entity === $) return text
+        throw new Error('Getters are not appendable')
+      }
+    })
+    return $nodes
+  }
+
   window.marycat = {
     el, mount,
+    makeState, get,
     elements: {
       div: el('div'),
       form: el('form'),
