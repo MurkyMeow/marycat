@@ -1,0 +1,21 @@
+<head><meta charset="UTF-8"></head>
+<body></body>
+<script src="../index.js"></script>
+<script>
+const { makeState, mount } = marycat
+const { div, h3 } = marycat.elements
+
+const show = makeState(true)
+const show2 = makeState(true)
+
+setInterval(() => show.value = !show.value, 1000)
+
+const app =
+  div()
+    (h3('George Boole\'s hall of fame'))
+    (div('This works like OR').when(show, show2))
+    (div('And this is about AND').when(show).when(show2))
+    (div('An example of inversion').when(show.after(x => !x)))
+
+mount(document.body, app)
+</script>
