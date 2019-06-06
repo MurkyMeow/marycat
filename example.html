@@ -1,3 +1,31 @@
+<head>
+  <meta charset="UTF-8">
+  <style>
+  header {
+    font-weight: bold;
+  }
+  article {
+    width: 200px;
+    padding: 5px 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    background: cornsilk;
+  }
+  article div {
+    text-decoration: underline; 
+  }
+  input {
+    display: block;
+  }
+  .counter__extra {
+    color: deeppink;
+    font-style: italic;
+  }
+  </style>
+</head>
+<body></body>
+<script src="index.js"></script>
+<script>
 const { makeState, get, mount } = marycat
 const { div, header, article, section, input, h3, form, button } = marycat.elements
 
@@ -71,3 +99,4 @@ const app =
     )
 
 mount(document.body, app)
+</script>
