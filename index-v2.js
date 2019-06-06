@@ -5,10 +5,14 @@
     const $el = document.createElement(name)
     function chain(...entities) {
       for (const entity of entities) {
-        if (entity === $) return $el
+        if (entity === $) {
+          if (chain.onConnected) chain.onConnected()
+          return $el
+        }
         if (Array.isArray(entity)) return chain(...entity)
         if (typeof entity === 'string') {
           if (entity.startsWith('.')) $el.classList.add(entity.slice(1))
+          else if (entity.startsWith('@')) $el.name = entity.slice(1)
           else if (entity.startsWith('#')) $el.id = entity.slice(1)
           else $el.append(document.createTextNode(entity))
         }
@@ -26,7 +30,7 @@
       })
       return chain
     }
-    [ 'type',
+    [ 'type', 'placeholder',
     ].forEach(name => chain[name] = value => attr({ [name]: value }))
 
     const on = name => handler => {
@@ -53,8 +57,17 @@
     chain.on = (name, handler) => on(name)(handler)
 
     chain.bind = state => {
-      state(value => $el.value = value)
-      chain.input(() => state.value = $el.value)
+      if (name === 'form') {
+        state.value = state.value || {}
+        chain.input(e => state.value[e.target.name] = e.target.value)
+        chain.onConnected = () => state(value => {
+          $elements = Array.from($el)
+          $elements.forEach(x => x.value = value[x.name] || '')
+        })
+      } else {
+        state(value => $el.value = value)
+        chain.input(() => state.value = $el.value)
+      }
       return chain
     }
 

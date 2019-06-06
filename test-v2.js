@@ -15,6 +15,17 @@ setInterval(() => show.value = !show.value, 1000)
 // and wont affect the original value
 text.after(reverse).after(upper)(console.log)
 
+const formdata = makeState()
+function submit() {
+  const { meow = '', purring = '' } = formdata.value
+  console.log(meow.includes('meow') && purring.includes('pur')
+    ? 'Awww, you are so cute!'
+    : 'That doesnt sound like a cat, please try again'
+  )
+  // the form will react on manual changes of formdata:
+  formdata.value = { meow: '', purring: '' }
+}
+
 const Article = (title, ...slot) =>
   article()
     (header(title))
@@ -52,6 +63,11 @@ const app =
     )
     (form().submit.prevent(() => console.log('submitted!'))
       (button('`prevent` modifier to the rescue!'))
+    )
+    (form().bind(formdata)
+      (input('@meow').placeholder('Say meow!'))
+      (input('@purring').placeholder('Do some purring!'))
+      (button('Consider!').click.prevent(submit))
     )
 
 mount(document.body, app)
