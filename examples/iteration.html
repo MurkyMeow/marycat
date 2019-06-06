@@ -1,0 +1,44 @@
+<head>
+  <meta charset="UTF-8">
+  <style>
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 180px);
+    margin-bottom: 10px;
+  }
+  </style>
+</head>
+<body></body>
+<script src="../index.js"></script>
+<script>
+const { makeState, makeArray, mount } = marycat
+const { div, h3, button } = marycat.elements
+
+const suit = makeArray([
+  { name: 'Cute ribbon', view: '🎀' },
+  { name: 'Attractive dress', view: '👗' },
+  { name: 'A pair of sneakers', view: '👟' },
+])
+const array = makeArray([])
+
+const canGive = suit.after(x => x.length > 0)
+const canReturn = array.after(x => x.length > 0)
+
+const give = () => array.push(suit.pop())
+const back = () => suit.push(array.pop())
+
+const app =
+  div()
+    (h3('View them all'))
+    (div('.buttons')
+      (button('Give me something pretty').when(canGive).click(give))
+      (button('Return an item back').when(canReturn).click(back))
+    )
+    (array(item =>
+      div('.suit-item')
+        (div(item.name))
+        (div(item.view))
+    ))
+
+mount(document.body, app)
+</script>

@@ -5,7 +5,8 @@
     const $el = document.createElement(name)
     function chain(...entities) {
       for (const entity of entities) {
-        if (entity === $) {
+        if (entity instanceof Element) {
+          entity.appendChild($el)
           if (chain.onConnected) chain.onConnected()
           return $el
         }
@@ -16,7 +17,7 @@
           else if (entity.startsWith('#')) $el.id = entity.slice(1)
           else $el.append(document.createTextNode(entity))
         }
-        else if (typeof entity === 'function') $el.append(entity($))
+        else if (typeof entity === 'function') entity($el)
         else throw new Error(`I dont think i can handle that child: ${JSON.stringify(entity)}`)
       }
       return chain
@@ -82,7 +83,7 @@
   }
 
   function mount($node, vnode) {
-    return $node.appendChild(vnode($))
+    return vnode($node)
   }
 
   function makeState(initial) {
@@ -109,6 +110,45 @@
     return subscribe
   }
 
+  function makeArray(initial) {
+    const onadd = []
+    const ondel = []
+    const array = makeState(initial)
+    function map(vnode) {
+      return $parent => {
+        if ((!$parent instanceof Element)) throw new Error('Arrays are not appendable')
+        const $refs = []
+        function add(value) {
+          const $node = mount($parent, vnode(value))
+          $refs.push($node)
+        }
+        function del(index) {
+          const [$el] = $refs.splice(index, 1)
+          if ($el) $el.remove()
+        }
+        onadd.push(add)
+        ondel.push(del)
+        array.value.forEach(add)
+      }
+    }
+    map.push = value => {
+      array.value = [...array.value, value]
+      onadd.forEach(cb => cb(value))
+    }
+    map.del = index => {
+      const item = array.value[index]
+      array.value = array.value.filter((_, i) => i !== index)
+      ondel.forEach(cb => cb(index))
+      return item
+    }
+    map.pop = () => map.del(array.value.length - 1)
+    map.after = array.after
+    Object.defineProperty(map, 'value', {
+      get: () => array.value
+    })
+    return map
+  }
+
   function get(strings, ...keys) {
     const $nodes = strings.map((str, i) => {
       const state = keys[i]
@@ -116,7 +156,7 @@
       const text = document.createTextNode(str)
       state(value => text.textContent = str + value)
       return entity => {
-        if (entity === $) return text
+        if (entity instanceof Element) return entity.appendChild(text)
         throw new Error('Getters are not appendable')
       }
     })
@@ -126,6 +166,7 @@
   window.marycat = {
     el, mount,
     makeState, get,
+    makeArray,
     elements: {
       h3: el('h3'),
       div: el('div'),
