@@ -82,7 +82,7 @@
   }
 
   function mount($node, vnode) {
-    $node.append(vnode($))
+    return $node.appendChild(vnode($))
   }
 
   function makeState(initial) {
