@@ -1,0 +1,18 @@
+<head>
+  <meta charset="UTF-8">
+</head>
+<body></body>
+<script src="../index2.js"></script>
+<script>
+const div = el('div')
+
+const click = on('click')
+
+const app =
+  div('.class', '@name', '#id')
+    (div('inner-inner'))
+    (div('inner-inner2', click(console.log)))
+    (['hello', 'from array'])
+
+app(document.body)
+</script>
