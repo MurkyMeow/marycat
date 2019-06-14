@@ -9,6 +9,14 @@ function plain($el, str) {
   }
 }
 
+const withParent = $el => entity => {
+  switch (typeof entity) {
+    case 'string': return plain($el, entity)
+    case 'function': return entity($el)
+    default: throw Error(`Unexpected child: ${entity}`)
+  }
+}
+
 const el = name => (...entities) => {
   const chained = entities
   return function chain(...entities) {
@@ -18,13 +26,7 @@ const el = name => (...entities) => {
       return chain
     }
     const $el = document.createElement(name)
-    chained.forEach(entity => {
-      switch (typeof entity) {
-        case 'string': return plain($el, entity)
-        case 'function': return entity($el, chain)
-        default: throw Error(`Unexpected child: ${entity}`)
-      }
-    })
+    chained.forEach(withParent($el))
     return $parent.appendChild($el)
   }
 }
@@ -60,3 +62,18 @@ const on = name => handler => $el => {
 const attr = name => value => $el => {
   $el.setAttribute(name, value)
 }
+
+const ternary = cond => then => otherwise => $el => {
+  const state = cond.after(Boolean)
+  const mount = withParent($el)
+  let $node
+  state(value => {
+    const $new = mount(value ? then : otherwise)
+    if ($node) $node.replaceWith($new)
+    else $el.appendChild($new)
+    $node = $new
+  })
+}
+
+const when = cond => vnode =>
+  ternary(cond)(vnode)('')

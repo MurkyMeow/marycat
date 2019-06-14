@@ -5,14 +5,22 @@
 <script src="../index2.js"></script>
 <script>
 const div = el('div')
-
+const button = el('button')
 const click = on('click')
+
+const showing = makeState(false)
+const toggle = () => showing.value = !showing.value
 
 const app =
   div('.class', '@name', '#id')
-    (div('inner-inner'))
-    (div('inner-inner2', click(console.log)))
-    (['hello', 'from array'])
+    (ternary(showing)
+      (div('True'))
+      (div('False'))
+    )
+    (button('Toggle', click(toggle)))
+    (when(showing)
+      (div('Boo!'))
+    )
 
 app(document.body)
 </script>
