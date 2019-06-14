@@ -8,17 +8,26 @@ const div = el('div')
 const button = el('button')
 const click = on('click')
 
-const showing = makeState(false)
-const toggle = () => showing.value = !showing.value
+const count = makeState(0, {
+  actions: {
+    increment: v => v + 1,
+    decrement: v => v - 1,
+  },
+  views: {
+    enough: v => v > 5,
+    positive: v => v > 0,
+  },
+})
 
 const app =
   div('.class', '@name', '#id')
-    (ternary(showing)
-      (div('True'))
-      (div('False'))
+    (ternary(count.positive)
+      (div('Positive'))
+      (div('Zero or less'))
     )
-    (button('Toggle', click(toggle)))
-    (when(showing)
+    (button('Increment', click(count.increment)))
+    (button('Decrement', click(count.decrement)))
+    (when(count.enough)
       (div('Boo!'))
     )
 

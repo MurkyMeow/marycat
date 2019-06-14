@@ -31,7 +31,7 @@ const el = name => (...entities) => {
   }
 }
 
-function makeState(initial) {
+function makeState(initial, params = {}) {
   let current = initial
   const observers = []
   function subscribe(cb) {
@@ -51,6 +51,16 @@ function makeState(initial) {
     const newState = makeState(current)
     subscribe(value => newState.value = f(value))
     return newState
+  }
+  const actions = Object.entries(params.actions || {})
+  for (const [name, fn] of actions) {
+    subscribe[name] = (...args) => {
+      subscribe.value = fn(current, ...args)
+    }
+  }
+  const views = Object.entries(params.views || {})
+  for (const [name, fn] of views) {
+    subscribe[name] = subscribe.after(fn)
   }
   return subscribe
 }
