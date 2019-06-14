@@ -40,6 +40,7 @@ function makeState(initial) {
   Object.defineProperty(subscribe, 'value', {
     get: () => current,
     set(value) {
+      if (value === current) return
       current = value
       observers.forEach(cb => cb(value))
     }
