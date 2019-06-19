@@ -43,8 +43,8 @@ function makeState(initial, params = {}) {
     get: () => current,
     set(value) {
       if (value === current) return
+      observers.forEach(cb => cb(value, current))
       current = value
-      observers.forEach(cb => cb(value))
     }
   })
   subscribe.after = f => {
@@ -88,57 +88,31 @@ const ternary = cond => then => otherwise => $el => {
 const when = cond => vnode =>
   ternary(cond)(vnode)('')
 
-function makeArray(initial = [], params) {
-  const observers = []
-  const array = new Proxy(initial, {
-    set(target, prop, value) {
-      const length = target.length
-      const current = target[prop]
-      target[prop] = value
-      if (prop !== 'length') {
-        observers.forEach(ob => ob.onset(value, Number(prop), current))
-      } else if (value < length) {
-        observers.forEach(ob => ob.ondel(Number(value - 1)))
-      }
-      return true
-    }
-  })
-  const state = makeState(array, params)
-  state.subscribe = ob => {
-    observers.push(ob)
-    array.forEach((value, i) => ob.onset(value, i))
-  }
-  return state
-}
-
 const iter = state => vnode => $el => {
   const mount = withParent($el)
   const $hook = document.createComment('')
-  const refs = [$hook]
   $el.appendChild($hook)
-  state.subscribe({
-    onset(next, index, current) {
-      if (!next._key) {
-        next._key = Math.random()
-        next._i = index
-        const $node = mount(vnode(next, index))
-        refs[index].after($node)
-        refs.splice(index + 1, 0, $node)
+  function nodeAt(index, $node = $hook) {
+    if (index < 0) return $node
+    return nodeAt(index - 1, $node.nextSibling)
+  }
+  state((nextState, oldState = []) => {
+    oldState.forEach((old, i) => {
+      const deleted = nextState.every(next => old.$$key !== next.$$key);
+      if (deleted) nodeAt(i).remove()
+    })
+    nextState.forEach((item, i) => {
+      if (!item.$$i) {
+        const $node = mount(vnode(item, i))
+        const index = makeState(i)
+        index(nextIndex => {
+          nodeAt(nextIndex - 1).after($node)
+        })
+        item.$$i = index
+        item.$$key = Math.random()
       } else {
-        const [$current] = refs.splice(current._i + 1, 1)
-        const newIndex = state.value.findIndex(x => x._key === current._key)
-        if (newIndex < 0) {
-          $current.remove()
-        } else {
-          current._i = newIndex
-          refs[newIndex].after($current)
-          refs.splice(newIndex + 1, 0, $current)
-        }
+        item.$$i.value = i
       }
-    },
-    ondel(index) {
-      const [$node] = refs.splice(index + 1, 1)
-      $node.remove()
-    },
+    });
   })
 }

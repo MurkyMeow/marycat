@@ -19,18 +19,17 @@ const count = makeState(0, {
   },
 })
 
-const items = makeArray([
+const items = makeState([
   { name: 'foo' },
   { name: 'bar' },
   { name: 'baz' },
+  { name: 'qux' },
+  { name: 'quux' },
 ], {
   actions: {
-    add: v => (
-      v.push({ name: performance.now() }),
-    v),
-    del: (v, index) => (
-      v.splice(index, 1),
-    v),
+    add: v => [...v, { name: performance.now() }],
+    del: (v, item) => v.filter(x => x !== item),
+    reverse: v => [...v].reverse(),
   },
 })
 
@@ -45,10 +44,10 @@ const app =
     (when(count.enough)
       (div('Boo!'))
     )
-    (iter(items)((item, i) =>
-      div(`${i} - ${item.name}`, click(() => items.del(i)))
-    ))
     (button('Add', click(items.add)))
+    (iter(items)((item, i) =>
+      div(`${i} - ${item.name}`, click(() => items.del(item)))
+    ))
 
 app(document.body)
 </script>
