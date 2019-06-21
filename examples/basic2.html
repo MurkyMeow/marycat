@@ -45,6 +45,8 @@ const app =
     (button('Decrement', click(count.decrement)))
     (when(count.enough)
       (div('Boo!'))
+      (div('Foo!'))
+      (div('Cool'))
     )
     (button('Add', click(items.add)))
     (iter(items)(q =>

@@ -12,7 +12,7 @@ function plain($el, str) {
 function withParent($el) {
   return function mount(entity) {
     if (Array.isArray(entity)) {
-      return entity.forEach(mount)
+      return entity.map(mount)
     }
     switch (typeof entity) {
       case 'number':
@@ -96,20 +96,27 @@ const attr = name => value => $el => {
   $el.setAttribute(name, value)
 }
 
+function empty() {
+  return document.createComment('')
+}
+
 const ternary = cond => then => otherwise => $el => {
   const state = cond.after(Boolean)
   const mount = withParent($el)
-  let $node
+  let nodes = []
   state(value => {
-    const $new = mount(value ? then : otherwise)
-    if ($node) $node.replaceWith($new)
-    else $el.appendChild($new)
-    $node = $new
+    while (nodes.length > 1) nodes.pop().remove()
+    const $hook = nodes[0] || $el.appendChild(empty())
+    const newNodes = mount(value ? then : otherwise)
+    nodes = [].concat(newNodes)
+    nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
+    $hook.remove()
   })
 }
 
-const when = cond => vnode =>
-  ternary(cond)(vnode)('')
+const when = cond => chainable(($el, chained) =>
+  ternary(cond)(chained)(empty)($el)
+)
 
 function reactiveItem(item) {
   const observers = []
@@ -129,8 +136,7 @@ function reactiveItem(item) {
 const iter = state => vnode => $el => {
   let oldLookup = new Map()
   const mount = withParent($el)
-  const $hook = document.createComment('')
-  $el.appendChild($hook)
+  const $hook = $el.appendChild(empty())
   state((nextState, oldState = []) => {
     const newLookup = new Map()
     for (const item of nextState) {
