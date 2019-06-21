@@ -26,6 +26,7 @@ const items = makeState([
   { name: 'qux' },
   { name: 'quux' },
 ], {
+  key: 'name',
   actions: {
     add: v => [...v, { name: performance.now() }],
     del: (v, item) => v.filter(x => x !== item),
@@ -46,8 +47,8 @@ const app =
       (div('Boo!'))
     )
     (button('Add', click(items.add)))
-    (iter(items, 'name')((item, i) =>
-      div(`${i} - ${item.name}`, click(() => items.del(item)))
+    (iter(items)(q =>
+      div(get`${q.i} - ${q.name}`, click(() => items.del(q.$)))
     ))
 
 app(document.body)

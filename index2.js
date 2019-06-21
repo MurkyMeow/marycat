@@ -60,14 +60,14 @@ function makeState(initial, params = {}) {
     subscribe(value => newState.value = f(value))
     return newState
   }
-  const actions = Object.entries(params.actions || {})
-  for (const [name, fn] of actions) {
+  const { key, actions, views } = params
+  subscribe.key = key
+  for (const [name, fn] of Object.entries(actions || {})) {
     subscribe[name] = (...args) => {
       subscribe.value = fn(current, ...args)
     }
   }
-  const views = Object.entries(params.views || {})
-  for (const [name, fn] of views) {
+  for (const [name, fn] of Object.entries(views || {})) {
     subscribe[name] = subscribe.after(fn)
   }
   return subscribe
@@ -106,32 +106,51 @@ const ternary = cond => then => otherwise => $el => {
 const when = cond => vnode =>
   ternary(cond)(vnode)('')
 
-const iter = (state, keyField) => vnode => $el => {
+function reactiveItem(item) {
+  const observers = []
+  function get(_, prop) {
+    if (prop === '$') return item
+    return cb => {
+      observers.push((value, i) => cb(prop === 'i' ? i : value[prop]))
+    }
+  }
+  function update(value, index) {
+    observers.forEach(cb => cb(value, index))
+  }
+  const getters = new Proxy({}, { get })
+  return { update, getters }
+}
+
+const iter = state => vnode => $el => {
   let oldLookup = new Map()
   const mount = withParent($el)
   const $hook = document.createComment('')
   $el.appendChild($hook)
   state((nextState, oldState = []) => {
     const newLookup = new Map()
-    nextState.forEach((item, i) => {
-      const key = item[keyField]
+    for (const item of nextState) {
+      const key = item[state.key]
       if (oldLookup.has(key)) {
         newLookup.set(key, oldLookup.get(key))
       } else {
-        const $node = mount(vnode(item, i))
-        newLookup.set(key, $node)
+        const { update, getters } = reactiveItem(item)
+        const $node = mount(vnode(getters))
+        newLookup.set(key, { update, $node })
       }
-    })
+    }
     for (const item of oldState) {
-      const key = item[keyField]
-      if (!newLookup.has(key)) oldLookup.get(key).remove()
+      const key = item[state.key]
+      if (!newLookup.has(key)) {
+        oldLookup.get(key).$node.remove()
+      }
     }
     let $current = $hook.nextSibling
-    for (const item of nextState) {
-      const $new = newLookup.get(item[keyField])
-      if ($current === $new) $current = $current.nextSibling
-      else $current.before($new)
-    }
+    nextState.forEach((item, i) => {
+      const next = newLookup.get(item[state.key])
+      if ($current === next.$node) $current = $current.nextSibling
+      else $current.before(next.$node)
+      next.update(item, i)
+    })
     oldLookup = newLookup
   })
 }
