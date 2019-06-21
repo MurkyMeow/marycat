@@ -35,6 +35,7 @@ const items = makeState([
 
 const app =
   div('.class', '@name', '#id')
+    (get`The count is: ${count}`)
     (ternary(count.positive)
       (div('Positive'))
       (div('Zero or less'))

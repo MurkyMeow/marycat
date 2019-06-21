@@ -65,6 +65,16 @@ function makeState(initial, params = {}) {
   return subscribe
 }
 
+function get(strings, ...keys) {
+  return strings.map((str, i) => {
+    const state = keys[i]
+    if (!state) return str
+    const text = document.createTextNode('')
+    state(next => text.textContent = str + next)
+    return $el => $el.appendChild(text)
+  })
+}
+
 const on = name => handler => $el => {
   $el.addEventListener(name, handler)
 }
