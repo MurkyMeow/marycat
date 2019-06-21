@@ -9,14 +9,19 @@ function plain($el, str) {
   }
 }
 
-const withParent = $el => entity => {
-  switch (typeof entity) {
-    case 'number':
-    case 'boolean':
-      return plain($el, entity.toString())
-    case 'string': return plain($el, entity)
-    case 'function': return entity($el)
-    default: throw Error(`Unexpected child: ${entity}`)
+function withParent($el) {
+  return function mount(entity) {
+    if (Array.isArray(entity)) {
+      return entity.forEach(mount)
+    }
+    switch (typeof entity) {
+      case 'number':
+      case 'boolean':
+        return $el.appendChild(document.createTextNode(entity))
+      case 'string': return plain($el, entity)
+      case 'function': return entity($el)
+      default: throw Error(`Unexpected child: ${entity}`)
+    }
   }
 }
 
@@ -25,7 +30,7 @@ const el = name => (...entities) => {
   return function chain(...entities) {
     const $parent = entities.find(x => x instanceof Element)
     if (!$parent) {
-      chained.push(...entities.flat())
+      chained.push(...entities)
       return chain
     }
     const $el = document.createElement(name)
