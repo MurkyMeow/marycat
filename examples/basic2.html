@@ -45,7 +45,7 @@ const app =
       (div('Boo!'))
     )
     (button('Add', click(items.add)))
-    (iter(items)((item, i) =>
+    (iter(items, 'name')((item, i) =>
       div(`${i} - ${item.name}`, click(() => items.del(item)))
     ))
 

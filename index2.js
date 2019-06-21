@@ -88,31 +88,32 @@ const ternary = cond => then => otherwise => $el => {
 const when = cond => vnode =>
   ternary(cond)(vnode)('')
 
-const iter = state => vnode => $el => {
+const iter = (state, keyField) => vnode => $el => {
+  let oldLookup = new Map()
   const mount = withParent($el)
   const $hook = document.createComment('')
   $el.appendChild($hook)
-  function nodeAt(index, $node = $hook) {
-    if (index < 0) return $node
-    return nodeAt(index - 1, $node.nextSibling)
-  }
   state((nextState, oldState = []) => {
-    oldState.forEach((old, i) => {
-      const deleted = nextState.every(next => old.$$key !== next.$$key);
-      if (deleted) nodeAt(i).remove()
-    })
+    const newLookup = new Map()
     nextState.forEach((item, i) => {
-      if (!item.$$i) {
-        const $node = mount(vnode(item, i))
-        const index = makeState(i)
-        index(nextIndex => {
-          nodeAt(nextIndex - 1).after($node)
-        })
-        item.$$i = index
-        item.$$key = Math.random()
+      const key = item[keyField]
+      if (oldLookup.has(key)) {
+        newLookup.set(key, oldLookup.get(key))
       } else {
-        item.$$i.value = i
+        const $node = mount(vnode(item, i))
+        newLookup.set(key, $node)
       }
-    });
+    })
+    for (const item of oldState) {
+      const key = item[keyField]
+      if (!newLookup.has(key)) oldLookup.get(key).remove()
+    }
+    let $current = $hook.nextSibling
+    for (const item of nextState) {
+      const $new = newLookup.get(item[keyField])
+      if ($current === $new) $current = $current.nextSibling
+      else $current.before($new)
+    }
+    oldLookup = newLookup
   })
 }
