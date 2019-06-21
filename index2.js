@@ -11,6 +11,9 @@ function plain($el, str) {
 
 const withParent = $el => entity => {
   switch (typeof entity) {
+    case 'number':
+    case 'boolean':
+      return plain($el, entity.toString())
     case 'string': return plain($el, entity)
     case 'function': return entity($el)
     default: throw Error(`Unexpected child: ${entity}`)
