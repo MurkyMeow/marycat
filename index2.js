@@ -25,19 +25,24 @@ function withParent($el) {
   }
 }
 
-const el = name => (...entities) => {
-  const chained = entities
-  return function chain(...entities) {
-    const $parent = entities.find(x => x instanceof Element)
-    if (!$parent) {
-      chained.push(...entities)
-      return chain
+const chainable = cb => (...initial) => {
+  const chained = []
+  function chain(first, ...rest) {
+    if (first instanceof Element) {
+      return cb(first, chained)
     }
-    const $el = document.createElement(name)
-    chained.forEach(withParent($el))
-    return $parent.appendChild($el)
+    chained.push(first, ...rest)
+    return chain
   }
+  return chain(...initial)
 }
+
+const el = name => chainable(($parent, chained) => {
+  const $el = document.createElement(name)
+  const mount = withParent($el)
+  chained.forEach(mount)
+  return $parent.appendChild($el)
+})
 
 function makeState(initial, params = {}) {
   let current = initial
