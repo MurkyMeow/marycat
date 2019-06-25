@@ -65,6 +65,15 @@ function makeState(initial, params = {}) {
     subscribe(value => newState.value = f(value))
     return newState
   }
+  subscribe.combine = f => state => {
+    const comb = makeState()
+    state(x => comb.value = f(current, x))
+    subscribe(x => comb.value = f(x, state.value))
+    return comb
+  }
+  subscribe.not = () => subscribe.after(x => !x)
+  subscribe.and = subscribe.combine((a, b) => a && b)
+  subscribe.or = subscribe.combine((a, b) => a || b)
   const { key, actions, views } = params
   subscribe.key = key
   for (const [name, fn] of Object.entries(actions || {})) {

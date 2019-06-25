@@ -14,7 +14,7 @@ const count = makeState(0, {
     decrement: v => v - 1,
   },
   views: {
-    enough: v => v > 5,
+    enough: v => v >= 2,
     positive: v => v > 0,
   },
 })
@@ -34,6 +34,10 @@ const items = makeState([
   },
 })
 
+const a = makeState(true)
+const b = makeState(false)
+const c = makeState(false)
+
 const app =
   div('.class', '@name', '#id')
     (get`The count is: ${count}`)
@@ -43,7 +47,7 @@ const app =
     )
     (button('Increment', click(count.increment)))
     (button('Decrement', click(count.decrement)))
-    (when(count.enough)
+    (when(a.and(b).or(c).not())
       (div('Boo!'))
       (div('Foo!'))
       (div('Cool'))
