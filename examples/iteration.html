@@ -1,44 +1,45 @@
 <head>
   <meta charset="UTF-8">
-  <style>
-  .buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 180px);
-    margin-bottom: 10px;
-  }
-  </style>
 </head>
 <body></body>
-<script src="../index.js"></script>
+<script src="../index2.js"></script>
+<script src="bindings.js"></script>
 <script>
-const { makeState, makeArray, mount } = marycat
-const { div, h3, button } = marycat.elements
-
-const suit = makeArray([
+const items = [
+  { name: 'Crown', view: '👑' },
+  { name: 'Kimono', view: '👘' },
   { name: 'Cute ribbon', view: '🎀' },
-  { name: 'Attractive dress', view: '👗' },
+  { name: 'Sweet dress', view: '👗' },
   { name: 'A pair of sneakers', view: '👟' },
-])
-const array = makeArray([])
+  { name: 'Weird looking necklace', view: '📿' },
+]
 
-const canGive = suit.after(x => x.length > 0)
-const canReturn = array.after(x => x.length > 0)
+const randomItem = () =>
+  items[items.length * Math.random() | 0]
 
-const give = () => array.push(suit.pop())
-const back = () => suit.push(array.pop())
+const suit = makeState([], {
+  key: 'name',
+  actions: {
+    pick(v) {
+      const amount = Math.random() * 5 | 0 + 1
+      const newsuit = Array(amount).fill().map(randomItem)
+      return [...new Set(newsuit)] // remove duplicates
+    },
+  },
+  views: {
+    button: v => v.length > 0 ? 'Something else' : 'Pick',
+  },
+})
 
 const app =
-  div()
-    (h3('View them all'))
-    (div('.buttons')
-      (button('Give me something pretty').when(canGive).click(give))
-      (button('Return an item back').when(canReturn).click(back))
+  div(null)
+    (h3('What to wear'))
+    (button(click(suit.pick))
+      (get`${suit.button}`)
     )
-    (array(item =>
-      div('.suit-item')
-        (div(item.name))
-        (div(item.view))
+    (iter(suit)(q =>
+      div('.suit-item')(get`${q.name} ${q.view}`)
     ))
 
-mount(document.body, app)
+app(document.body)
 </script>

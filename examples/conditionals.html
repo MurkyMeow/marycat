@@ -1,21 +1,26 @@
 <head><meta charset="UTF-8"></head>
 <body></body>
-<script src="../index.js"></script>
+<script src="../index2.js"></script>
+<script src="bindings.js"></script>
 <script>
-const { makeState, mount } = marycat
-const { div, h3 } = marycat.elements
+const a = makeState(true)
+const b = makeState(true)
 
-const show = makeState(true)
-const show2 = makeState(true)
-
-setInterval(() => show.value = !show.value, 1000)
+setInterval(() => a.v = !a.v, 1000)
 
 const app =
-  div()
+  div(null)
     (h3('George Boole\'s hall of fame'))
-    (div('This works like OR').when(show, show2))
-    (div('And this is about AND').when(show).when(show2))
-    (div('An example of inversion').when(show.after(x => !x)))
+    (ternary(a)
+      (div('A'))
+      (div('not A'))
+    )
+    (when(a.or(b))
+      (div('A or B'))
+    )
+    (when(a.and(b))
+      (div('A and B'))
+    )
 
-mount(document.body, app)
+app(document.body)
 </script>

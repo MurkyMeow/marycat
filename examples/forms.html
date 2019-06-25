@@ -7,21 +7,19 @@
   </style>
 </head>
 <body></body>
-<script src="../index.js"></script>
+<script src="../index2.js"></script>
+<script src="bindings.js"></script>
 <script>
-const { makeState, mount } = marycat
-const { div, input, h3, form, button } = marycat.elements
-
 const formdata = makeState()
 
 function submit() {
-  const { meow = '', purring = '' } = formdata.value
+  const { meow = '', purring = '' } = formdata.v
   alert(meow.includes('meow') && purring.includes('pur')
     ? 'Awww, you are so cute!'
     : 'That doesnt sound like a cat, please try again'
   )
   // the form will react on manual changes of formdata:
-  formdata.value = { meow: '', purring: '' }
+  formdata.v = { meow: '', purring: '' }
 }
 
 const app =
@@ -39,5 +37,5 @@ const app =
       (button('Consider!').click.prevent(submit))
     )
 
-mount(document.body, app)
+app(document.body)
 </script>
