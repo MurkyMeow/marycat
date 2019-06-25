@@ -11,6 +11,7 @@ function plain($el, str) {
 
 function withParent($el) {
   return function mount(entity) {
+    if (entity === null) return
     if (Array.isArray(entity)) {
       return entity.map(mount)
     }
@@ -90,7 +91,7 @@ function makeState(initial, params = {}) {
 function get(strings, ...keys) {
   return strings.map((str, i) => {
     const state = keys[i]
-    if (!state) return str
+    if (!state) return str || null
     const text = document.createTextNode('')
     state(next => text.textContent = str + next)
     return $el => $el.appendChild(text)
