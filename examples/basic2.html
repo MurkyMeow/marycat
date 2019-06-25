@@ -29,7 +29,7 @@ const items = makeState([
   key: 'name',
   actions: {
     add: v => [...v, { name: performance.now() }],
-    del: (v, item) => v.filter(x => x !== item),
+    del: (v, item) => v.filter(x => x.name !== item.name),
     reverse: v => [...v].reverse(),
   },
 })
@@ -54,7 +54,7 @@ const app =
     )
     (button('Add', click(items.add)))
     (iter(items)(q =>
-      div(get`${q.i} - ${q.name}`, click(() => items.del(q.$)))
+      div(get`${q.i} - ${q.name}`, click(() => items.del(q.v)))
     ))
 
 app(document.body)
