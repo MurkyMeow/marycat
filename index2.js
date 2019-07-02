@@ -1,3 +1,7 @@
+function assert(cond, msg) {
+  if (!cond) throw new Error(msg)
+}
+
 function plain($el, str) {
   const [prefix, rest] = [str[0], str.slice(1)]
   switch (prefix) {
@@ -26,24 +30,46 @@ function withParent($el) {
   }
 }
 
-const chainable = cb => (...initial) => {
-  const chained = []
-  function chain(first, ...rest) {
-    if (first instanceof Element) {
-      return cb(first, chained)
-    }
-    chained.push(first, ...rest)
-    return chain
+class MaryNode {
+  constructor(name, ...initial) {
+    this.el = name
+    this.chain = initial
   }
-  return chain(...initial)
+  onconnect($parent, $el = document.createElement(this.el)) {
+    const mount = withParent($el)
+    this.chain.forEach(mount)
+    return $parent.appendChild($el)
+  }
+  add(first, ...rest) {
+    if (first instanceof Element) {
+      return this.onconnect(first)
+    }
+    this.chain.push(first, ...rest)
+  }
+  on(name, handler) {
+    this.add($el => $el.addEventListener(name, handler))
+  }
+  attr(name, value = '') {
+    this.add($el => $el.setAttribute(name, value))
+  }
 }
 
-const el = name => chainable(($parent, chained) => {
-  const $el = document.createElement(name)
-  const mount = withParent($el)
-  chained.forEach(mount)
-  return $parent.appendChild($el)
-})
+const el = Type => (...initial) => {
+  const inst = typeof Type === 'string'
+    ? new MaryNode(Type, ...initial)
+    : new Type(...initial)
+  const proxy = new Proxy(inst.add.bind(inst), {
+    apply(target, _, args) {
+      return target(...args) || proxy
+    },
+    get: (target, prop) => (...args) => {
+      assert(prop in inst, `"${prop}" is not defined on "${Type.name || Type}"`)
+      target($el => inst[prop]($el, ...args))
+      return proxy
+    },
+  })
+  return proxy
+}
 
 class State {
   constructor(initial, params = {}) {
@@ -95,8 +121,6 @@ class State {
   }
 }
 
-const makeState = (...args) => new State(...args)
-
 function get(strings, ...keys) {
   return strings.map((str, i) => {
     const state = keys[i]
@@ -107,38 +131,48 @@ function get(strings, ...keys) {
   })
 }
 
-const on = name => handler => $el => {
-  $el.addEventListener(name, handler)
-}
-
-const attr = name => value => $el => {
-  $el.setAttribute(name, value)
-}
-
 function empty() {
   return document.createComment('')
 }
 
-const ternary = cond => then => otherwise => $el => {
-  const state = cond.after(Boolean)
-  const mount = withParent($el)
-  let nodes = []
-  state.sub(value => {
-    while (nodes.length > 1) nodes.pop().remove()
-    const $hook = nodes[0] || $el.appendChild(empty())
-    const newNodes = mount(value ? then : otherwise)
-    nodes = [].concat(newNodes)
-    nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
-    $hook.remove()
-  })
+class When extends MaryNode {
+  constructor(cond) {
+    super()
+    this.cond = cond
+    this.mode = 'then'
+    this.nodes = { then: [], else: [] }
+  }
+  onconnect($parent) {
+    const mount = withParent($parent)
+    const state = this.cond.after(Boolean)
+    let nodes = []
+    state.sub(value => {
+      while (nodes.length > 1) nodes.pop().remove()
+      const $hook = nodes[0] || $parent.appendChild(empty())
+      const newNodes = mount(this.nodes[value ? 'then' : 'else'])
+      nodes = [].concat(newNodes)
+      nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
+      $hook.remove()
+    })
+  }
+  then() {
+    this.mode = 'then'
+  }
+  else() {
+    this.mode = 'else'
+  }
+  add(first, ...rest) {
+    const node = super.add(first, ...rest)
+    if (node instanceof Element) return node
+    const { chain, mode } = this
+    const nodes = chain.splice(0, chain.length)
+    this.nodes[mode].push(...nodes)
+  }
 }
-
-const when = cond => chainable(($el, chained) =>
-  ternary(cond)(chained)(empty)($el)
-)
+const when = el(When)
 
 function reactiveItem(initial) {
-  const state = makeState(initial)
+  const state = new State(initial)
   const getters = new Proxy({}, {
     get: (_, prop) => prop === 'v'
       ? state.v

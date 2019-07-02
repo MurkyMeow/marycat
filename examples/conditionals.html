@@ -3,16 +3,17 @@
 <script src="../index2.js"></script>
 <script src="bindings.js"></script>
 <script>
-const a = makeState(true)
-const b = makeState(true)
+const a = new State(true)
+const b = new State(true)
 
 setInterval(() => a.v = !a.v, 1000)
 
 const app =
   div(null)
     (h3('George Boole\'s hall of fame'))
-    (ternary(a)
+    (when(a).then()
       (div('A'))
+    ).else(
       (div('not A'))
     )
     (when(a.or(b))
