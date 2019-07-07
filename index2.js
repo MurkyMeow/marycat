@@ -162,11 +162,8 @@ class If extends MaryNode {
     this.mode = 'else'
   }
   add(first, ...rest) {
-    const node = super.add(first, ...rest)
-    if (node instanceof Element) return node
-    const { chain, mode } = this
-    const nodes = chain.splice(0, chain.length)
-    this.nodes[mode].push(...nodes)
+    if (first instanceof Element) return super.add(first)
+    this.nodes[this.mode].push(first, ...rest)
   }
 }
 const _if = el(If)

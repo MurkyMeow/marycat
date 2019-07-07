@@ -41,7 +41,7 @@ const app =
       (div('Hi hello hi!'))
     )
     (Article('You can click on me!')
-      (click(() => alert('So fancy!')))
+      .on('click', () => alert('So fancy!'))
     )
     (input()
       .type('password')
