@@ -11,15 +11,15 @@ setInterval(() => a.v = !a.v, 1000)
 const app =
   div(null)
     (h3('George Boole\'s hall of fame'))
-    (when(a).then()
+    (_if(a)
       (div('A'))
     ).else(
       (div('not A'))
     )
-    (when(a.or(b))
+    (_if(a.or(b))
       (div('A or B'))
     )
-    (when(a.and(b))
+    (_if(a.and(b))
       (div('A and B'))
     )
 

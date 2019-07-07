@@ -34,7 +34,7 @@ const items = new State([
 const app =
   div('.class', '@name', '#id')
     (get`The count is: ${count}`)
-    (when(count.positive).then()
+    (_if(count.positive)
       (div('Positive'))
     ).else()
       (div('Zero or less')

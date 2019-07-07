@@ -135,7 +135,7 @@ function empty() {
   return document.createComment('')
 }
 
-class When extends MaryNode {
+class If extends MaryNode {
   constructor(cond) {
     super()
     this.cond = cond
@@ -169,7 +169,7 @@ class When extends MaryNode {
     this.nodes[mode].push(...nodes)
   }
 }
-const when = el(When)
+const _if = el(If)
 
 function reactiveItem(initial) {
   const state = new State(initial)
