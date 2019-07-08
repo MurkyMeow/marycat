@@ -46,11 +46,11 @@ class MaryNode {
     }
     this.chain.push(first, ...rest)
   }
-  on(name, handler) {
-    this.add($el => $el.addEventListener(name, handler))
+  on($el, name, handler) {
+    $el.addEventListener(name, handler)
   }
-  attr(name, value = '') {
-    this.add($el => $el.setAttribute(name, value))
+  attr($el, name, value = '') {
+    $el.setAttribute(name, value)
   }
 }
 
