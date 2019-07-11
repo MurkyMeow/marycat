@@ -30,46 +30,44 @@ function withParent($el) {
   }
 }
 
-class MaryNode {
-  constructor(name, ...initial) {
-    this.el = name
-    this.chain = initial
-  }
-  onconnect($parent, $el = document.createElement(this.el)) {
-    const mount = withParent($el)
-    this.chain.forEach(mount)
-    return $parent.appendChild($el)
-  }
-  add(first, ...rest) {
+const chainable = api => (...initial) => {
+  const chained = []
+  function chain(first, ...rest) {
     if (first instanceof Element) {
-      return this.onconnect(first)
+      return chain._connect(first, chained)
     }
-    this.chain.push(first, ...rest)
+    if (chain._take) {
+      return chain._take(first, ...rest)
+    }
+    chained.push(first, ...rest)
+    return chain
   }
-  on($el, name, handler) {
-    $el.addEventListener(name, handler)
+  const { _init, ...rest } = api
+  Object.assign(chain, rest)
+  if (_init) {
+    _init.apply(chain, initial)
+    return chain
   }
-  attr($el, name, value = '') {
-    $el.setAttribute(name, value)
-  }
+  return chain(...initial)
 }
 
-const el = Type => (...initial) => {
-  const inst = typeof Type === 'string'
-    ? new MaryNode(Type, ...initial)
-    : new Type(...initial)
-  const proxy = new Proxy(inst.add.bind(inst), {
-    apply(target, _, args) {
-      return target(...args) || proxy
-    },
-    get: (target, prop) => (...args) => {
-      assert(prop in inst, `"${prop}" is not defined on "${Type.name || Type}"`)
-      target($el => inst[prop]($el, ...args))
-      return proxy
-    },
-  })
-  return proxy
-}
+const el = (name, api = {}) => chainable({
+  ...api,
+  _connect($parent, chained) {
+    const $el = document.createElement(name)
+    const mount = withParent($el)
+    chained.forEach(mount)
+    return $parent.appendChild($el)
+  },
+  on(name, handler) {
+    this($el => $el.addEventListener(name, handler))
+    return this
+  },
+  attr(name, handler) {
+    this($el => $el.setAttribute(name, handler))
+    return this
+  },
+})
 
 class State {
   constructor(initial, params = {}) {
@@ -135,38 +133,40 @@ function empty() {
   return document.createComment('')
 }
 
-class If extends MaryNode {
-  constructor(cond) {
-    super()
+const _if = chainable({
+  _init(cond) {
+    this.then()
     this.cond = cond
-    this.mode = 'then'
     this.nodes = { then: [], else: [] }
-  }
-  onconnect($parent) {
+  },
+  _take(first, ...rest) {
+    this.nodes[this.mode].push(first, ...rest)
+    return this
+  },
+  _connect($parent) {
     const mount = withParent($parent)
     const state = this.cond.after(Boolean)
-    let nodes = []
+    let $hook, nodes = []
     state.sub(value => {
       while (nodes.length > 1) nodes.pop().remove()
-      const $hook = nodes[0] || $parent.appendChild(empty())
+      $hook = nodes[0] || $parent.appendChild(empty())
       const newNodes = mount(this.nodes[value ? 'then' : 'else'])
       nodes = [].concat(newNodes)
       nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
       $hook.remove()
     })
-  }
+    return $hook
+  },
   then() {
     this.mode = 'then'
-  }
+    return this
+  },
   else() {
     this.mode = 'else'
-  }
-  add(first, ...rest) {
-    if (first instanceof Element) return super.add(first)
-    this.nodes[this.mode].push(first, ...rest)
-  }
-}
-const _if = el(If)
+    return this
+  },
+  // TODO: elseif
+})
 
 function reactiveItem(initial) {
   const state = new State(initial)

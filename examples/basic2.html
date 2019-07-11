@@ -36,7 +36,7 @@ const app =
     (get`The count is: ${count}`)
     (_if(count.positive)
       (div('Positive'))
-    .else
+    .else()
       (div('Zero or less'))
     )
     (button('Increment').on('click', count.increment))
