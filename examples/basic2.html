@@ -2,9 +2,12 @@
   <meta charset="UTF-8">
 </head>
 <body></body>
-<script src="../index2.js"></script>
-<script src="bindings.js"></script>
-<script>
+<script type="module">
+import { _if } from '../if.js'
+import { iter } from '../iter.js'
+import { State, get } from '../state.js'
+import { div, button } from './bindings.js'
+
 const count = new State(0, {
   actions: {
     increment: v => v + 1,

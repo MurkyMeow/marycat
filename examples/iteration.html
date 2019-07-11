@@ -2,9 +2,11 @@
   <meta charset="UTF-8">
 </head>
 <body></body>
-<script src="../index2.js"></script>
-<script src="bindings.js"></script>
-<script>
+<script type="module">
+import { iter } from '../iter.js'
+import { State, get } from '../state.js'
+import { div, h3, button } from './bindings.js'
+
 const items = [
   { name: 'Crown', view: '👑' },
   { name: 'Kimono', view: '👘' },
@@ -17,7 +19,7 @@ const items = [
 const randomItem = () =>
   items[items.length * Math.random() | 0]
 
-const suit = makeState([], {
+const suit = new State([], {
   key: 'name',
   actions: {
     pick(v) {
@@ -34,8 +36,8 @@ const suit = makeState([], {
 const app =
   div(null)
     (h3('What to wear'))
-    (button(click(suit.pick))
-      (get`${suit.button}`)
+    (button(get`${suit.button}`)
+      .on('click', suit.pick)
     )
     (iter(suit)(q =>
       div('.suit-item')(get`${q.name} ${q.view}`)

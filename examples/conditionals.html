@@ -1,8 +1,10 @@
 <head><meta charset="UTF-8"></head>
 <body></body>
-<script src="../index2.js"></script>
-<script src="bindings.js"></script>
-<script>
+<script type="module">
+import { _if } from '../if.js'
+import { State } from '../state.js'
+import { div, h3 } from './bindings.js'
+
 const a = new State(true)
 const b = new State(true)
 

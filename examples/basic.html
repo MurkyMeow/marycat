@@ -17,13 +17,14 @@
   </style>
 </head>
 <body></body>
-<script src="../index2.js"></script>
-<script src="bindings.js"></script>
-<script>
+<script type="module">
+import { State, get } from '../state.js'
+import { div, article, header, input } from './bindings.js'
+
 const upper = str => str.toUpperCase()
 const reverse = str => [...str].reverse().join('')
 
-const text = makeState('')
+const text = new State('')
 
 // This will fire after every update
 // and wont affect the original value

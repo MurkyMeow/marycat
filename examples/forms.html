@@ -7,10 +7,11 @@
   </style>
 </head>
 <body></body>
-<script src="../index2.js"></script>
-<script src="bindings.js"></script>
-<script>
-const formdata = makeState()
+<script type="module">
+import { State } from '../state.js'
+import { div, h3, form, input, button } from './bindings.js'
+
+const formdata = new State()
 
 function submit() {
   const { meow = '', purring = '' } = formdata.v
