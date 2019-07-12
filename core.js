@@ -51,23 +51,40 @@ export const chainable = api => (...initial) => {
   return chain(...initial)
 }
 
-export const el = (name, api = {}) => chainable({
-  ...api,
-  _connect($parent, chained) {
-    const $el = document.createElement(name)
-    const mount = withParent($el)
-    chained.forEach(mount)
-    return $parent.appendChild($el)
-  },
-  on(name, handler) {
-    this($el => $el.addEventListener(name, handler))
-    return this
-  },
-  attr(name, handler) {
-    this($el => $el.setAttribute(name, handler))
-    return this
-  },
-})
+export function el(name, api = {}) {
+  const { _attrs = [], _events = [], ...rest } = api
+  return chainable({
+    ...rest,
+    _connect($parent, chained) {
+      const $el = document.createElement(name)
+      const mount = withParent($el)
+      chained.forEach(mount)
+      return $parent.appendChild($el)
+    },
+    prevent() {
+      this.prevented = true
+      return this
+    },
+    on(name, handler) {
+      const handle = this.prevented
+        ? e => (e.preventDefault(), handler(e))
+        : handler
+      this.prevented = false
+      this($el => $el.addEventListener(name, handle))
+      return this
+    },
+    attr(name, value) {
+      this($el => $el.setAttribute(name, value))
+      return this
+    },
+    ..._events.reduce((acc, evt) => ({ ...acc,
+      [evt]: function(handler) { return this.on(evt, handler) }
+    }), {}),
+    ..._attrs.reduce((acc, attr) => ({ ...acc,
+      [attr]: function(value) { return this.attr(attr, value) }
+    }), {}),
+  })
+}
 
 export function empty() {
   return document.createComment('')
