@@ -9,7 +9,8 @@
 <body></body>
 <script type="module">
 import { State } from '../state.js'
-import { div, h3, form, input, button } from './bindings.js'
+import { form, input } from '../form.js'
+import { div, h3, button } from './bindings.js'
 
 const formdata = new State()
 
@@ -20,7 +21,7 @@ function submit() {
     : 'That doesnt sound like a cat, please try again'
   )
   // the form will react on manual changes of formdata:
-  formdata.v = { meow: '', purring: '' }
+  formdata.v = {}
 }
 
 const app =
@@ -29,13 +30,13 @@ const app =
     (form()
       (button('I will reload the page =('))
     )
-    (form().submit.prevent(() => console.log('submitted!'))
+    (form().prevent().submit(() => console.log('submitted!'))
       (button('`prevent` modifier to the rescue!'))
     )
     (form().bind(formdata)
       (input('@meow').placeholder('Say meow!'))
       (input('@purring').placeholder('Do some purring!'))
-      (button('Consider!').click.prevent(submit))
+      (button('Consider!').prevent().on('click', submit))
     )
 
 app(document.body)

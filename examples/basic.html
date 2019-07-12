@@ -18,8 +18,9 @@
 </head>
 <body></body>
 <script type="module">
+import { input } from '../form.js'
 import { State, get } from '../state.js'
-import { div, article, header, input } from './bindings.js'
+import { div, article, header } from './bindings.js'
 
 const upper = str => str.toUpperCase()
 const reverse = str => [...str].reverse().join('')
