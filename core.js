@@ -36,10 +36,8 @@ export const chainable = api => (...initial) => {
     if (first instanceof Element) {
       return chain._connect(first, chained)
     }
-    if (chain._take) {
-      return chain._take(first, ...rest)
-    }
-    chained.push(first, ...rest)
+    if (chain._take) chain._take(first, ...rest)
+    else chained.push(first, ...rest)
     return chain
   }
   const { _init, ...rest } = api

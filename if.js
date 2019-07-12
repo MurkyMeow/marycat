@@ -8,21 +8,19 @@ export const _if = chainable({
   },
   _take(first, ...rest) {
     this.nodes[this.mode].push(first, ...rest)
-    return this
   },
   _connect($parent) {
     const mount = withParent($parent)
     const state = this.cond.after(Boolean)
-    let $hook, nodes = []
+    let nodes = []
     state.sub(value => {
       while (nodes.length > 1) nodes.pop().remove()
-      $hook = nodes[0] || $parent.appendChild(empty())
+      const $hook = nodes[0] || $parent.appendChild(empty())
       const newNodes = mount(this.nodes[value ? 'then' : 'else'])
       nodes = [].concat(newNodes)
       nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
       $hook.remove()
     })
-    return $hook
   },
   then() {
     this.mode = 'then'
