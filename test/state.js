@@ -1,19 +1,27 @@
-const { makeState, get } = marycat
+import { State, get } from '../state.js'
 
 describe('state', function() {
   it('ensures state callbacks are called', function() {
-    const state = makeState(25)
+    const state = new State(25)
     const values = []
-    state(val => values[0] = val)
-    state(val => values[1] = val)
+    state.sub(v => values[0] = v)
+    state.sub(v => values[1] = v)
     assert(values.every(x => x === 25), 'Initial value is not applied')
-    state.value = 'foo'
+    state.v = 'foo'
     assert(values.every(x => x === 'foo'), 'Value updates are not applied')
   })
 
+  it('checks if `after` works', function() {
+    const state = new State('xxx')
+    const len = state.after(v => v.length)
+    assert(len.v === 3)
+    state.v = 'xxxxx'
+    assert(len.v === 5, 'State updates are not captured')
+  })
+
   it('ensures `get` works properly', function() {
-    const state = makeState('foo')
-    const state2 = makeState('bar')
+    const state = new State('foo')
+    const state2 = new State('bar')
     const $node = mount(
       div(get`state=${state};state2=${state2}`)
     )
@@ -21,59 +29,39 @@ describe('state', function() {
       $node.textContent === 'state=foo;state2=bar',
       'Initial values are not applied'
     )
-    state.value = 'baz'
-    state2.value = 'qux'
+    state.v = 'baz'
+    state2.v = 'qux'
     assert(
       $node.textContent === 'state=baz;state2=qux',
       'State updates are not applied'
     )
   })
 
-  it.skip('checks if `bind` works with <input>', function() {
-    const state = makeState('foo')
-    const $node = mount(input().bind(state))
-    assert($node.value === 'foo', 'Initial value is not applied')
-    // TODO: simulate keyboard input somehow?
+  it('checks if logical operators are working', function() {
+    const a = new State(true)
+    const b = new State(false)
+    const or = a.or(b)
+    const and = a.and(b)
+    assert(or.v === true, 'OR is doing a wrong thing')
+    assert(and.v === false, 'AND is doing a wrong thing')
   })
 
-  it.skip('checks if `bind` works with <form>', function() {
-    const initial = { meow: 'meowww', purr: 'purrr' }
-    const state = makeState(initial)
-    const $node = mount(
-      form().bind(state)
-        (input('@meow'))
-        (input('@purr'))
-    )
-    const data = new FormData($node)
-    assert(
-      data.get('meow') === initial.meow &&
-      data.get('purr') === initial.purr,
-      'Initial values are not applied'
-    )
-    // TODO: simulate keyboard input somehow?
-  })
+  it('checks if comparators are working', function() {
+    const state = new State(25)
 
-  it('checks if `when` works as designed', function() {
-    const cond = makeState(true)
-    const cond2 = makeState(false)
-    const $node = mount(
-      div()
-        (div().when(cond))
-        (div().when(cond2))
-        (div().when(cond, cond2))
-        (div().when(cond).when(cond2))
-    )
-    const [shown, hidden, or, and] = $node.children
-    assert(!shown.hidden, 'When true the node should not be hidden')
-    assert(hidden.hidden, 'When false the node should be hidden')
-    assert(!or.hidden, 'OR with comma notation doesnt work')
-    assert(and.hidden, 'AND with chain notation doesnt work')
+    assert(state.gt(10).v === true)
+    assert(state.gt(25).v === false)
 
-    cond.value = false
-    assert(shown.hidden, 'Changing condition has no effect')
-    assert(or.hidden, 'OR doesnt track updates')
+    assert(state.lt(30).v === true)
+    assert(state.lt(25).v === false)
 
-    cond.value = cond2.value = true
-    assert(!and.hidden, 'AND doesnt track updates')
+    assert(state.ge(30).v === false)
+    assert(state.ge(25).v === true)
+
+    assert(state.le(10).v === false)
+    assert(state.le(25).v === true)
+
+    assert(state.eq(25).v === true)
+    assert(state.eq('abcd').v === false)
   })
 })

@@ -3,13 +3,14 @@ describe('mount', function() {
     const $node = mount(
       div()
         (h3())
-        (input())
+        (button())
         (article())
     )
     const { children } = $node
+    assert($node.tagName === 'DIV', 'The root node should be a div')
     assert(children.length === 3, 'The amount of nodes doesnt match')
     assert(children[0].tagName === 'H3', 'The first node should be an h3')
-    assert(children[1].tagName === 'INPUT', 'The second node should be an input')
+    assert(children[1].tagName === 'BUTTON', 'The second node should be a button')
     assert(children[2].tagName === 'ARTICLE', 'The third node should be an article')
   })
 
@@ -28,16 +29,16 @@ describe('mount', function() {
 
   it('sets id and name', function() {
     const $node = mount(div('#foo')('@bar'))
-    assert($node.id === 'foo', 'id is not set')
-    assert($node.name === 'bar', 'name is not set')
+    assert($node.getAttribute('id') === 'foo', 'id is not set')
+    assert($node.getAttribute('name') === 'bar', 'name is not set')
   })
   
   it('registers click events', function() {
     let count = 0
     const $node = mount(
       div()
-        .click(() => count += 2)
-        .click(() => count += 3)
+        .on('click', () => count += 2)
+        .on('click', () => count += 3)
     )
     $node.click()
     assert(count === 5, 'Click handlers are not called')

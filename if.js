@@ -21,6 +21,9 @@ export const _if = chainable({
       nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
       $hook.remove()
     })
+    const frag = document.createDocumentFragment()
+    frag.append(...nodes)
+    return frag
   },
   then() {
     this.mode = 'then'

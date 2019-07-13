@@ -5,17 +5,24 @@
 <body>
   <div id="mocha"></div>
 </body>
-<script src="../index.js"></script>
-<script src="https://unpkg.com/chai/chai.js"></script>
 <script src="https://unpkg.com/mocha/mocha.js"></script>
-<script>
+<script type="module">
+  import { assert, withParent } from '../core.js'
   mocha.setup('bdd')
-  window.assert = chai.assert
-  window.mount = vnode => marycat.mount(document.head, vnode)
-  Object.assign(window, marycat.elements)
+  window.assert = assert
+  window.mount = withParent(document.head)
 </script>
-<script src="mount.js"></script>
-<script src="state.js"></script>
-<script>
+<script type="module">
+  import { el } from '../core.js'
+  window.article = el('article')
+  window.button = el('button')
+  window.div = el('div')
+  window.h3 = el('h3')
+</script>
+<script src="mount.js" type="module"></script>
+<script src="state.js" type="module"></script>
+<script src="form.js" type="module"></script>
+<script src="if.js" type="module"></script>
+<script type="module">
   mocha.run()
 </script>
