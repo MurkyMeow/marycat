@@ -28,16 +28,13 @@ const suit = new State([], {
       return [...new Set(newsuit)] // remove duplicates
     },
   },
-  views: {
-    button: v => v.length > 0 ? 'Something else' : 'Pick',
-  },
 })
 
 const app =
   div(null)
     (h3('What to wear'))
-    (button(get`${suit.button}`)
-      .on('click', suit.pick)
+    (button(null).on('click', suit.pick)
+      (get`${suit.isEmpty.tern('Pick', 'Something else...')}`)
     )
     (iter(suit)(q =>
       div('.suit-item')(get`${q.name} ${q.view}`)

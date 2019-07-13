@@ -1,3 +1,5 @@
+import { assert } from './core.js'
+
 export class State {
   constructor(initial, params = {}) {
     const { key, actions = {}, views = {} } = params
@@ -8,9 +10,6 @@ export class State {
       this[name] = (...args) => {
         this.v = fn(this.v, ...args)
       }
-    }
-    for (const [name, fn] of Object.entries(views)) {
-      this[name] = this.after(fn)
     }
   }
   get v() {
@@ -40,11 +39,32 @@ export class State {
     this.sub(x => comb.v = f(x, state.v))
     return comb
   }
-  and(state) {
-    return this.merge(state, (a, b) => a && b)
+  op(val, fn) {
+    if (val instanceof State) return this.merge(val, fn)
+    return this.after(v => fn(v, val))
   }
-  or(state) {
-    return this.merge(state, (a, b) => a || b)
+  tern(then, otherwise) {
+    return this.after(Boolean).after(v => v ? then : otherwise)
+  }
+  get isEmpty() {
+    assert(Array.isArray(this.v), `"isEmpty" was called on non-array value: "${this.v}"`)
+    return this.after(v => v.length <= 0)
+  }
+}
+
+const operators = new Map()
+  .set('gt', (a, b) => a > b)
+  .set('lt', (a, b) => a < b)
+  .set('le', (a, b) => a <= b)
+  .set('ge', (a, b) => a >= b)
+  .set('ne', (a, b) => a !== b)
+  .set('eq', (a, b) => a === b)
+  .set('or', (a, b) => a || b)
+  .set('and', (a, b) => a && b)
+
+for (const [name, fn] of operators.entries()) {
+  State.prototype[name] = function(val) {
+    return this.op(val, fn)
   }
 }
 
