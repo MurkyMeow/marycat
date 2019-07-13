@@ -46,7 +46,8 @@ export const chainable = api => (...initial) => {
     _init.apply(chain, initial)
     return chain
   }
-  return chain(...initial)
+  return initial.length > 0
+    ? chain(...initial) : chain
 }
 
 export function el(name, api = {}) {

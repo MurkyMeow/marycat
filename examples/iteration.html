@@ -31,9 +31,9 @@ const suit = new State([], {
 })
 
 const app =
-  div(null)
+  div()
     (h3('What to wear'))
-    (button(null).on('click', suit.pick)
+    (button().on('click', suit.pick)
       (get`${suit.isEmpty.tern('Pick', 'Something else...')}`)
     )
     (iter(suit)(q =>
