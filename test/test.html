@@ -4,13 +4,19 @@
 </head>
 <body>
   <div id="mocha"></div>
+  <div id="stage"></div>
 </body>
 <script src="https://unpkg.com/mocha/mocha.js"></script>
 <script type="module">
   import { assert, withParent } from '../core.js'
   mocha.setup('bdd')
   window.assert = assert
-  window.mount = withParent(document.head)
+  window.stage = document.getElementById('stage')
+  window.mount = withParent(stage)
+  afterEach(function() {
+    // cloning not deeply so child nodes are erased
+    stage.replaceWith(stage.cloneNode())
+  })
 </script>
 <script type="module">
   import { el } from '../core.js'
