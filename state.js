@@ -2,7 +2,7 @@ import { assert } from './core.js'
 
 export class State {
   constructor(initial, params = {}) {
-    const { key, actions = {}, views = {} } = params
+    const { key, actions = {} } = params
     this.current = initial
     this.observers = []
     this.key = key
@@ -15,10 +15,10 @@ export class State {
   get v() {
     return this.current
   }
-  set v(value) {
-    if (value === this.v) return
-    this.observers.forEach(cb => cb(value, this.v))
-    this.current = value
+  set v(next) {
+    if (next === this.current) return
+    this.observers.forEach(cb => cb(next, this.current))
+    this.current = next
   }
   sub(cb) {
     cb(this.v)
