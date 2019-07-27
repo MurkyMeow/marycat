@@ -33,15 +33,13 @@ export class State {
   not() {
     return this.after(x => !x)
   }
-  merge(state, f) {
-    const comb = new State()
-    state.sub(x => comb.v = f(this.v, x))
-    this.sub(x => comb.v = f(x, state.v))
+  merge(val, f) {
+    if (!(val instanceof State)) {
+      return this.after(x => f(x, val))
+    }
+    const comb = this.after(x => f(x, val.v))
+    val.sub(x => comb.v = f(this.v, x))
     return comb
-  }
-  op(val, fn) {
-    if (val instanceof State) return this.merge(val, fn)
-    return this.after(v => fn(v, val))
   }
   tern(then, otherwise) {
     return this.after(Boolean).after(v => v ? then : otherwise)
@@ -64,7 +62,7 @@ const operators = new Map()
 
 for (const [name, fn] of operators.entries()) {
   State.prototype[name] = function(val) {
-    return this.op(val, fn)
+    return this.merge(val, fn)
   }
 }
 
