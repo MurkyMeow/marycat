@@ -1,37 +1,60 @@
-import { chainable, empty, withParent } from './core.js'
+import { chainable, empty, withParent, assert } from './core.js'
+import { State } from './state.js';
+
+function debounce(fn) {
+  let frame
+  return (...args) => {
+    if (frame) return
+    frame = requestAnimationFrame(() => {
+      fn(...args)
+      frame = null
+    })
+  }
+}
 
 export const _if = chainable({
   _init(cond) {
-    this.then()
-    this.cond = cond
-    this.nodes = { then: [], else: [] }
+    this.elif(cond)
+    this.nodes = new Map()
+    this.state = this.current
   },
   _take(first, ...rest) {
-    this.nodes[this.mode].push(first, ...rest)
+    const { current, nodes } = this
+    if (!nodes.has(current)) nodes.set(current, [])
+    nodes.get(current).push(first, ...rest)
   },
   _connect($parent) {
-    const mount = withParent($parent)
-    const state = this.cond.after(Boolean)
-    let nodes = []
-    state.sub(value => {
-      while (nodes.length > 1) nodes.pop().remove()
-      const $hook = nodes[0] || $parent.appendChild(empty())
-      const newNodes = mount(this.nodes[value ? 'then' : 'else'])
-      nodes = [].concat(newNodes)
-      nodes.reduce((prev, cur) => (prev.after(cur), cur), $hook)
-      $hook.remove()
-    })
-    const frag = document.createDocumentFragment()
-    frag.append(...nodes)
-    return frag
+    this.mount = withParent($parent)
+    this.refs = [$parent.appendChild(empty())]
+    const reconcile = debounce(() => this.reconcile())
+    for (const [cond] of this.nodes) {
+      if (cond !== 'else') cond.sub(reconcile)
+    }
+  },
+  reconcile() {
+    const [$hook, ...children] = this.refs
+    children.forEach($el => $el.remove())
+    const newNodes = this.mount(this.getNodes())
+    this.refs = [].concat(newNodes)
+    this.refs.reduce((prev, cur) => (prev.after(cur), cur), $hook)
+    $hook.remove()
+  },
+  getNodes() {
+    for (const [cond, nodes] of this.nodes) {
+      if (cond !== 'else' && cond.v) return nodes
+    }
+    return this.nodes.get('else') || [empty]
   },
   then() {
-    this.mode = 'then'
-    return this
+    return this.elif(this.state)
   },
   else() {
-    this.mode = 'else'
+    this.current = 'else'
     return this
   },
-  // TODO: elseif
+  elif(cond) {
+    assert(cond instanceof State, `Got non-state value: ${cond}`)
+    this.current = cond
+    return this
+  },
 })
