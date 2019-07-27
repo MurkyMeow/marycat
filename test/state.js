@@ -46,7 +46,7 @@ describe('state', function() {
     assert(and.v === false, 'AND is doing a wrong thing')
   })
 
-  it('checks if comparators are working', function() {
+  it('checks if comparators work with primitives', function() {
     const state = new State(25)
 
     assert(state.gt(10).v === true)
@@ -63,5 +63,23 @@ describe('state', function() {
 
     assert(state.eq(25).v === true)
     assert(state.eq('abcd').v === false)
+  })
+
+  it('checks if comparators work with states', function() {
+    const a = new State(25)
+    const b = new State(10)
+
+    assert(a.gt(b).v === true)
+    assert(a.lt(b).v === false)
+
+    assert(b.gt(a).v === false)
+    assert(b.lt(a).v === true)
+
+    a.v = 5
+    assert(a.gt(b).v === false)
+    assert(a.lt(b).v === true)
+
+    assert(b.gt(a).v === true)
+    assert(b.lt(a).v === false)
   })
 })
