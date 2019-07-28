@@ -1,0 +1,27 @@
+{
+  "name": "marycat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MurkyMeow/marycat.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MurkyMeow/marycat/issues"
+  },
+  "homepage": "https://github.com/MurkyMeow/marycat#readme",
+  "devDependencies": {
+    "rollup": "^1.17.0",
+    "rollup-plugin-terser": "^5.1.1"
+  }
+}
