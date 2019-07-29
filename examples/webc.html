@@ -9,6 +9,11 @@ const example = webc({
   props: {
     supercool: false,
   },
+  css: `
+    span {
+      color: red;
+    }
+  `,
   fun(host, { supercool }) {
     const count = new State(0)
     host.on('click', () => count.v++)

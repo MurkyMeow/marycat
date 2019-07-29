@@ -9,13 +9,20 @@ const converters = {
 }
 
 class MaryNode extends HTMLElement {
-  constructor(props, fun) {
+  constructor({ props, fun, css }) {
     super()
-    this.fun = fun
     this.props = {}
     for (const [key, value] of Object.entries(props)) {
       this.props[key] = new State(value)
     }
+    this.attachShadow({ mode: 'open' })
+    if (css) {
+      const style = document.createElement('style')
+      style.textContent = css
+      this.shadowRoot.appendChild(style)
+    }
+    const node = fun(fragment(), this.props)
+    node(this.shadowRoot) // mount nodes to the shadow root
   }
   attributeChangedCallback(name, _, value) {
     const prop = this.props[name]
@@ -26,19 +33,13 @@ class MaryNode extends HTMLElement {
       prop.v = value
     }
   }
-  connectedCallback() {
-    this.attachShadow({ mode: 'open' })
-    const frag = fragment()
-    this.fun(frag, this.props)
-    frag(this.shadowRoot)
-  }
 }
 
-export function webc({ name, props, fun }) {
+export function webc({ name, props, css, fun }) {
   const attrs = Object.keys(props)
   customElements.define(name, class extends MaryNode {
     constructor() {
-      super(props, fun)
+      super({ props, fun, css })
     }
     static get observedAttributes() {
       return attrs
