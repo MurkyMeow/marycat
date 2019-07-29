@@ -53,7 +53,6 @@ export const chainable = api => (...initial) => {
 export function el(name, api = {}) {
   const { _attrs = [], _events = [], ...rest } = api
   return chainable({
-    ...rest,
     _connect($parent, chained) {
       const $el = document.createElement(name)
       const mount = withParent($el)
@@ -82,8 +81,16 @@ export function el(name, api = {}) {
     ..._attrs.reduce((acc, attr) => ({ ...acc,
       [attr]: function(value) { return this.attr(attr, value) }
     }), {}),
+    ...rest,
   })
 }
+
+export const fragment = el('', {
+  _connect($parent, chained) {
+    const mount = withParent($parent)
+    mount(chained)
+  },
+})
 
 export function empty() {
   return document.createComment('')
