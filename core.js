@@ -33,7 +33,7 @@ export function withParent($el) {
 export const chainable = api => (...initial) => {
   const chained = []
   function chain(first, ...rest) {
-    if (first instanceof Element) {
+    if (first instanceof Node) {
       return chain._connect(first, chained)
     }
     if (chain._take) chain._take(first, ...rest)
