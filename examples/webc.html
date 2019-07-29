@@ -1,0 +1,26 @@
+<head><meta charset="UTF-8"></head>
+<body></body>
+<script type="module">
+import { State, get, webc, _if } from '../index.js'
+import { div, span } from './bindings.js'
+
+const example = webc({
+  name: 'mary-example',
+  props: {
+    supercool: false,
+  },
+  fun(host, { supercool }) {
+    const count = new State(0)
+    host.on('click', () => count.v++)
+    return host
+    (span(get`You clicked ${count} times`))
+    (_if(supercool)
+      (div('💫 ⭐️ 🌟 ✨'))
+      (div('⚡️ ☄️ 💥 🔥'))
+    )
+  },
+})
+
+example().supercool(true)
+  (document.body)
+</script>
