@@ -1,3 +1,5 @@
+import { State } from '../state.js'
+
 describe('mount', function() {
   it('renders different nodes', function() {
     const $node = mount(
@@ -55,3 +57,17 @@ describe('mount', function() {
     assert(catched.type === 'custom-evt')
   })
 })
+describe('mount state', function() {
+  const el = new State(div())
+  let mounting
+
+  it('mounts the state-wrapped div', function() {
+    mounting = mount(el)
+    assert(mounting[0] && mounting[0].tagName === 'DIV')
+  })
+  it('responds to the state change', function() {
+    el.v = h3()
+    assert(mounting[0] && mounting[0].tagName === 'H3')
+  })
+})
+
