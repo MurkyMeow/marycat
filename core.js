@@ -1,3 +1,5 @@
+import { State } from './state.js';
+
 export function assert(cond, msg) {
   if (!cond) throw new Error(msg)
 }
@@ -13,11 +15,31 @@ function plain($el, str) {
   }
 }
 
+function observed(state, mount) {
+  const nodes = [mount('')]
+  state.sub(next => {
+    // keep the first element to insert nodes after it
+    while (nodes.length > 1) nodes.pop().remove()
+    // what concat does: n -> [n]; [n] -> [n]
+    const nextNodes = [].concat(mount(next))
+    nextNodes.forEach((node, i) => {
+      const previous = nextNodes[i - 1] || nodes.pop()
+      previous.after(node)
+      nodes.push(node)
+      if (i === 0) previous.remove()
+    })
+  })
+  return nodes
+}
+
 export function withParent($el) {
   return function mount(entity) {
     if (entity === null) return
     if (Array.isArray(entity)) {
       return entity.map(mount)
+    }
+    if (entity instanceof State) {
+      return observed(entity, mount)
     }
     switch (typeof entity) {
       case 'number':

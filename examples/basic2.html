@@ -30,9 +30,15 @@ const items = new State([
   },
 })
 
+const dynamic = new State(
+  div('A dynamic el')
+)
+setTimeout(() => dynamic.v = button('Tada'), 3000)
+
 const app =
   div('.class', '@name', '#id')
     (get`The count is: ${count}`)
+    (dynamic)
     (_if(count.gt(0))
       (div('Positive'))
     .elif(count.eq(0))

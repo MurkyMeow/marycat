@@ -5,10 +5,7 @@ function debounce(fn) {
   let frame
   return (...args) => {
     if (frame) return
-    frame = requestAnimationFrame(() => {
-      fn(...args)
-      frame = null
-    })
+    frame = requestAnimationFrame(() => (fn(...args), frame = null))
   }
 }
 
@@ -18,26 +15,18 @@ export const _if = chainable({
     this.nodes = new Map()
     this.state = this.current
   },
-  _take(first, ...rest) {
+  _take(...args) {
     const { current, nodes } = this
     if (!nodes.has(current)) nodes.set(current, [])
-    nodes.get(current).push(first, ...rest)
+    nodes.get(current).push(...args)
   },
   _connect($parent) {
-    this.mount = withParent($parent)
-    this.refs = [$parent.appendChild(empty())]
-    const reconcile = debounce(() => this.reconcile())
+    const node = new State(empty)
+    const reconcile = debounce(() => node.v = this.getNodes())
     for (const [cond] of this.nodes) {
       if (cond !== 'else') cond.sub(reconcile)
     }
-  },
-  reconcile() {
-    const [$hook, ...children] = this.refs
-    children.forEach($el => $el.remove())
-    const newNodes = this.mount(this.getNodes())
-    this.refs = [].concat(newNodes)
-    this.refs.reduce((prev, cur) => (prev.after(cur), cur), $hook)
-    $hook.remove()
+    withParent($parent)(node)
   },
   getNodes() {
     for (const [cond, nodes] of this.nodes) {
