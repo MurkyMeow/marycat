@@ -39,8 +39,8 @@ describe('mount', function() {
     let count = 0
     const $node = mount(
       div()
-        .on('click', () => count += 2)
-        .on('click', () => count += 3)
+        .click(() => count += 2)
+        .click(() => count += 3)
     )
     $node.click()
     assert(count === 5, 'Click handlers are not called')

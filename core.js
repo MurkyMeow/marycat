@@ -72,8 +72,24 @@ export const chainable = api => (...initial) => {
     ? chain(...initial) : chain
 }
 
+const defaultEvents = [
+  'click', 'dblclick',
+  'mousedown', 'mouseenter', 'mouseleave',
+  'mousemove', 'mouseout', 'mouseover', 'mouseup',
+  'keyup', 'keydown', 'keypress',
+  'drag', 'dragenter', 'dragexit', 'dragleave',
+  'dragover', 'dragstart', 'dragend', 'drop',
+  'input', 'scroll', 'submit', 'focus',
+]
+const defaultAttrs = [
+  'id', 'class', 'style',
+  'role', 'tabindex', 'hidden',
+]
+
 export function el(name, api = {}) {
   const { _attrs = [], _events = [], ...rest } = api
+  const attrs = [...defaultAttrs, ..._attrs]
+  const events = [...defaultEvents, ..._events]
   return chainable({
     _connect($parent, chained) {
       const $el = document.createElement(name)
@@ -109,10 +125,10 @@ export function el(name, api = {}) {
       this($el => $el.setAttributeNode(attr))
       return this
     },
-    ..._events.reduce((acc, evt) => ({ ...acc,
+    ...events.reduce((acc, evt) => ({ ...acc,
       [evt]: function(handler) { return this.on(evt, handler) }
     }), {}),
-    ..._attrs.reduce((acc, attr) => ({ ...acc,
+    ...attrs.reduce((acc, attr) => ({ ...acc,
       [attr]: function(value) { return this.attr(attr, value) }
     }), {}),
     ...rest,

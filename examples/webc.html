@@ -16,7 +16,7 @@ const example = webc({
   `,
   fun(host, { supercool }) {
     const count = new State(0)
-    host.on('click', () => count.v++)
+    host.click(() => count.v++)
     return host
     (span(get`You clicked ${count} times`))
     (_if(supercool)

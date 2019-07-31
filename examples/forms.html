@@ -36,7 +36,7 @@ const app =
     (form().bind(formdata)
       (input('@meow').placeholder('Say meow!'))
       (input('@purring').placeholder('Do some purring!'))
-      (button('Consider!').prevent().on('click', submit))
+      (button('Consider!').prevent().click(submit))
     )
 
 app(document.body)
