@@ -3,10 +3,12 @@ import { el } from './core.js'
 export const form = el('form', {
   bind(state) {
     state.v = state.v || {}
-    this.input(e => state.v[e.target.name] = e.target.value)
+    this.input(e => {
+      state.v[e.target.getAttrute('name')] = e.target.value
+    })
     this($el => state.sub(next => {
-      const $inputs = [...$el]
-      $inputs.forEach(x => x.value = next[x.name] || '')
+      const $inputs = [...$el] // yes, the form can be spread like this
+      $inputs.forEach(x => x.value = next[x.getAttrute('name')] || '')
     }))
     return this
   },
