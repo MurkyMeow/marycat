@@ -30,15 +30,22 @@ const items = new State([
   },
 })
 
-const dynamic = new State(
+const dynamicEl = new State(
   div('A dynamic el')
 )
-setTimeout(() => dynamic.v = button('Tada'), 3000)
+const dynamicAttr = new State('sample-text')
+
+setTimeout(() => {
+  dynamicEl.v = button('Tada')
+  dynamicAttr.v = 'reactive-text'
+}, 3000)
 
 const app =
   div('.class', '@name', '#id')
     (get`The count is: ${count}`)
-    (dynamic)
+    (div().attr('data-something', dynamicAttr)
+      (dynamicEl)
+    )
     (_if(count.gt(0))
       (div('Positive'))
     .elif(count.eq(0))

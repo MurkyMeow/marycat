@@ -94,7 +94,13 @@ export function el(name, api = {}) {
       return this
     },
     attr(name, value) {
-      this($el => $el.setAttribute(name, value))
+      const attr = document.createAttribute(name)
+      if (value instanceof State) {
+        value.sub(next => attr.value = next)
+      } else {
+        attr.value = value
+      }
+      this($el => $el.setAttributeNode(attr))
       return this
     },
     ..._events.reduce((acc, evt) => ({ ...acc,

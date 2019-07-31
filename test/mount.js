@@ -57,7 +57,7 @@ describe('mount', function() {
     assert(catched.type === 'custom-evt')
   })
 })
-describe('mount state', function() {
+describe('reactive mount', function() {
   const el = new State(div())
   let mounting
 
@@ -70,4 +70,16 @@ describe('mount state', function() {
     assert(mounting[0] && mounting[0].tagName === 'H3')
   })
 })
+describe('reactive attribute', function() {
+  const state = new State('foo')
+  let $el
 
+  it('sets a reactive attribute', function() {
+    $el = mount(div().attr('data-test', state))
+    assert($el.getAttribute('data-test') === state.v)
+  })
+  it('responds to the attribute change', function() {
+    state.v = 'bar'
+    assert($el.getAttribute('data-test') === state.v)
+  })
+})
