@@ -35,7 +35,7 @@ class MaryNode extends HTMLElement {
   }
 }
 
-export function webc({ name, props, css, fun }) {
+export function webc({ name, props = {}, css, fun }) {
   const attrs = Object.keys(props)
   customElements.define(name, class extends MaryNode {
     constructor() {
