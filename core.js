@@ -85,11 +85,17 @@ export function el(name, api = {}) {
       this.prevented = true
       return this
     },
+    stop() {
+      this.stopped = true
+      return this
+    },
     on(name, handler) {
       const handle = this.prevented
-        ? e => (e.preventDefault(), handler(e))
+        ? this.stopped
+          ? (e => (e.preventDefault(), e.stopPropagation(), handler(e)))
+          : (e => (e.preventDefault(), handler(e)))
         : handler
-      this.prevented = false
+      this.stopped = this.prevented = false
       this($el => $el.addEventListener(name, handle))
       return this
     },
