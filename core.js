@@ -122,7 +122,7 @@ export function el(name, api = {}) {
       } else {
         attr.value = value
       }
-      this($el => $el.setAttributeNode(attr))
+      this($el => $el.setAttributeNode(attr.cloneNode()))
       return this
     },
     ...events.reduce((acc, evt) => ({ ...acc,
