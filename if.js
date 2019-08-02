@@ -20,7 +20,7 @@ export const _if = chainable({
     if (!nodes.has(current)) nodes.set(current, [])
     nodes.get(current).push(...args)
   },
-  _connect($parent) {
+  connect($parent) {
     const node = new State(empty)
     const reconcile = debounce(() => node.v = this.getNodes())
     for (const [cond] of this.nodes) {

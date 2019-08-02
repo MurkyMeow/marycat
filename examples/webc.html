@@ -26,6 +26,6 @@ const example = webc({
   },
 })
 
-example().supercool(true)
-  (document.body)
+const instance = example().supercool(true)
+instance.connect(document.body)
 </script>

@@ -22,7 +22,7 @@ class MaryNode extends HTMLElement {
       this.shadowRoot.appendChild(style)
     }
     const node = fun(fragment(), this.props)
-    node(this.shadowRoot) // mount nodes to the shadow root
+    node.connect(this.shadowRoot)
   }
   attributeChangedCallback(name, _, value) {
     const prop = this.props[name]

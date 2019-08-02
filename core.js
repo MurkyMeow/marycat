@@ -46,24 +46,22 @@ export function withParent($el) {
       case 'boolean':
         return $el.appendChild(document.createTextNode(entity))
       case 'string': return plain($el, entity)
-      case 'function': return entity($el)
+      case 'function': return entity.connect
+        ? entity.connect($el)
+        : entity($el)
       default: throw Error(`Unexpected child: ${entity}`)
     }
   }
 }
 
 export const chainable = api => (...initial) => {
-  const chained = []
   function chain(first, ...rest) {
-    if (first instanceof Node) {
-      return chain._connect(first, chained)
-    }
     if (chain._take) chain._take(first, ...rest)
-    else chained.push(first, ...rest)
+    else chain.chained.push(first, ...rest)
     return chain
   }
   const { _init, ...rest } = api
-  Object.assign(chain, rest)
+  Object.assign(chain, rest, { chained: [] })
   if (_init) {
     _init.apply(chain, initial)
     return chain
@@ -91,10 +89,10 @@ export function el(name, api = {}) {
   const attrs = [...defaultAttrs, ..._attrs]
   const events = [...defaultEvents, ..._events]
   return chainable({
-    _connect($parent, chained) {
+    connect($parent) {
       const $el = document.createElement(name)
       const mount = withParent($el)
-      chained.forEach(mount)
+      this.chained.forEach(mount)
       return $parent.appendChild($el)
     },
     prevent() {
@@ -136,9 +134,9 @@ export function el(name, api = {}) {
 }
 
 export const fragment = el('', {
-  _connect($parent, chained) {
+  connect($parent) {
     const mount = withParent($parent)
-    mount(chained)
+    mount(this.chained)
   },
 })
 

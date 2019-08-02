@@ -66,5 +66,5 @@ const app =
       div(get`${q.i} - ${q.name}`).click(() => items.del(q.v))
     ))
 
-app(document.body)
+app.connect(document.body)
 </script>
