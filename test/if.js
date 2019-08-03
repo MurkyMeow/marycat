@@ -1,25 +1,31 @@
 import { State } from '../state.js'
 import { _if } from '../if.js'
 
+const animationFrame = () => new Promise(res => requestAnimationFrame(res))
+
 describe('if', function() {
-  it('ensures `if` renders nodes properly', function() {
-    const cond = new State(true)
-    const $node = mount(
-      (_if(cond)
-        (div('then'))
-        (div('then2'))
-      .else()
-        (div('else'))
-      )
+  const cond = new State(true)
+  const children = mount(
+    (_if(cond)
+      (div('then'))
+      (div('then2'))
+    .else()
+      (div('else'))
     )
-    assert($node.children.length === 2, 'The amount of children doesnt match')
+  )
+  it('renders nodes properly', async function() {
+    await animationFrame()
+    assert(children.length === 2, 'The amount of children doesnt match')
     assert(
-      $node.children[0].textContent === 'then' &&
-      $node.children[1].textContent === 'then2',
-      'The children are not in their place'
+      children[0].textContent === 'then' &&
+      children[1].textContent === 'then2',
     )
+  })
+  it('responds to condition changes', async function() {
     cond.v = false
-    assert($node.children.length === 1, 'The amount of `else` children doesnt match')
-    assert($node.children[0].textContent === 'else', '`else` renders a wrong child')
+    await animationFrame()
+    assert(children.length === 1 && children[0].textContent,
+      '`else` doesnt seem to work'
+    )
   })
 })

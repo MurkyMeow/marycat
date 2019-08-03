@@ -26,7 +26,7 @@ export const _if = chainable({
     for (const [cond] of this.nodes) {
       if (cond !== 'else') cond.sub(reconcile)
     }
-    withParent($parent)(node)
+    return withParent($parent)(node)
   },
   getNodes() {
     for (const [cond, nodes] of this.nodes) {
