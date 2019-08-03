@@ -84,6 +84,14 @@ const defaultAttrs = [
   'role', 'tabindex', 'hidden',
 ]
 
+function setAttribute($el, name, value) {
+  if (typeof value === 'object') {
+    $el[name] = value
+  } else {
+    $el.setAttribute(name, value)
+  }
+}
+
 export function el(name, api = {}) {
   const { _attrs = [], _events = [], ...rest } = api
   const attrs = [...defaultAttrs, ..._attrs]
@@ -117,9 +125,9 @@ export function el(name, api = {}) {
       this($el => {
         const el = $el instanceof ShadowRoot ? $el.host : $el
         if (value instanceof State) {
-          value.sub(next => el.setAttribute(name, next))
+          value.sub(next => setAttribute(el, name, next))
         } else {
-          el.setAttribute(name, value)
+          setAttribute(el, name, value)
         }
       })
       return this

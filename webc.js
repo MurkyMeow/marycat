@@ -1,10 +1,9 @@
 import { State, el, fragment } from './index.js'
 
 const converters = {
-  string: v => String(v),
-  number: v => Number(v),
-  bigint: v => BigInt(v),
-  object: v => JSON.parse(v),
+  string: String,
+  number: Number,
+  bigint: BigInt,
   boolean: v => v == 'true',
 }
 
@@ -14,7 +13,7 @@ class MaryNode extends HTMLElement {
     this.props = {}
     this.fun = fun
     for (const [key, value] of Object.entries(props)) {
-      this.props[key] = new State(value)
+      this.props[key] = this[key] || new State(value)
     }
     this.attachShadow({ mode: 'open' })
     if (css) {
@@ -30,23 +29,30 @@ class MaryNode extends HTMLElement {
   attributeChangedCallback(name, _, value) {
     const prop = this.props[name]
     const converter = converters[typeof prop.v]
-    if (converter) {
-      prop.v = converter(value)
-    } else {
-      prop.v = value
-    }
+    prop.v = converter ? converter(value) : value
   }
 }
 
 export function webc({ name, props = {}, css, fun }) {
   const attrs = Object.keys(props)
-  customElements.define(name, class extends MaryNode {
+  const node = class extends MaryNode {
     constructor() {
       super({ props, fun, css })
     }
     static get observedAttributes() {
       return attrs
     }
+  }
+  attrs.filter(key => typeof props[key] === 'object').forEach(key => {
+    Object.defineProperty(node.prototype, key, {
+      get() {
+        return this[`_${key}`] || (this[`_${key}`] = new State(props[key]))
+      },
+      set(v) {
+        this[key].v = v
+      },
+    })
   })
+  customElements.define(name, node)
   return el(name, { _attrs: attrs })
 }
