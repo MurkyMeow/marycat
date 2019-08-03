@@ -12,6 +12,7 @@ class MaryNode extends HTMLElement {
   constructor({ props, fun, css }) {
     super()
     this.props = {}
+    this.fun = fun
     for (const [key, value] of Object.entries(props)) {
       this.props[key] = new State(value)
     }
@@ -21,7 +22,9 @@ class MaryNode extends HTMLElement {
       style.textContent = css
       this.shadowRoot.appendChild(style)
     }
-    const node = fun(fragment(), this.props)
+  }
+  connectedCallback() {
+    const node = this.fun(fragment(), this.props)
     node.connect(this.shadowRoot)
   }
   attributeChangedCallback(name, _, value) {

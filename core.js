@@ -115,10 +115,11 @@ export function el(name, api = {}) {
     },
     attr(name, value) {
       this($el => {
+        const el = $el instanceof ShadowRoot ? $el.host : $el
         if (value instanceof State) {
-          value.sub(next => $el.setAttribute(name, next))
+          value.sub(next => el.setAttribute(name, next))
         } else {
-          $el.setAttribute(name, value)
+          el.setAttribute(name, value)
         }
       })
       return this
