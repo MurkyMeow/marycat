@@ -8,10 +8,10 @@ const converters = {
 }
 
 class MaryNode extends HTMLElement {
-  constructor({ props, fun, css }) {
+  constructor({ props, render, css }) {
     super()
     this.props = {}
-    this.fun = fun
+    this.render = render
     for (const [key, value] of Object.entries(props)) {
       this.props[key] = this[key] || new State(value)
     }
@@ -23,7 +23,7 @@ class MaryNode extends HTMLElement {
     }
   }
   connectedCallback() {
-    const node = this.fun(fragment(), this.props)
+    const node = this.render(fragment(), this.props)
     node.connect(this.shadowRoot)
   }
   attributeChangedCallback(name, _, value) {
@@ -33,11 +33,11 @@ class MaryNode extends HTMLElement {
   }
 }
 
-export function webc({ name, props = {}, css, fun }) {
+export function webc({ name, props = {}, css, render }) {
   const attrs = Object.keys(props)
   const node = class extends MaryNode {
     constructor() {
-      super({ props, fun, css })
+      super({ props, render, css })
     }
     static get observedAttributes() {
       return attrs

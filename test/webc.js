@@ -8,7 +8,7 @@ describe('webc', function() {
       p2: '',
       p3: [],
     },
-    fun: (h, { p1, p2, p3 }) => (h
+    render: (h, { p1, p2, p3 }) => (h
       (span(p1))
       (span(p2))
       (span(p3))

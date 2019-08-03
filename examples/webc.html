@@ -14,7 +14,7 @@ const example = webc({
       color: red;
     }
   `,
-  fun(host, { supercool }) {
+  render(host, { supercool }) {
     const count = new State(0)
     host.click(() => count.v++)
     host.attr('test', 'foobar')
