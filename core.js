@@ -77,7 +77,7 @@ const defaultEvents = [
   'keyup', 'keydown', 'keypress',
   'drag', 'dragenter', 'dragexit', 'dragleave',
   'dragover', 'dragstart', 'dragend', 'drop',
-  'input', 'scroll', 'submit', 'focus',
+  'input', 'scroll', 'submit', 'focus', 'blur',
 ]
 const defaultAttrs = [
   'id', 'class', 'style',
