@@ -1,85 +1,83 @@
 import { State, get } from '../state.js'
 
 describe('state', function() {
-  it('ensures state callbacks are called', function() {
+  it('notifies state subscribers', function() {
     const state = new State(25)
     const values = []
     state.sub(v => values[0] = v)
     state.sub(v => values[1] = v)
-    assert(values.every(x => x === 25), 'Initial value is not applied')
+    expect(values).to.have.members([25, 25])
     state.v = 'foo'
-    assert(values.every(x => x === 'foo'), 'Value updates are not applied')
+    expect(values).to.have.members(['foo', 'foo'])
   })
 
   it('checks if `after` works', function() {
     const state = new State('xxx')
     const len = state.after(v => v.length)
-    assert(len.v === 3)
+    expect(len.v).to.equal(3)
     state.v = 'xxxxx'
-    assert(len.v === 5, 'State updates are not captured')
+    expect(len.v).to.equal(5)
   })
 
-  it('ensures `get` works properly', function() {
+  describe('get', function() {
     const state = new State('foo')
     const state2 = new State('bar')
     const $node = mount(
       div(get`state=${state};state2=${state2}`)
     )
-    assert(
-      $node.textContent === 'state=foo;state2=bar',
-      'Initial values are not applied'
-    )
-    state.v = 'baz'
-    state2.v = 'qux'
-    assert(
-      $node.textContent === 'state=baz;state2=qux',
-      'State updates are not applied'
-    )
+    it('applies initial values', function() {
+      expect($node.textContent).to.equal('state=foo;state2=bar')
+    })
+    it('applies state changes', function() {
+      state.v = 'baz'
+      expect($node.textContent).to.equal('state=baz;state2=bar')
+      state2.v = 'qux'
+      expect($node.textContent).to.equal('state=baz;state2=qux')
+    })
   })
 
-  it('checks if logical operators are working', function() {
-    const a = new State(true)
-    const b = new State(false)
-    const or = a.or(b)
-    const and = a.and(b)
-    assert(or.v === true, 'OR is doing a wrong thing')
-    assert(and.v === false, 'AND is doing a wrong thing')
+  describe('logical', function() {
+    const first = new State(true)
+    const second = new State(false)
+    it('or', function() {
+      expect(first.or(second).v).to.equal(first.v || second.v)
+    })
+    it('and', function() {
+      expect(first.and(second).v).to.equal(first.v && second.v)
+    })
   })
 
-  it('checks if comparators work with primitives', function() {
+  describe('primitive comparators', function() {
     const state = new State(25)
-
-    assert(state.gt(10).v === true)
-    assert(state.gt(25).v === false)
-
-    assert(state.lt(30).v === true)
-    assert(state.lt(25).v === false)
-
-    assert(state.ge(30).v === false)
-    assert(state.ge(25).v === true)
-
-    assert(state.le(10).v === false)
-    assert(state.le(25).v === true)
-
-    assert(state.eq(25).v === true)
-    assert(state.eq('abcd').v === false)
+    it('gt', function() {
+      expect(state.gt(10).v).to.equal(state.v > 10)
+      expect(state.gt(25).v).to.equal(state.v > 25)
+    })
+    it('lt', function() {
+      expect(state.lt(30).v).to.equal(state.v < 30)
+      expect(state.lt(25).v).to.equal(state.v < 25)
+    })
+    it('ge', function() {
+      expect(state.ge(30).v).to.equal(state.v >= 30)
+      expect(state.ge(25).v).to.equal(state.v >= 25)
+    })
+    it('le', function() {
+      expect(state.le(10).v).to.equal(state.v <= 10)
+      expect(state.le(25).v).to.equal(state.v <= 25)
+    })
+    it('eq', function() {
+      expect(state.eq(25).v).to.equal(state.v === 25)
+      expect(state.eq('abcd').v).to.equal(state.v === 'abcd')
+    })
   })
 
-  it('checks if comparators work with states', function() {
-    const a = new State(25)
-    const b = new State(10)
-
-    assert(a.gt(b).v === true)
-    assert(a.lt(b).v === false)
-
-    assert(b.gt(a).v === false)
-    assert(b.lt(a).v === true)
-
-    a.v = 5
-    assert(a.gt(b).v === false)
-    assert(a.lt(b).v === true)
-
-    assert(b.gt(a).v === true)
-    assert(b.lt(a).v === false)
+  describe('state comparators', function() {
+    const first = new State(25)
+    const second = new State(10)
+    it('compares two states', function() {
+      expect(first.gt(second).v).to.equal(first.v > second.v)
+      expect(first.lt(second).v).to.equal(first.v < second.v)
+      expect(first.eq(second).v).to.equal(first.v === second.v)
+    })
   })
 })

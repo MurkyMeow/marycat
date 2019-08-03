@@ -4,12 +4,16 @@ export const form = el('form', {
   bind(state) {
     state.v = state.v || {}
     this.input(e => {
-      state.v[e.target.getAttrute('name')] = e.target.value
+      state.v[e.target.getAttribute('name')] = e.target.value
     })
-    this($el => state.sub(next => {
-      const $inputs = [...$el] // yes, the form can be spread like this
-      $inputs.forEach(x => x.value = next[x.getAttrute('name')] || '')
-    }))
+    this($el => {
+      requestAnimationFrame(() => { // wait until all the inputs are mounted
+        state.sub(next => {
+          const $inputs = [...$el] // yes, the form can be spread like this
+          $inputs.forEach(x => x.value = next[x.getAttribute('name')] || '')
+        })
+      })
+    })
     return this
   },
 })

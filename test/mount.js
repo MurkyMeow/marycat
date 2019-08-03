@@ -9,30 +9,23 @@ describe('mount', function() {
         (article())
     )
     const { children } = $node
-    assert($node.tagName === 'DIV', 'The root node should be a div')
-    assert(children.length === 3, 'The amount of nodes doesnt match')
-    assert(children[0].tagName === 'H3', 'The first node should be an h3')
-    assert(children[1].tagName === 'BUTTON', 'The second node should be a button')
-    assert(children[2].tagName === 'ARTICLE', 'The third node should be an article')
+    expect($node.tagName).to.equal('DIV')
+    expect(children.length).to.equal(3)
+    expect(children[0].tagName).to.equal('H3')
+    expect(children[1].tagName).to.equal('BUTTON')
+    expect(children[2].tagName).to.equal('ARTICLE')
   })
 
   it('appends class names', function() {
     const $node = mount(div('.c1', '.c2')('.c3')('.c4'))
     const { classList } = $node
-    assert(
-      classList.contains('c1') && classList.contains('c2'),
-      'Comma notation doesnt work'
-    )
-    assert(
-      classList.contains('c3') && classList.contains('c4'),
-      'Chain notation doesnt work'
-    )
+    expect([...classList]).to.have.members(['c1', 'c2', 'c3', 'c4'])
   })
 
   it('sets id and name', function() {
     const $node = mount(div('#foo')('@bar'))
-    assert($node.getAttribute('id') === 'foo', 'id is not set')
-    assert($node.getAttribute('name') === 'bar', 'name is not set')
+    expect($node.getAttribute('id')).to.equal('foo')
+    expect($node.getAttribute('name')).to.equal('bar')
   })
   
   it('registers click events', function() {
@@ -43,7 +36,7 @@ describe('mount', function() {
         .click(() => count += 3)
     )
     $node.click()
-    assert(count === 5, 'Click handlers are not called')
+    expect(count).to.equal(5)
   })
 
   it('registers custom event', function() {
@@ -54,20 +47,20 @@ describe('mount', function() {
     )
     const event = new CustomEvent('custom-evt', { bubbles: true })
     $node.children[0].dispatchEvent(event)
-    assert(catched.type === 'custom-evt')
+    expect(catched.type).to.equal('custom-evt')
   })
 })
 describe('reactive mount', function() {
-  const el = new State(div())
+  const state = new State(div())
   let mounting
 
-  it('mounts the state-wrapped div', function() {
-    mounting = mount(el)
-    assert(mounting[0] && mounting[0].tagName === 'DIV')
+  it('mounts a state-wrapped element', function() {
+    mounting = mount(state)
+    expect(mounting[0]).to.have.property('tagName', 'DIV')
   })
-  it('responds to the state change', function() {
-    el.v = h3()
-    assert(mounting[0] && mounting[0].tagName === 'H3')
+  it('responds to a state change', function() {
+    state.v = h3()
+    expect(mounting[0]).to.have.property('tagName', 'H3')
   })
 })
 describe('reactive attribute', function() {
@@ -76,10 +69,10 @@ describe('reactive attribute', function() {
 
   it('sets a reactive attribute', function() {
     $el = mount(div().attr('data-test', state))
-    assert($el.getAttribute('data-test') === state.v)
+    expect($el.getAttribute('data-test')).to.equal(state.v)
   })
   it('responds to the attribute change', function() {
     state.v = 'bar'
-    assert($el.getAttribute('data-test') === state.v)
+    expect($el.getAttribute('data-test')).to.equal(state.v)
   })
 })

@@ -1,26 +1,32 @@
 import { State } from '../state.js'
 import { form, input }  from '../form.js'
 
-it('checks if `bind` works with <input>', function() {
+describe('input', function() {
   const state = new State('foo')
-  const $node = mount(input().bind(state))
-  assert($node.value === 'foo', 'Initial value is not applied')
-  // TODO: simulate keyboard input somehow?
+  let $node
+  it('binds a state to an input', function() {
+    $node = mount(input().bind(state))
+    expect($node.value).to.equal('foo')
+  })
+  it.skip('changes the state when typing', function() {
+  })
 })
 
-it('checks if `bind` works with <form>', function() {
+describe('form', function() {
   const initial = { meow: 'meowww', purr: 'purrr' }
   const state = new State(initial)
-  const $node = mount(
-    form().bind(state)
-      (input('@meow'))
-      (input('@purr'))
-  )
-  const data = new FormData($node)
-  assert(
-    data.get('meow') === initial.meow &&
-    data.get('purr') === initial.purr,
-    'Initial values are not applied'
-  )
-  // TODO: simulate keyboard input somehow?
+  let $node
+  it('binds a state to a form', async function() {
+    $node = mount(
+      form().bind(state)
+        (input('@meow'))
+        (input('@purr'))
+    )
+    await animationFrame()
+    const data = new FormData($node)
+    expect(data.get('meow')).to.equal(initial.meow)
+    expect(data.get('purr')).to.equal(initial.purr)
+  })
+  it.skip('changes the state as the inputs change', function() {
+  })
 })

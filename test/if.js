@@ -1,8 +1,6 @@
 import { State } from '../state.js'
 import { _if } from '../if.js'
 
-const animationFrame = () => new Promise(res => requestAnimationFrame(res))
-
 describe('if', function() {
   const cond = new State(true)
   const children = mount(
@@ -13,19 +11,16 @@ describe('if', function() {
       (div('else'))
     )
   )
-  it('renders nodes properly', async function() {
+  it('renders the right nodes', async function() {
     await animationFrame()
-    assert(children.length === 2, 'The amount of children doesnt match')
-    assert(
-      children[0].textContent === 'then' &&
-      children[1].textContent === 'then2',
-    )
+    expect(children.length).to.equal(2)
+    expect(children[0].textContent).to.equal('then')
+    expect(children[1].textContent).to.equal('then2')
   })
-  it('responds to condition changes', async function() {
+  it('responds to a condition change', async function() {
     cond.v = false
     await animationFrame()
-    assert(children.length === 1 && children[0].textContent,
-      '`else` doesnt seem to work'
-    )
+    expect(children.length).to.equal(1)
+    expect(children[0].textContent).to.equal('else')
   })
 })
