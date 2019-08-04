@@ -2,7 +2,7 @@ import { assert } from './core.js'
 
 export class State {
   constructor(initial, params = {}) {
-    const { key, actions = {} } = params
+    const { key, observed, actions = {} } = params
     this.current = initial
     this.observers = []
     this.key = key
@@ -11,14 +11,29 @@ export class State {
         this.v = fn(this.v, ...args)
       }
     }
+    if (observed) {
+      this.observed = observed
+      for (const [key, val] of Object.entries(this.current)) {
+        this.current[key] = new State(val)
+        Object.defineProperty(this, key, {
+          get: () => this.current[key],
+          set: v => this.current[key].v = v,
+        })
+      }
+    }
   }
   get v() {
     return this.current
   }
   set v(next) {
     if (next === this.current) return
+    if (this.observed) {
+      assert(typeof next === 'object',
+        `Cant assign the primitive value "${next}" to an object state`)
+      this.observed.forEach(key => this[key] = next[key])
+    }
     this.observers.forEach(cb => cb(next, this.current))
-    this.current = next
+    if (!this.observed) this.current = next
   }
   sub(cb) {
     cb(this.v)
@@ -50,17 +65,18 @@ export class State {
   }
 }
 
-const operators = new Map()
-  .set('gt', (a, b) => a > b)
-  .set('lt', (a, b) => a < b)
-  .set('le', (a, b) => a <= b)
-  .set('ge', (a, b) => a >= b)
-  .set('ne', (a, b) => a !== b)
-  .set('eq', (a, b) => a === b)
-  .set('or', (a, b) => a || b)
-  .set('and', (a, b) => a && b)
+const operators = {
+  gt: (a, b) => a > b,
+  lt: (a, b) => a < b,
+  le: (a, b) => a <= b,
+  ge: (a, b) => a >= b,
+  ne: (a, b) => a !== b,
+  eq: (a, b) => a === b,
+  or: (a, b) => a || b,
+  and: (a, b) => a && b,
+}
 
-for (const [name, fn] of operators.entries()) {
+for (const [name, fn] of Object.entries(operators)) {
   State.prototype[name] = function(val) {
     return this.merge(val, fn)
   }
