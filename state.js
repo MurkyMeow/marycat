@@ -2,7 +2,7 @@ import { assert } from './core.js'
 
 export class State {
   constructor(initial, params = {}) {
-    const { key, observed, actions = {} } = params
+    const { key, actions = {} } = params
     this.current = initial
     this.observers = []
     this.key = key
@@ -11,12 +11,11 @@ export class State {
         this.v = fn(this.v, ...args)
       }
     }
-    if (observed) {
-      this.observed = observed
+    if (typeof initial === 'object') {
       for (const [key, val] of Object.entries(this.current)) {
         this.current[key] = new State(val)
         Object.defineProperty(this, key, {
-          get: () => this.current[key],
+          get: () => this.after(x => x[key]),
           set: v => this.current[key].v = v,
         })
       }
@@ -27,10 +26,10 @@ export class State {
   }
   set v(next) {
     if (next === this.current) return
-    if (this.observed) {
+    if (typeof this.current === 'object') {
       assert(typeof next === 'object',
         `Cant assign the primitive value "${next}" to an object state`)
-      this.observed.forEach(key => this[key] = next[key])
+      Object.keys(this.current).forEach(key => this[key] = next[key])
     }
     this.observers.forEach(cb => cb(next, this.current))
     if (!this.observed) this.current = next

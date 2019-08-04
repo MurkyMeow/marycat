@@ -8,18 +8,24 @@ const example = webc({
   name: 'mary-example',
   props: {
     supercool: false,
+    logo: {
+      title: '',
+      icon: '',
+    },
   },
   css: `
     span {
       color: red;
     }
   `,
-  render(host, { supercool }) {
+  render(host, { supercool, logo }) {
     const count = new State(0)
     host.click(() => count.v++)
     host.attr('test', 'foobar')
+    console.log(logo)
     return host
     (span(get`You clicked ${count} times`))
+    (div(get`${logo.icon} ${logo.title}`))
     (_if(supercool)
       (div('💫 ⭐️ 🌟 ✨'))
       (div('⚡️ ☄️ 💥 🔥'))
@@ -27,6 +33,8 @@ const example = webc({
   },
 })
 
-const instance = example().supercool(true)
+const instance = example()
+  .supercool(true)
+  .logo({ title: 'web component', icon: '🌞' })
 instance.connect(document.body)
 </script>

@@ -13,7 +13,7 @@ class MaryNode extends HTMLElement {
     this.props = {}
     this.render = render
     for (const [key, value] of Object.entries(props)) {
-      this.props[key] = this[key] || new State(value)
+      this.props[key] = new State(value)
     }
     this.attachShadow({ mode: 'open' })
     if (css) {
@@ -43,16 +43,6 @@ export function webc({ name, props = {}, css, render }) {
       return attrs
     }
   }
-  attrs.filter(key => typeof props[key] === 'object').forEach(key => {
-    Object.defineProperty(node.prototype, key, {
-      get() {
-        return this[`_${key}`] || (this[`_${key}`] = new State(props[key]))
-      },
-      set(v) {
-        this[key].v = v
-      },
-    })
-  })
   customElements.define(name, node)
   return el(name, { _attrs: attrs })
 }

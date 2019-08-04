@@ -31,7 +31,7 @@ describe('webc', function() {
   it('responds to prop updates', function() {
     $el.setAttribute('p1', 'false')
     $el.setAttribute('p2', 'world')
-    $el.p3 = [3, 2, 1]
+    $el.props.p3.v = [3, 2, 1]
     expect(p1.textContent).to.equal('false')
     expect(p2.textContent).to.equal('world')
     expect(p3.textContent).to.equal('321')
