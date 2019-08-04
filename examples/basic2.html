@@ -25,7 +25,7 @@ const items = new State([
   key: 'name',
   actions: {
     add: v => [...v, { name: performance.now() }],
-    del: (v, item) => v.filter(x => x.name !== item.name),
+    del: (v, name) => v.filter(x => x.name !== name),
     reverse: v => [...v].reverse(),
   },
 })
@@ -53,7 +53,7 @@ const app =
     .elif(count.eq(-1))
       (div('Minus one'))
     .else()
-      (div('Little'))
+      (div('Very negative'))
     )
     (button('Increment').click(count.increment))
     (button('Decrement').click(count.decrement))
@@ -62,8 +62,8 @@ const app =
       (div('Boo!'))
     )
     (button('Add').click(items.add))
-    (iter(items)(q =>
-      div(get`${q.i} - ${q.name}`).click(() => items.del(q.v))
+    (iter(items, item =>
+      div(get`${item.i} - ${item.name}`).click(() => items.del(item.name.v))
     ))
 
 app.connect(document.body)
