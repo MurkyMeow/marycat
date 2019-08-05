@@ -36,7 +36,7 @@ const app =
     (button().click(suit.pick)
       (get`${suit.isEmpty.tern('Pick', 'Something else...')}`)
     )
-    (iter(suit)(q =>
+    (iter(suit, q =>
       div('.suit-item')(get`${q.name} ${q.view}`)
     ))
 

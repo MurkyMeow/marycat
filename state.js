@@ -7,6 +7,7 @@ const isObject = val => typeof val === 'object'
 export class State {
   constructor(initial, params = {}) {
     const { key, actions = {} } = params
+    this.current = initial
     this.observers = []
     this.key = key
     for (const [name, fn] of Object.entries(actions)) {
@@ -14,38 +15,34 @@ export class State {
         this.v = fn(this.v, ...args)
       }
     }
-    if (!isObject(initial)) {
-      this.current = initial
-    } else {
-      this.current = {}
-      for (const [key, val] of Object.entries(initial)) {
-        this.current[key] = new State(val)
-        Object.defineProperty(this, key, {
-          get: () => this.current[key],
-          set: v => this.current[key].v = v,
-        })
-      }
-    }
   }
   get v() {
-    const { current } = this
-    if (isObject(current)) {
-      const v = {}
-      for (const key in current) v[key] = current[key].v
-      return v
-    }
-    return current
+    return this.current
   }
   set v(next) {
-    if (isObject(this.current)) {
-      assert(typeof next === 'object',
-        `Cant assign the primitive value "${next}" to an object state`)
-      for (const key in this.current) this[key] = next[key]
-    } else {
-      if (next === this.current) return
-      this.observers.forEach(cb => cb(next, this.current))
-      this.current = next
+    if (next === this.current) return
+    if (this.wrapped) {
+      assert(isObject(next),
+        `Cant assign non-object value "${next}" to an object state`)
+      for (const key in this.wrapped) this[key] = next[key]
     }
+    this.observers.forEach(cb => cb(next, this.current))
+    this.current = next
+  }
+  wrap() {
+    assert(isObject(this.current), `Cant wrap non-object value: "${this.current}"`)
+    assert(!this.wrapped, 'Cant wrap a state twice')
+    this.wrapped = {}
+    for (const [key, val] of Object.entries(this.current)) {
+      const state = this.wrapped[key] = new State(val)
+      if (isObject(val)) state.wrap()
+      Object.defineProperty(this, key, {
+        get: () => state,
+        set: v => state.v = v,
+      })
+      state.sub(v => this.current[key] = v)
+    }
+    return this
   }
   sub(cb) {
     cb(this.v)

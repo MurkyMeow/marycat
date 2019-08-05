@@ -11,7 +11,7 @@ describe('state', function() {
     expect(values).to.have.members(['foo', 'foo'])
   })
 
-  it('checks if `after` works', function() {
+  it('makes derivation', function() {
     const state = new State('xxx')
     const len = state.after(v => v.length)
     expect(len.v).to.equal(3)
@@ -81,9 +81,9 @@ describe('state', function() {
     })
   })
 })
-describe('state<object>', function() {
+describe('wrapped state', function() {
   describe('flat', function() {
-    const state = new State({ foo: 1, bar: 2 })
+    const state = new State({ foo: 1, bar: 2 }).wrap()
     it('wraps fields', function() {
       expect(state.foo.v).to.equal(1)
       expect(state.bar.v).to.equal(2)
@@ -104,6 +104,7 @@ describe('state<object>', function() {
     const state2 = new State({
       bar: { baz: 2 },
     })
+    state2.wrap()
     it('wraps nested fields', function() {
       expect(state2.bar.baz.v).to.equal(2)
     })

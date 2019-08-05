@@ -16,6 +16,7 @@ export const iter = (state, vnode) => $el => {
         const state = new State(obj, {
           observed: Object.keys(obj),
         })
+        state.wrap()
         const $node = mount(vnode(state))
         newLookup.set(key, { state, $node })
       }

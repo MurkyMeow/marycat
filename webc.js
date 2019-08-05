@@ -7,6 +7,10 @@ const converters = {
   boolean: v => v == 'true',
 }
 
+const isObject = val => typeof val === 'object'
+  && val !== null
+  && !Array.isArray(val)
+
 class MaryNode extends HTMLElement {
   constructor({ props, render, css }) {
     super()
@@ -14,6 +18,7 @@ class MaryNode extends HTMLElement {
     this.render = render
     for (const [key, value] of Object.entries(props)) {
       this.props[key] = new State(value)
+      if (isObject(value)) this.props[key].wrap()
     }
     this.attachShadow({ mode: 'open' })
     if (css) {
