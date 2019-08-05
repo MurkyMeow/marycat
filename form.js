@@ -4,7 +4,7 @@ export const form = el('form', {
   bind(state) {
     state.v = state.v || {}
     this.input(e => {
-      state.v[e.target.getAttribute('name')] = e.target.value
+      state[e.target.getAttribute('name')] = e.target.value
     })
     this($el => {
       requestAnimationFrame(() => { // wait until all the inputs are mounted

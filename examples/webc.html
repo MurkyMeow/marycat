@@ -22,7 +22,6 @@ const example = webc({
     const count = new State(0)
     host.click(() => count.v++)
     host.attr('test', 'foobar')
-    console.log(logo)
     return host
     (span(get`You clicked ${count} times`))
     (div(get`${logo.icon} ${logo.title}`))

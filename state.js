@@ -1,9 +1,12 @@
 import { assert } from './core.js'
 
+const isObject = val => typeof val === 'object'
+  && val !== null
+  && !Array.isArray(val)
+
 export class State {
   constructor(initial, params = {}) {
     const { key, actions = {} } = params
-    this.current = initial
     this.observers = []
     this.key = key
     for (const [name, fn] of Object.entries(actions)) {
@@ -11,28 +14,38 @@ export class State {
         this.v = fn(this.v, ...args)
       }
     }
-    if (typeof initial === 'object') {
-      for (const [key, val] of Object.entries(this.current)) {
+    if (!isObject(initial)) {
+      this.current = initial
+    } else {
+      this.current = {}
+      for (const [key, val] of Object.entries(initial)) {
         this.current[key] = new State(val)
         Object.defineProperty(this, key, {
-          get: () => this.after(x => x[key]),
+          get: () => this.current[key],
           set: v => this.current[key].v = v,
         })
       }
     }
   }
   get v() {
-    return this.current
+    const { current } = this
+    if (isObject(current)) {
+      const v = {}
+      for (const key in current) v[key] = current[key].v
+      return v
+    }
+    return current
   }
   set v(next) {
-    if (next === this.current) return
-    if (typeof this.current === 'object') {
+    if (isObject(this.current)) {
       assert(typeof next === 'object',
         `Cant assign the primitive value "${next}" to an object state`)
-      Object.keys(this.current).forEach(key => this[key] = next[key])
+      for (const key in this.current) this[key] = next[key]
+    } else {
+      if (next === this.current) return
+      this.observers.forEach(cb => cb(next, this.current))
+      this.current = next
     }
-    this.observers.forEach(cb => cb(next, this.current))
-    if (!this.observed) this.current = next
   }
   sub(cb) {
     cb(this.v)
