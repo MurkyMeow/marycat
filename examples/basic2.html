@@ -63,7 +63,7 @@ const app =
     )
     (button('Add').click(items.add))
     (iter(items, item =>
-      div(get`${item.i} - ${item.name}`).click(() => items.del(item.name.v))
+      div(get`${item._`i`} - ${item._`name`}`).click(() => items.del(item.v.name))
     ))
 
 app.connect(document.body)

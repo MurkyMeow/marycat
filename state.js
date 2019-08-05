@@ -1,9 +1,5 @@
 import { assert } from './core.js'
 
-const isObject = val => typeof val === 'object'
-  && val !== null
-  && !Array.isArray(val)
-
 export class State {
   constructor(initial, params = {}) {
     const { key, actions = {} } = params
@@ -21,28 +17,12 @@ export class State {
   }
   set v(next) {
     if (next === this.current) return
-    if (this.wrapped) {
-      assert(isObject(next),
-        `Cant assign non-object value "${next}" to an object state`)
-      for (const key in this.wrapped) this[key] = next[key]
-    }
     this.observers.forEach(cb => cb(next, this.current))
     this.current = next
   }
-  wrap() {
-    assert(isObject(this.current), `Cant wrap non-object value: "${this.current}"`)
-    assert(!this.wrapped, 'Cant wrap a state twice')
-    this.wrapped = {}
-    for (const [key, val] of Object.entries(this.current)) {
-      const state = this.wrapped[key] = new State(val)
-      if (isObject(val)) state.wrap()
-      Object.defineProperty(this, key, {
-        get: () => state,
-        set: v => state.v = v,
-      })
-      state.sub(v => this.current[key] = v)
-    }
-    return this
+  _(field) {
+    const [key] = [].concat(field)
+    return this.after(v => v[key])
   }
   sub(cb) {
     cb(this.v)

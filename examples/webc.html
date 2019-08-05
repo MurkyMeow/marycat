@@ -24,7 +24,9 @@ const example = webc({
     host.attr('test', 'foobar')
     return host
     (span(get`You clicked ${count} times`))
-    (div(get`${logo.icon} ${logo.title}`))
+    (div()
+      (get`${logo._`icon`} ${logo._`title`}`)
+    )
     (_if(supercool)
       (div('💫 ⭐️ 🌟 ✨'))
       (div('⚡️ ☄️ 💥 🔥'))

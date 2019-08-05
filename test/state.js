@@ -80,41 +80,30 @@ describe('state', function() {
       expect(first.eq(second).v).to.equal(first.v === second.v)
     })
   })
-})
-describe('wrapped state', function() {
-  describe('flat', function() {
-    const state = new State({ foo: 1, bar: 2 }).wrap()
-    it('wraps fields', function() {
-      expect(state.foo.v).to.equal(1)
-      expect(state.bar.v).to.equal(2)
+  describe('object getter', function() {
+    const state = new State({
+      foo: 1,
+      bar: 2,
+      haystack: { needle: 3 },
     })
-    it('reassigns individual fields', function() {
-      state.foo = 5
-      state.bar = 10
-      expect(state.foo.v).to.equal(5)
-      expect(state.bar.v).to.equal(10)
+    let foo, bar, needle
+    it('makes refs to state fields', function() {
+      foo = state._`foo`
+      bar = state._('bar') // should support bracket notation as well
+      needle = state._`haystack`._`needle`
+      expect(foo.v).to.equal(1)
+      expect(bar.v).to.equal(2)
+      expect(needle.v).to.equal(3)
     })
-    it('reassigns the whole object', function() {
-      state.v = { foo: 'h', bar: 'w' }
-      expect(state.foo.v).to.equal('h')
-      expect(state.bar.v).to.equal('w')
-    })
-  })
-  describe('nested', function() {
-    const state2 = new State({
-      bar: { baz: 2 },
-    })
-    state2.wrap()
-    it('wraps nested fields', function() {
-      expect(state2.bar.baz.v).to.equal(2)
-    })
-    it('reassigns a nested field', function() {
-      state2.bar.baz = 3
-      expect(state2.bar.baz.v).to.equal(3)
-    })
-    it('reassigns a branch', function() {
-      state2.bar = { baz: 4 }
-      expect(state2.bar.baz.v).to.equal(4)
+    it('updates the refs', function() {
+      state.v = {
+        foo: 'w',
+        bar: 'h',
+        haystack: { needle: 'z' },
+      }
+      expect(foo.v).to.equal('w')
+      expect(bar.v).to.equal('h')
+      expect(needle.v).to.equal('z')
     })
   })
 })
