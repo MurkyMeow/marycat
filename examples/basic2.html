@@ -22,7 +22,7 @@ const items = new State([
   { name: 'qux' },
   { name: 'quux' },
 ], {
-  key: 'name',
+  key: item => item.name,
   actions: {
     add: v => [...v, { name: performance.now() }],
     del: (v, name) => v.filter(x => x.name !== name),

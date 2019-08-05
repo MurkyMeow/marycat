@@ -20,7 +20,7 @@ const randomItem = () =>
   items[items.length * Math.random() | 0]
 
 const suit = new State([], {
-  key: 'name',
+  key: item => item.name,
   actions: {
     pick(v) {
       const amount = Math.random() * 5 | 0 + 1

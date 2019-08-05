@@ -5,7 +5,7 @@ export class State {
     const { key, actions = {} } = params
     this.current = initial
     this.observers = []
-    this.key = key
+    if (key) this.key = key
     for (const [name, fn] of Object.entries(actions)) {
       this[name] = (...args) => {
         this.v = fn(this.v, ...args)
