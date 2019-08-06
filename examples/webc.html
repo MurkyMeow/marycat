@@ -18,12 +18,14 @@ const example = webc({
       color: red;
     }
   `,
+  _init() {
+    this.count = new State(0)
+  },
   render(host, { supercool, logo }) {
-    const count = new State(0)
-    host.click(() => count.v++)
+    host.click(() => this.count.v++)
     host.attr('test', 'foobar')
     return host
-    (span(get`You clicked ${count} times`))
+    (span(get`You clicked ${this.count} times`))
     (div()
       (get`${logo._`icon`} ${logo._`title`}`)
     )
@@ -32,10 +34,18 @@ const example = webc({
       (div('⚡️ ☄️ 💥 🔥'))
     )
   },
+  bind(state) {
+    this.count.sub(v => state.v = v)
+    return this
+  },
 })
+
+const listener = new State()
+listener.sub(console.log)
 
 const instance = example()
   .supercool(true)
   .logo({ title: 'web component', icon: '🌞' })
+  .bind(listener)
 instance.connect(document.body)
 </script>
