@@ -22,12 +22,13 @@ export const iter = (state, vnode) => $el => {
       const key = getkey(item)
       let next = newLookup.get(key)
       if (!next) {
-        const state = new State({ ...item, i })
-        const $node = mount(vnode(state))
-        next = { state, $node }
+        const [index, state] = [new State(i), new State(item)]
+        const $node = mount(vnode(state, index))
+        next = { state, index, $node }
         newLookup.set(key, next)
       } else {
-        next.state.v = { ...item, i } // update existing node
+        // update existing node
+        [next.state.v, next.index.v] = [item, i]
       }
       if ($current.nextSibling === next.$node) {
         $current = $current.nextSibling
