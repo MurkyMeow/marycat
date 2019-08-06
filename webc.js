@@ -39,9 +39,7 @@ export function webc({ name, props = {}, css, render, ...api }) {
     }
   })
   return el(name, {
-    _attrs: attrs,
-    ...api,
-    render,
+    ...api, attrs, render,
     connect($parent) {
       const $el = this.baseConnect($parent)
       const node = this.render(fragment(), $el.props)

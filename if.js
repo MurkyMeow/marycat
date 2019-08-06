@@ -10,12 +10,12 @@ function debounce(fn) {
 }
 
 export const _if = chainable({
-  _init(cond) {
+  init(cond) {
     this.elif(cond)
     this.nodes = new Map()
     this.state = this.current
   },
-  _take(...args) {
+  take(...args) {
     const { current, nodes } = this
     if (!nodes.has(current)) nodes.set(current, [])
     nodes.get(current).push(...args)

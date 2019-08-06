@@ -56,14 +56,14 @@ export function withParent($el) {
 
 export const chainable = api => (...initial) => {
   function chain(first, ...rest) {
-    if (chain._take) chain._take(first, ...rest)
+    if (chain.take) chain.take(first, ...rest)
     else chain.chained.push(first, ...rest)
     return chain
   }
-  const { _init, ...rest } = api
+  const { init, ...rest } = api
   Object.assign(chain, rest, { chained: [] })
-  if (_init) {
-    _init.apply(chain, initial)
+  if (init) {
+    init.apply(chain, initial)
     return chain
   }
   return initial.length > 0
@@ -93,9 +93,9 @@ function setAttribute($el, name, value) {
 }
 
 export function el(name, api = {}) {
-  const { _attrs = [], _events = [], ...rest } = api
-  const attrs = [...defaultAttrs, ..._attrs]
-  const events = [...defaultEvents, ..._events]
+  const { attrs = [], events = [], ...rest } = api
+  const _attrs = [...defaultAttrs, ...attrs]
+  const _events = [...defaultEvents, ...events]
   return chainable({
     [api.connect ? 'baseConnect' : 'connect']($parent) {
       const $el = document.createElement(name)
@@ -132,10 +132,10 @@ export function el(name, api = {}) {
       })
       return this
     },
-    ...events.reduce((acc, evt) => ({ ...acc,
+    ..._events.reduce((acc, evt) => ({ ...acc,
       [evt]: function(handler) { return this.on(evt, handler) }
     }), {}),
-    ...attrs.reduce((acc, attr) => ({ ...acc,
+    ..._attrs.reduce((acc, attr) => ({ ...acc,
       [attr]: function(value) { return this.attr(attr, value) }
     }), {}),
     ...rest,

@@ -19,7 +19,7 @@ export const form = el('form', {
 })
 
 export const input = el('input', {
-  _attrs: [
+  attrs: [
     'type', 'value',
     'placeholder', 'required',
     'autocomplete', 'autofocus',
