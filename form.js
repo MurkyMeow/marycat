@@ -31,7 +31,7 @@ export const input = el('input', {
     return this
   },
   validity(state) {
-    this($el => state.sub(v => $el.setCustomValidity(v)))
+    this($el => state.sub(v => $el.setCustomValidity(v || '')))
     return this
   },
 })
