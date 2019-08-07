@@ -121,7 +121,7 @@ export function el(name, api = {}) {
       this($el => $el.addEventListener(name, handle))
       return this
     },
-    attr(name, value) {
+    attr(name, value = '') {
       this($el => {
         const el = $el instanceof ShadowRoot ? $el.host : $el
         if (value instanceof State) {
