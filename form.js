@@ -30,4 +30,8 @@ export const input = el('input', {
     this.input(e => state.v = e.target.value)
     return this
   },
+  validity(state) {
+    this($el => state.sub(v => $el.setCustomValidity(v)))
+    return this
+  },
 })

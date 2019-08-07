@@ -24,6 +24,8 @@ function submit() {
   formdata.v = {}
 }
 
+const error = new State('foo')
+
 const app =
   div()
     (h3('Form struggles'))
@@ -37,6 +39,11 @@ const app =
       (input('@meow').placeholder('Say meow!'))
       (input('@purring').placeholder('Do some purring!'))
       (button('Consider!').prevent().click(submit))
+    )
+    (h3('Custom validity'))
+    (form().prevent().submit(_=>_)
+      (input().required().validity(error))
+      (button('submit'))
     )
 
 app.connect(document.body)
