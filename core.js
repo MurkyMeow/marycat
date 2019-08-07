@@ -97,8 +97,8 @@ export function el(name, api = {}) {
   const _attrs = [...defaultAttrs, ...attrs]
   const _events = [...defaultEvents, ...events]
   return chainable({
-    [api.connect ? 'baseConnect' : 'connect']($parent) {
-      const $el = document.createElement(name)
+    [api.connect ? 'baseConnect' : 'connect']($parent, $node) {
+      const $el = $node || document.createElement(name)
       const mount = withParent($el)
       this.chained.forEach(mount)
       return $parent.appendChild($el)

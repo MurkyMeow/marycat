@@ -8,16 +8,12 @@ const converters = {
 }
 
 class MaryNode extends HTMLElement {
-  constructor({ props, css }) {
+  constructor() {
     super()
-    this.props = {}
-    for (const [key, value] of Object.entries(props)) {
-      this.props[key] = new State(value)
-    }
     this.attachShadow({ mode: 'open' })
-    if (css) {
+    if (this.css) {
       const style = document.createElement('style')
-      style.textContent = css
+      style.textContent = this.css
       this.shadowRoot.appendChild(style)
     }
   }
@@ -31,8 +27,8 @@ class MaryNode extends HTMLElement {
 export function webc({ name, props = {}, css, render, ...api }) {
   const attrs = Object.keys(props)
   customElements.define(name, class extends MaryNode {
-    constructor() {
-      super({ props, css })
+    get css() {
+      return css
     }
     static get observedAttributes() {
       return attrs
@@ -40,9 +36,18 @@ export function webc({ name, props = {}, css, render, ...api }) {
   })
   return el(name, {
     ...api, attrs, render,
+    init() {
+      this.props = {}
+      for (const [key, value] of Object.entries(props)) {
+        this.props[key] = new State(value)
+      }
+      if (api.init) api.init.apply(this)
+    },
     connect($parent) {
-      const $el = this.baseConnect($parent)
-      const node = this.render(fragment(), $el.props)
+      const $el = document.createElement(name)
+      $el.props = this.props
+      this.baseConnect($parent, $el)
+      const node = this.render(fragment(), this.props)
       node.connect($el.shadowRoot)
       return $el
     },
