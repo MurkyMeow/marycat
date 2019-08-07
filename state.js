@@ -22,7 +22,10 @@ export class State {
   }
   _(field) {
     const [key] = [].concat(field)
-    return this.after(v => v[key])
+    if (!this.fields) this.fields = {}
+    return this.fields[key] || (
+      this.fields[key] = this.after(v => v[key])
+    )
   }
   sub(cb) {
     cb(this.v)

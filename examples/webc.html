@@ -22,7 +22,10 @@ const example = webc({
     this.count = new State(0)
   },
   render(host, { supercool, logo }) {
-    host.click(() => this.count.v++)
+    host.click(() => {
+      this.count.v++
+      logo._`icon`.v = '👁‍'
+    })
     host.attr('test', 'foobar')
     return host
     (span(get`You clicked ${this.count} times`))
