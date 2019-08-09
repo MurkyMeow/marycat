@@ -4,8 +4,7 @@
 import { State, get, webc, _if } from '../index.js'
 import { div, span } from './bindings.js'
 
-const example = webc({
-  name: 'mary-example',
+const example = webc('mary-example', {
   props: {
     supercool: false,
     logo: {

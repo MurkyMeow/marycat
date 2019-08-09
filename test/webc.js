@@ -1,8 +1,7 @@
 import { webc } from '../index.js'
 
 describe('webc', function() {
-  const comp = webc({
-    name: 'mary-test',
+  const comp = webc('mary-test', {
     props: {
       p1: false,
       p2: '',
