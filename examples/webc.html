@@ -46,7 +46,7 @@ const example = webc({
 const listener = new State()
 listener.sub(console.log)
 
-const instance = example()
+const instance = example('.classname')
   .supercool(true)
   .logo({ title: 'web component', icon: '🌞' })
   .bind(listener)

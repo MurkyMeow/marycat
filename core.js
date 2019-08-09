@@ -55,19 +55,22 @@ export function withParent($el) {
 }
 
 export const chainable = api => (...initial) => {
-  function chain(first, ...rest) {
-    if (chain.take) chain.take(first, ...rest)
-    else chain.chained.push(first, ...rest)
+  function chain(...args) {
+    if (chain.take) chain.take(...args)
+    else chain.chained.push(...args)
     return chain
   }
   const { init, ...rest } = api
-  Object.assign(chain, rest, { chained: [] })
+  Object.assign(chain, rest, {
+    chained: [],
+    baseInit: () => chain(...initial),
+  })
   if (init) {
     init.apply(chain, initial)
     return chain
   }
   return initial.length > 0
-    ? chain(...initial) : chain
+    ? chain.baseInit(...initial) : chain
 }
 
 const defaultEvents = [

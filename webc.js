@@ -35,11 +35,12 @@ export function webc({ name, props = {}, css, render, ...api }) {
     }
   })
   return el(name, {
-    ...api, attrs, render,
+    ...api, attrs,
     init() {
+      this.baseInit()
       this.props = {}
-      for (const [key, value] of Object.entries(props)) {
-        this.props[key] = new State(value)
+      for (const key of attrs) {
+        this.props[key] = new State(props[key])
       }
       if (api.init) api.init.apply(this)
     },
@@ -47,7 +48,7 @@ export function webc({ name, props = {}, css, render, ...api }) {
       const $el = document.createElement(name)
       $el.props = this.props
       this.baseConnect($parent, $el)
-      const node = this.render(fragment(), this.props)
+      const node = render.call(this, fragment(), this.props)
       node.connect($el.shadowRoot)
       return $el
     },
