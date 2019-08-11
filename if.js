@@ -1,7 +1,7 @@
 import { chainable, empty, withParent, assert } from './core.js'
 import { State } from './state.js';
 
-function debounce(fn) {
+export function debounce(fn) {
   let frame
   return (...args) => {
     if (frame) return

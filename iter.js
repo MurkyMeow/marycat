@@ -1,41 +1,50 @@
-import { State, withParent, empty } from './index.js'
+import { State, debounce, chainable, withParent, empty, assert } from './index.js'
 
-export const iter = (state, vnode) => $el => {
-  let oldLookup = new Map()
-  const mount = withParent($el)
-  const $hook = $el.appendChild(empty())
-  const getkey = state.key || (x => x)
-  state.sub((nextState, oldState = []) => {
+export const iter = chainable({
+  init(state, vnode) {
+    this.state = state
+    this.vnode = vnode
+    this.lookup = new Map()
+  },
+  connect($el) {
+    const reconcile = debounce((n, p) => this.reconcile(n, p))
+    this.state.sub(reconcile)
+    this.mount = withParent($el)
+    return this.$hook = $el.appendChild(empty())
+  },
+  reconcile(nextState, oldState = []) {
+    assert(Array.isArray(nextState), `Cant iterate over "${nextState}"`)
     const newLookup = new Map()
+    const getkey = this.state.key || (x => x)
     for (const item of nextState) {
       const key = getkey(item)
-      newLookup.set(key, oldLookup.get(key))
+      newLookup.set(key, this.lookup.get(key))
     }
     for (const item of oldState) {
       const key = getkey(item)
       if (!newLookup.has(key)) {
-        oldLookup.get(key).$node.remove()
+        this.lookup.get(key).$node.remove()
       }
     }
-    let $current = $hook
+    let $current = this.$hook
     nextState.forEach((item, i) => {
       const key = getkey(item)
       let next = newLookup.get(key)
       if (!next) {
-        const [index, state] = [new State(i), new State(item)]
-        const $node = mount(vnode(state, index))
+        const [state, index] = [new State(item), new State(i)]
+        const $node = this.mount(this.vnode(state, index))
         next = { state, index, $node }
         newLookup.set(key, next)
       } else {
         // update existing node
         [next.state.v, next.index.v] = [item, i]
       }
-      if ($current.nextSibling === next.$node) {
+      if ($current === next.$node) {
         $current = $current.nextSibling
       } else {
         $current.before(next.$node)
       }
     })
-    oldLookup = newLookup
-  })
-}
+    this.lookup = newLookup
+  },
+})
