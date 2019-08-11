@@ -21,13 +21,18 @@ describe('mount', function() {
     const { classList } = $node
     expect([...classList]).to.have.members(['c1', 'c2', 'c3', 'c4'])
   })
-
   it('sets id and name', function() {
     const $node = mount(div('#foo')('@bar'))
     expect($node.getAttribute('id')).to.equal('foo')
     expect($node.getAttribute('name')).to.equal('bar')
   })
-  
+  it('sets style rules', function() {
+    const $node = mount(
+      div().style('backgroundColor', 'red').style('fontSize', '12px')
+    )
+    expect($node.getAttribute('style'))
+      .to.equal('background-color: red; font-size: 12px;')
+  })
   it('registers click events', function() {
     let count = 0
     const $node = mount(

@@ -83,7 +83,7 @@ const defaultEvents = [
   'input', 'scroll', 'submit', 'focus', 'blur',
 ]
 const defaultAttrs = [
-  'id', 'class', 'style',
+  'id', 'class',
   'role', 'tabindex', 'hidden',
 ]
 
@@ -133,6 +133,13 @@ export function el(name, api = {}) {
           setAttribute(el, name, value)
         }
       })
+      return this
+    },
+    style(rule, value) {
+      this($el => value instanceof State
+        ? value.sub(v => $el.style[rule] = v)
+        : $el.style[rule] = value
+      )
       return this
     },
     ..._events.reduce((acc, evt) => ({ ...acc,
