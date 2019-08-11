@@ -1,4 +1,4 @@
-import { assert } from './core.js'
+import { assert } from './util.js'
 
 export class State {
   constructor(initial, params = {}) {

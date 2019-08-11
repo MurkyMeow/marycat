@@ -1,4 +1,6 @@
-import { State, debounce, chainable, withParent, empty, assert } from './index.js'
+import { chainable, withParent, empty } from './core.js'
+import { State } from './state.js'
+import { debounce, assert } from './util.js'
 
 export const iter = chainable({
   init(state, vnode) {

@@ -1,4 +1,5 @@
-import { State, el, fragment } from './index.js'
+import { el, fragment } from './core.js'
+import { State } from './state.js'
 
 const converters = {
   string: String,

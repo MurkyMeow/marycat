@@ -1,9 +1,5 @@
 import { State } from './state.js';
 
-export function assert(cond, msg) {
-  if (!cond) throw new Error(msg)
-}
-
 function plain($el, str) {
   const [prefix, rest] = [str[0], str.slice(1)]
   switch (prefix) {

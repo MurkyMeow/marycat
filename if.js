@@ -1,13 +1,6 @@
-import { chainable, empty, withParent, assert } from './core.js'
-import { State } from './state.js';
-
-export function debounce(fn) {
-  let frame
-  return (...args) => {
-    if (frame) return
-    frame = requestAnimationFrame(() => (fn(...args), frame = null))
-  }
-}
+import { chainable, empty, withParent } from './core.js'
+import { State } from './state.js'
+import { assert, debounce } from './util.js'
 
 export const _if = chainable({
   init(cond) {
