@@ -10,10 +10,12 @@ export const iter = chainable({
     const reconcile = debounce((n, p) => this.reconcile(n, p))
     this.state.sub(reconcile)
     this.mount = withParent($el)
-    return this.$hook = $el.appendChild(empty())
+    this.$hook = $el.appendChild(empty())
+    return this.nodes = []
   },
   reconcile(nextState, oldState = []) {
     assert(Array.isArray(nextState), `Cant iterate over "${nextState}"`)
+    this.nodes.length = 0
     const newLookup = new Map()
     const getkey = this.state.key || (x => x)
     for (const item of nextState) {
@@ -39,6 +41,7 @@ export const iter = chainable({
         // update existing node
         [next.state.v, next.index.v] = [item, i]
       }
+      this.nodes.push(next.$node)
       if ($current === next.$node) {
         $current = $current.nextSibling
       } else {
