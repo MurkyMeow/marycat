@@ -80,7 +80,7 @@ describe('state', function() {
       expect(first.eq(second).v).to.equal(first.v === second.v)
     })
   })
-  describe('object getter', function() {
+  describe('static object getter', function() {
     const state = new State({
       foo: 1,
       bar: 2,
@@ -104,6 +104,19 @@ describe('state', function() {
       expect(foo.v).to.equal('w')
       expect(bar.v).to.equal('h')
       expect(needle.v).to.equal('z')
+    })
+  })
+  describe('dynamic object getters', function() {
+    const state = new State({ foo: 1, bar: 2 })
+    const key = new State('foo')
+    let ref
+    it('sets a dynamic ref', function() {
+      ref = state._`${key}`
+      expect(ref.v).to.equal(1)
+    })
+    it('updates the dynamic ref', function() {
+      key.v = 'bar'
+      expect(ref.v).to.equal(2)
     })
   })
 })

@@ -20,8 +20,11 @@ export class State {
     this.observers.forEach(cb => cb(next, this.current))
     this.current = next
   }
-  _(field) {
-    const [key] = [].concat(field)
+  _(field, variable) {
+    if (variable instanceof State) {
+      return this.merge(variable, (a, b) => a[b])
+    }
+    const [key] = [].concat(variable || field)
     if (!this.fields) this.fields = {}
     return this.fields[key] || (
       this.fields[key] = this.after(v => v[key])
@@ -54,6 +57,9 @@ export class State {
   get isEmpty() {
     assert(Array.isArray(this.v), `"isEmpty" was called on non-array value: "${this.v}"`)
     return this.after(v => v.length <= 0)
+  }
+  get keys() {
+    return this.after(Object.keys)
   }
 }
 
