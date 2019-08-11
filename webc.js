@@ -51,6 +51,7 @@ export function webc(name, { props = {}, css, render, ...api }) {
       this.baseConnect($parent, $el)
       const node = render.call(this, fragment(), this.props)
       node.connect($el.shadowRoot)
+      if (api.connect) api.connect.call(this, $parent)
       return $el
     },
   })
