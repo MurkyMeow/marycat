@@ -44,15 +44,16 @@ describe('mount', function() {
     expect(count).to.equal(5)
   })
 
-  it('registers custom event', function() {
+  it('emits a custom event', function() {
     let catched
-    const $node = mount(
-      div().on('custom-evt', e => catched = e)
-        (div())
-    )
-    const event = new CustomEvent('custom-evt', { bubbles: true })
-    $node.children[0].dispatchEvent(event)
+    const child = div()
+    mount
+      (div().on('custom-evt', e => catched = e)
+        (child)
+      )
+    child.emit('custom-evt', 1234, { bubbles: true })
     expect(catched.type).to.equal('custom-evt')
+    expect(catched.detail).to.equal(1234)
   })
 })
 describe('reactive mount', function() {

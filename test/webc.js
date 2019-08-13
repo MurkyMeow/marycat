@@ -28,16 +28,15 @@ describe('webc', function() {
     expect(p3.textContent).to.equal('123')
   })
   it('responds to prop updates', function() {
-    $el.setAttribute('p1', 'false')
+    $el.setAttribute('p1', false)
     $el.setAttribute('p2', 'world')
     $el.props.p3.v = [3, 2, 1]
     expect(p1.textContent).to.equal('false')
     expect(p2.textContent).to.equal('world')
     expect(p3.textContent).to.equal('321')
   })
-  // Do i need this?
-  it.skip('updates props via instance methods', function() {
-    instance.p1('foobar')
-    expect(p1.textContent).to.equal('foobar')
+  it('updates props via instance methods', function() {
+    instance.p2('foobar')
+    expect(p2.textContent).to.equal('foobar')
   })
 })

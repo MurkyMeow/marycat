@@ -53,6 +53,7 @@ export function withParent($el) {
 export const chainable = api => (...initial) => {
   function chain(...args) {
     if (chain.take) chain.take(...args)
+    else if (chain.el) chain.mount(...args)
     else chain.chained.push(...args)
     return chain
   }
@@ -97,10 +98,10 @@ export function el(name, api = {}) {
   const _events = [...defaultEvents, ...events]
   return chainable({
     [api.connect ? 'baseConnect' : 'connect']($parent, $node) {
-      const $el = $node || document.createElement(name)
-      const mount = withParent($el)
-      this.chained.forEach(mount)
-      return $parent.appendChild($el)
+      this.el = $node || document.createElement(name)
+      this.mount = withParent(this.el)
+      this.chained.forEach(this.mount)
+      return $parent.appendChild(this.el)
     },
     prevent() {
       this.prevented = true
@@ -117,11 +118,16 @@ export function el(name, api = {}) {
           : (e => (e.preventDefault(), handler(e)))
         : handler
       this.stopped = this.prevented = false
-      this($el => $el.addEventListener(name, handle))
-      return this
+      return this($el => $el.addEventListener(name, handle))
+    },
+    emit(name, detail, opts = {}) {
+      return this($el => {
+        const event = new CustomEvent(name, { detail, ...opts })
+        $el.dispatchEvent(event)
+      })
     },
     attr(name, value = '') {
-      this($el => {
+      return this($el => {
         const el = $el instanceof ShadowRoot ? $el.host : $el
         if (value instanceof State) {
           value.sub(next => setAttribute(el, name, next))
@@ -129,14 +135,12 @@ export function el(name, api = {}) {
           setAttribute(el, name, value)
         }
       })
-      return this
     },
     style(rule, value) {
-      this($el => value instanceof State
+      return this($el => value instanceof State
         ? value.sub(v => $el.style[rule] = v)
         : $el.style[rule] = value
       )
-      return this
     },
     ..._events.reduce((acc, evt) => ({ ...acc,
       [evt]: function(handler) { return this.on(evt, handler) }
