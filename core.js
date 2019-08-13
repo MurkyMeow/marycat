@@ -112,13 +112,13 @@ export function el(name, api = {}) {
       return this
     },
     on(name, handler) {
-      const handle = this.prevented
-        ? this.stopped
-          ? (e => (e.preventDefault(), e.stopPropagation(), handler(e)))
-          : (e => (e.preventDefault(), handler(e)))
-        : handler
+      const handle = [handler]
+      if (this.prevented) handle.unshift(e => e.preventDefault())
+      if (this.stopped) handle.unshift(e => e.stopPropagation())
       this.stopped = this.prevented = false
-      return this($el => $el.addEventListener(name, handle))
+      return this($el => {
+        $el.addEventListener(name, e => handle.forEach(fn => fn(e)))
+      })
     },
     emit(name, detail, opts = {}) {
       return this($el => {
