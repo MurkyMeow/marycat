@@ -23,11 +23,13 @@ export class State {
   _(field, variable) {
     if (variable instanceof State) {
       return this.merge(variable, (a, b) => a[b])
+        .sub(v => this.v[variable.v] = v)
     }
     const [key] = [].concat(variable || field)
     if (!this.fields) this.fields = {}
     return this.fields[key] || (
       this.fields[key] = this.after(v => v[key])
+        .sub(v => this.v[key] = v)
     )
   }
   sub(cb) {

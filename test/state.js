@@ -95,6 +95,10 @@ describe('state', function() {
       expect(bar.v).to.equal(2)
       expect(needle.v).to.equal(3)
     })
+    it('updates an individual ref', function() {
+      foo.v = 123
+      expect(state.v.foo).to.equal(123)
+    })
     it('updates the refs', function() {
       state.v = {
         foo: 'w',
@@ -110,13 +114,17 @@ describe('state', function() {
     const state = new State({ foo: 1, bar: 2 })
     const key = new State('foo')
     let ref
-    it('sets a dynamic ref', function() {
+    it('sets a ref with a dynamic key', function() {
       ref = state._`${key}`
       expect(ref.v).to.equal(1)
     })
-    it('updates the dynamic ref', function() {
+    it('updates the key', function() {
       key.v = 'bar'
       expect(ref.v).to.equal(2)
+    })
+    it('updates the value', function() {
+      ref.v = 4
+      expect(state.v.bar).to.equal(4)
     })
   })
 })
