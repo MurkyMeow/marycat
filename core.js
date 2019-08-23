@@ -154,9 +154,9 @@ export function el(name, api = {}) {
 }
 
 export const fragment = el('', {
-  connect($parent) {
-    const mount = withParent($parent)
-    mount(this.chained)
+  connect($el) {
+    [this.el, this.mount] = [$el, withParent($el)]
+    this.mount(this.chained)
   },
 })
 
