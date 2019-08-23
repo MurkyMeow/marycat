@@ -17,17 +17,14 @@ const example = webc('mary-example', {
       color: red;
     }
   `,
-  init() {
-    this.count = new State(0)
-  },
   render(host, { supercool, logo }) {
-    host.click(() => {
-      this.count.v++
+    const count = new State(0).sub(v => host.emit('change', v))
+    host.click(e => {
+      count.v++
       logo._`icon`.v = '👁‍'
     })
-    host.attr('test', 'foobar')
     return host
-    (span(get`You clicked ${this.count} times`))
+    (span(get`You clicked ${count} times`))
     (div()
       (get`${logo._`icon`} ${logo._`title`}`)
     )
@@ -36,18 +33,13 @@ const example = webc('mary-example', {
       (div('⚡️ ☄️ 💥 🔥'))
     )
   },
-  bind(state) {
-    this.count.sub(v => state.v = v)
-    return this
-  },
 })
 
-const listener = new State()
-listener.sub(console.log)
-
-const instance = example('.classname')
-  .supercool(true)
-  .logo({ title: 'web component', icon: '🌞' })
-  .bind(listener)
+const instance =
+  (example('.classname')
+    .supercool(true)
+    .logo({ title: 'web component', icon: '🌞' })
+    .on('change', e => console.log(e.detail))
+  )
 instance.connect(document.body)
 </script>
