@@ -92,6 +92,7 @@ function setAttribute($el, name, value) {
     $el.setAttribute(name, value)
   }
 }
+const filterShadow = el => el instanceof ShadowRoot ? el.host : el
 
 export function el(name, api = {}) {
   const { attrs = [], events = [], ...rest } = api
@@ -112,25 +113,25 @@ export function el(name, api = {}) {
       this.stopped = true
       return this
     },
-    on(name, handler) {
+    on(name, handler, shadow = false) {
       const handle = [handler]
       if (this.prevented) handle.unshift(e => e.preventDefault())
       if (this.stopped) handle.unshift(e => e.stopPropagation())
       this.stopped = this.prevented = false
       return this($el => {
-        $el.addEventListener(name, e => handle.forEach(fn => fn(e)))
+        const el = shadow ? $el : filterShadow($el)
+        el.addEventListener(name, e => handle.forEach(fn => fn(e)))
       })
     },
     emit(name, detail, opts = {}) {
       return this($el => {
         const event = new CustomEvent(name, { detail, ...opts })
-        const el = $el instanceof ShadowRoot ? $el.host : $el
-        el.dispatchEvent(event)
+        filterShadow($el).dispatchEvent(event)
       })
     },
     attr(name, value = '') {
       return this($el => {
-        const el = $el instanceof ShadowRoot ? $el.host : $el
+        const el = filterShadow($el)
         if (value instanceof State) {
           value.sub(next => setAttribute(el, name, next))
         } else {
