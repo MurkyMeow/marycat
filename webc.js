@@ -37,15 +37,11 @@ export function webc(name, { props = {}, css, render, ...api }) {
   })
   return el(name, {
     ...api, attrs,
-    init() {
-      this.baseInit()
+    connect($parent) {
       this.props = {}
       for (const key of attrs) {
         this.props[key] = new State(props[key])
       }
-      if (api.init) api.init.apply(this)
-    },
-    connect($parent) {
       const $el = document.createElement(name)
       $el.props = this.props
       this.baseConnect($parent, $el)
