@@ -67,7 +67,7 @@ export const chainable = api => (...initial) => {
     return chain
   }
   return initial.length > 0
-    ? chain.baseInit(...initial) : chain
+    ? chain.baseInit() : chain
 }
 
 const defaultEvents = [
@@ -123,7 +123,8 @@ export function el(name, api = {}) {
     emit(name, detail, opts = {}) {
       return this($el => {
         const event = new CustomEvent(name, { detail, ...opts })
-        $el.dispatchEvent(event)
+        const el = $el instanceof ShadowRoot ? $el.host : $el
+        el.dispatchEvent(event)
       })
     },
     attr(name, value = '') {
