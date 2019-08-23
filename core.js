@@ -86,7 +86,8 @@ const defaultAttrs = [
 
 function setAttribute($el, name, value) {
   if (typeof value === 'object') {
-    $el.props[name].v = value
+    $el.props[name].v =
+      Array.isArray(value) ? [...value] : { ...value }
   } else {
     $el.setAttribute(name, value)
   }
