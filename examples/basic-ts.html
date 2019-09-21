@@ -1,0 +1,29 @@
+<head>
+  <meta charset="UTF-8">
+</head>
+<body></body>
+<script type="module">
+import { div, stateful, get } from '../dist/bundle.js'
+
+const test = stateful(1234)
+
+setInterval(() => {
+  test.v += 1
+}, 300)
+
+const app =
+  div()
+    .$(div('.hello'))
+    .$(div('Whoa').on('click', console.log))
+    .$(div()
+      .$(div('.world'))
+      .$(div())
+      .$(div()
+        .$(div())
+        .$(div())
+        .$(get`state: ${test}`)
+      )
+    )
+
+app.mount(document.body)
+</script>
