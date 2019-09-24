@@ -7,7 +7,7 @@ type Middleware
   | ((el: HTMLElement) => any)
 
 export class MaryElement {
-  private el?: HTMLElement;
+  el?: HTMLElement;
 
   constructor(
     public name: string,
@@ -15,14 +15,9 @@ export class MaryElement {
   ) {}
 
   $(...args: Middleware[]): this {
-    this.chain.push(...args)
+    if (this.el) this.apply(args);
+    else this.chain.push(...args)
     return this
-  }
-  on(event: string, handler: (e: Event) => any): this {
-    return this.$(el => el.addEventListener(event, handler))
-  }
-  attr(name: string, val: any): this {
-    return this.$(el => el.setAttribute(name, val))
   }
   style(
     prop: Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule'>,
@@ -30,20 +25,40 @@ export class MaryElement {
   ): this {
     return this.$(el => el.style[prop] = val)
   }
-  // private observed(state: State<MaryElement>) {
-  //   const nodes = [this.applyPlain('')]
-  //   state.sub(next => {
-  //     // keep the first element to insert nodes after it
-  //     while (nodes.length > 1) nodes.pop()!.remove()
-  //     const nextNodes = [].concat(this.apply(next))
-  //     nextNodes.forEach((node, i) => {
-  //       const previous = nextNodes[i - 1] || nodes.pop()
-  //       previous.after(node)
-  //       nodes.push(node)
-  //       if (i === 0) previous.remove()
-  //     })
-  //   })
-  // }
+  on(event: string, handler: (e: Event) => any): this {
+    return this.$(el => el.addEventListener(event, handler))
+  }
+  attr(name: string, val: any): this {
+    return this.$(el => el.setAttribute(name, val))
+  }
+  attr$(name: string): (strings: TemplateStringsArray, ...keys: State<any>[]) => this {
+    return (strings, ...keys) => this.$(el => {
+      const attr = document.createAttribute(name)
+      el.setAttributeNode(attr)
+      strings.forEach((str, i) => {
+        const state = keys[i]
+        attr.value += str
+        if (!state) return
+        const start = attr.value.length
+        state.sub((next, prev) => {
+          const left = attr.value.slice(0, start)
+          const right = attr.value.slice(start + String(prev).length)
+          attr.value = `${left}${next}${right}`
+        })
+      })
+    })
+  }
+  text$(strings: TemplateStringsArray, ...keys: State<any>[]): this {
+    return this.$(el => {
+      strings.forEach((str, i) => {
+        const state = keys[i]
+        if (!state) return
+        const text = new Text('')
+        state.sub(next => text.textContent = str + next)
+        el.appendChild(text)
+      })
+    })
+  }
   private applyPlain(str: string): void {
     const [prefix, rest] = [str[0], str.slice(1)]
     const el = this.el!
@@ -54,7 +69,7 @@ export class MaryElement {
       default: el.appendChild(document.createTextNode(str))
     }
   }
-  apply(middleware: Middleware): void {
+  apply(middleware: Middleware | Middleware[]): void {
     if (!this.el) {
       throw Error(`Cant apply a middleware to a not mounted element`)
     }

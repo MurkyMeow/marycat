@@ -3,13 +3,13 @@
 </head>
 <body></body>
 <script type="module">
-import { div, stateful, get } from '../dist/bundle.js'
+import { div, stateful } from '../dist/bundle.js'
 
 const test = stateful(1234)
+const test2 = stateful(1234)
 
-setInterval(() => {
-  test.v += 1
-}, 300)
+setInterval(() => test.v++, 1000)
+setInterval(() => test2.v++, 500)
 
 const app =
   div()
@@ -17,11 +17,11 @@ const app =
     .$(div('Whoa').on('click', console.log))
     .$(div()
       .$(div('.world'))
-      .$(div())
       .$(div()
+        .attr$('class')`type-${test}qweq__${test2}qeqw`
+        // .text$`state: ${test}`
         .$(div())
         .$(div())
-        .$(get`state: ${test}`)
       )
     )
 

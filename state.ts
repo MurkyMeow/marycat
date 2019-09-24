@@ -1,4 +1,4 @@
-type Observer<T> = (val: T, oldVal?: T) => any
+type Observer<T> = (val: T, oldVal: T) => void
 type Transform<T, K> = (val: T) => K
 
 export class State<T> {
@@ -12,7 +12,7 @@ export class State<T> {
     this.val = val
   }
   sub(fn: Observer<T>, immediate: boolean = true): this {
-    if (immediate) fn(this.v)
+    if (immediate) fn(this.v, this.v)
     this.observers.push(fn)
     return this
   }
@@ -24,12 +24,3 @@ export class State<T> {
 }
 
 export const stateful = <T>(val: T) => new State<T>(val)
-
-export const get = (strings: string[], ...keys: State<any>[]) =>
-  strings.map((str, i) => {
-    const state = keys[i]
-    if (!state) return str || null
-    const text = document.createTextNode('')
-    state.sub(next => text.textContent = str + next)
-    return (el: HTMLElement) => el.appendChild(text)
-  })
