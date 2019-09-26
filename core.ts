@@ -4,10 +4,12 @@ type Middleware
   = string
   | number
   | boolean
-  | ((el: HTMLElement) => any)
+  | State<any>
+  | MaryElement
+  | ((el: HTMLElement) => Node | void)
 
 export class MaryElement {
-  el?: HTMLElement;
+  el?: HTMLElement
 
   constructor(
     public name: string,
@@ -23,7 +25,7 @@ export class MaryElement {
     prop: Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule'>,
     val: string
   ): this {
-    return this.$(el => el.style[prop] = val)
+    return this.$(el => el.style.setProperty(<string>prop, val))
   }
   on(event: string, handler: (e: Event) => any): this {
     return this.$(el => el.addEventListener(event, handler))
@@ -59,38 +61,63 @@ export class MaryElement {
       })
     })
   }
-  private applyPlain(str: string): void {
+  private applyPlain(str: string): Node | undefined {
     const [prefix, rest] = [str[0], str.slice(1)]
     const el = this.el!
     switch (prefix) {
-      case '.': return el.classList.add(rest)
-      case '#': return el.setAttribute('id', rest)
-      case '@': return el.setAttribute('name', rest)
-      default: el.appendChild(document.createTextNode(str))
+      case '.': el.classList.add(rest); break
+      case '#': el.setAttribute('id', rest); break
+      case '@': el.setAttribute('name', rest); break
+      default: return el.appendChild(document.createTextNode(str))
     }
   }
-  apply(middleware: Middleware | Middleware[]): void {
+  private applyObserved(state: State<Middleware | Middleware[]>): Node[] {
+    const el = this.el!
+    const hook = el.appendChild(document.createComment(''))
+    const nodes: Node[] = []
+    state.sub(val => {
+      const res = this.apply(val)
+      nodes.forEach((node, i) => {
+        if (!res.includes(node)) el.removeChild(nodes[i])
+      })
+      nodes.length = 0
+      let current: Node = hook
+      res.forEach(node => {
+        if (!node) return
+        nodes.push(node)
+        el.insertBefore(node, current)
+        current = node
+      })
+    })
+    return nodes
+  }
+  apply(middleware: Middleware | Middleware[]): (Node | undefined)[] {
     if (!this.el) {
       throw Error(`Cant apply a middleware to a not mounted element`)
     }
-    if (middleware === null) return
+    if (middleware === null) return []
     if (Array.isArray(middleware)) {
-      return middleware.forEach(m => this.apply(m))
+      const res: (Node | undefined)[] = []
+      return res.concat(...middleware.map(m => this.apply(m)))
     }
     if (middleware instanceof MaryElement) {
-      return void middleware.mount(this.el)
+      return [middleware.mount(this.el)]
     }
-    // if (middleware instanceof State) {
-    //   return this.observed(middleware)
-    // }
+    if (middleware instanceof State) {
+      return this.applyObserved(middleware)
+    }
     switch (typeof middleware) {
       case 'number':
-      case 'boolean': return this.el.append(
-        document.createTextNode(middleware.toString())
-      )
-      case 'string': return this.applyPlain(middleware)
-      case 'function': return middleware(this.el)
-      default: console.trace(`Unexpected child: ${middleware}`)
+      case 'boolean': return [
+        this.el.appendChild(document.createTextNode(middleware.toString()))
+      ]
+      case 'string':
+        return [this.applyPlain(middleware)]
+      case 'function':
+        return [middleware(this.el) || undefined]
+      default:
+        console.trace(`Unexpected child: ${middleware}`)
+        return []
     }
   }
   mount(parent: Element): HTMLElement {
@@ -100,4 +127,7 @@ export class MaryElement {
   }
 }
 
-export const div = (...args: Middleware[]) => new MaryElement('div', args)
+const shorthand = (name: string) => (...args: Middleware[]) =>
+  new MaryElement(name, args)
+
+export const div = shorthand('div')

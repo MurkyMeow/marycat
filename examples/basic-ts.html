@@ -11,6 +11,9 @@ const test2 = stateful(1234)
 setInterval(() => test.v++, 1000)
 setInterval(() => test2.v++, 500)
 
+window.count = stateful(div('positive'))
+window.div = div
+
 const app =
   div()
     .$(div('.hello'))
@@ -19,11 +22,14 @@ const app =
       .$(div('.world'))
       .$(div()
         .attr$('class')`type-${test}qweq__${test2}qeqw`
-        // .text$`state: ${test}`
+        .text$`state: ${test}__${test2}`
         .$(div())
         .$(div())
       )
     )
+    .$(count)
+    .$(div('world'))
+    .$(div('world'))
 
 app.mount(document.body)
 </script>

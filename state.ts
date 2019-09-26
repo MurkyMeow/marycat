@@ -8,7 +8,7 @@ export class State<T> {
     return this.val
   }
   set v(val) {
-    this.observers.forEach(ob => ob(this.val, val))
+    this.observers.forEach(ob => ob(val, this.val))
     this.val = val
   }
   sub(fn: Observer<T>, immediate: boolean = true): this {
