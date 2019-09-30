@@ -11,7 +11,9 @@ const test2 = stateful(1234)
 setInterval(() => test.v++, 1000)
 setInterval(() => test2.v++, 500)
 
-window.count = stateful(div('positive'))
+window.count = stateful(Array(4).fill().map((_, i) =>
+  div(i).key$(Math.random())
+))
 window.div = div
 
 const app =

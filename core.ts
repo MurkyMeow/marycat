@@ -8,8 +8,12 @@ type Middleware
   | MaryElement
   | ((el: HTMLElement) => Node | void)
 
+const getKey = (a: Middleware) =>
+  a instanceof MaryElement ? a.key : a.toString()
+
 export class MaryElement {
   el?: HTMLElement
+  key?: any
 
   constructor(
     public name: string,
@@ -19,6 +23,10 @@ export class MaryElement {
   $(...args: Middleware[]): this {
     if (this.el) this.apply(args);
     else this.chain.push(...args)
+    return this
+  }
+  key$(val: string): this {
+    this.key = val
     return this
   }
   style(
@@ -75,19 +83,32 @@ export class MaryElement {
     const el = this.el!
     const hook = el.appendChild(document.createComment(''))
     const nodes: Node[] = []
-    state.sub(val => {
-      const res = this.apply(val)
-      nodes.forEach((node, i) => {
-        if (!res.includes(node)) el.removeChild(nodes[i])
+    const lookup = new Map<string, Node[]>()
+    state.sub((val, prevVal) => {
+      const next = ([] as Middleware[]).concat(val)
+      const prev = ([] as Middleware[]).concat(prevVal)
+      prev.forEach(x => {
+        const key = getKey(x)
+        if (next.find(y => key === getKey(y))) return
+        const oldNodes = lookup.get(key)
+        if (oldNodes) {
+          lookup.delete(key)
+          oldNodes.forEach(node => el.removeChild(node))
+        }
+      })
+      let curr: Node = hook
+      next.forEach(x => {
+        const key = getKey(x)
+        const nodes = lookup.get(key) ||
+          this.apply(x).filter(_=>_) as Node[]
+        lookup.set(key, nodes)
+        nodes.forEach(node => {
+          el.insertBefore(node, curr)
+          if ([node, hook].includes(curr)) curr = curr.nextSibling!
+        })
       })
       nodes.length = 0
-      let current: Node = hook
-      res.forEach(node => {
-        if (!node) return
-        nodes.push(node)
-        el.insertBefore(node, current)
-        current = node
-      })
+      lookup.forEach(x => nodes.push(...x))
     })
     return nodes
   }

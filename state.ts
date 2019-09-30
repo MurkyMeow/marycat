@@ -8,6 +8,7 @@ export class State<T> {
     return this.val
   }
   set v(val) {
+    if (val === this.val) return
     this.observers.forEach(ob => ob(val, this.val))
     this.val = val
   }
