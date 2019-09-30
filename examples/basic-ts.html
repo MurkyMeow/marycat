@@ -7,8 +7,16 @@ import { div, stateful } from '../dist/bundle.js'
 
 const test = stateful(-2)
 const test2 = stateful(1234)
+const obj = stateful({
+  foo: 123,
+  bar: 321,
+})
+window.key = stateful('foo')
 
-setInterval(() => test.v++, 1000)
+setInterval(() => {
+  test.v++
+  obj.v = { foo: obj.v.foo + 1, bar: obj.v.bar + 1 }
+}, 1000)
 setInterval(() => test2.v++, 500)
 
 window.observed = stateful(div('hello'))
@@ -29,7 +37,9 @@ const app =
     )
     .$(observed)
     .$(div('world'))
-    .$(div('world'))
+    .$(div(obj._`${key}`))
+    .$(div(obj._`foo`))
+    .$(div(obj._`bar`))
     .$(test.lt(0).and(
       div('Negative')
     ).or(test.eq(0).and(

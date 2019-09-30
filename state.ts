@@ -14,6 +14,12 @@ export class State<T> {
     this.observers.forEach(ob => ob(val, this.val))
     this.val = val
   }
+  _([field]: TemplateStringsArray, variable: State<keyof T>) {
+    if (variable) {
+      return zip([this, variable], (a, b) => a[b])
+    }
+    return this.map(v => v[field as keyof T])
+  }
   sub(fn: Observer<T>, immediate: boolean = true): this {
     if (immediate) fn(this.v, this.v)
     this.observers.push(fn)
