@@ -1,9 +1,11 @@
 type Observer<T> = (val: T, oldVal: T) => void
-type Transform<T, K> = (val: T) => K
+type ZipValue<T> = State<T> | T
 
 export class State<T> {
   private observers: Observer<T>[] = []
-  constructor(private val: T) {}
+  constructor(
+    private val: T,
+  ) {}
   get v() {
     return this.val
   }
@@ -17,11 +19,36 @@ export class State<T> {
     this.observers.push(fn)
     return this
   }
-  map<K>(fn: Transform<T, K>): State<K> {
-    const state = stateful(fn(this.v))
-    this.sub(val => state.v = fn(val), false)
-    return state
+  map<K>(fn: (val: T) => K): State<K> {
+    return zip([this], fn)
   }
+  not(): State<boolean> {
+    return this.map(v => !v)
+  }
+  and<K>(s: ZipValue<K>): State<T | K> { return zip([this, s], (a, b) => a && b) }
+  or<K>(s: ZipValue<K>): State<T | K> { return zip([this, s], (a, b) => a || b) }
+  eq<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a === b) }
+  ne<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a !== b) }
+  gt<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a > b) }
+  ge<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a >= b) }
+  lt<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a < b) }
+  le<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a <= b) }
 }
 
 export const stateful = <T>(val: T) => new State<T>(val)
+
+export function zip<K>(
+  states: ZipValue<any>[], map: (...values: any[]) => K,
+): State<K> {
+  const values = () => map(...states.map(x => x instanceof State ? x.v : x))
+  const res = stateful(values())
+  let frame: number
+  const update = () => {
+    if (frame) return
+    frame = requestAnimationFrame(() => (res.v = values(), frame = 0))
+  }
+  states.forEach(state => {
+    if (state instanceof State) state.sub(update, false)
+  })
+  return res
+}

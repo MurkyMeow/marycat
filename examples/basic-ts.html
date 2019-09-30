@@ -5,15 +5,13 @@
 <script type="module">
 import { div, stateful } from '../dist/bundle.js'
 
-const test = stateful(1234)
+const test = stateful(-2)
 const test2 = stateful(1234)
 
 setInterval(() => test.v++, 1000)
 setInterval(() => test2.v++, 500)
 
-window.count = stateful(Array(4).fill().map((_, i) =>
-  div(i).key$(Math.random())
-))
+window.observed = stateful(div('hello'))
 window.div = div
 
 const app =
@@ -29,9 +27,16 @@ const app =
         .$(div())
       )
     )
-    .$(count)
+    .$(observed)
     .$(div('world'))
     .$(div('world'))
+    .$(test.lt(0).and(
+      div('Negative')
+    ).or(test.eq(0).and(
+      div('Zero')
+    )).or(
+      div('Positive')
+    ))
 
 app.mount(document.body)
 </script>

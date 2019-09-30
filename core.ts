@@ -8,12 +8,12 @@ type Middleware
   | MaryElement
   | ((el: HTMLElement) => Node | void)
 
-const getKey = (a: Middleware) =>
-  a instanceof MaryElement ? a.key : a.toString()
+const getKey = (a: Middleware): any =>
+  a instanceof MaryElement && a._key || a
 
 export class MaryElement {
   el?: HTMLElement
-  key?: any
+  _key?: any
 
   constructor(
     public name: string,
@@ -25,8 +25,8 @@ export class MaryElement {
     else this.chain.push(...args)
     return this
   }
-  key$(val: string): this {
-    this.key = val
+  key(val: string): this {
+    this._key = val
     return this
   }
   style(
@@ -76,14 +76,14 @@ export class MaryElement {
       case '.': el.classList.add(rest); break
       case '#': el.setAttribute('id', rest); break
       case '@': el.setAttribute('name', rest); break
-      default: return el.appendChild(document.createTextNode(str))
+      default: return el.appendChild(new Text(str))
     }
   }
   private applyObserved(state: State<Middleware | Middleware[]>): Node[] {
     const el = this.el!
-    const hook = el.appendChild(document.createComment(''))
+    const hook = el.appendChild(new Comment(''))
     const nodes: Node[] = []
-    const lookup = new Map<string, Node[]>()
+    const lookup = new Map<any, Node[]>()
     state.sub((val, prevVal) => {
       const next = ([] as Middleware[]).concat(val)
       const prev = ([] as Middleware[]).concat(prevVal)
@@ -128,16 +128,17 @@ export class MaryElement {
       return this.applyObserved(middleware)
     }
     switch (typeof middleware) {
-      case 'number':
-      case 'boolean': return [
-        this.el.appendChild(document.createTextNode(middleware.toString()))
+      case 'number': return [
+        this.el.appendChild(new Text(middleware.toString()))
       ]
+      case 'boolean':
+        return []
       case 'string':
         return [this.applyPlain(middleware)]
       case 'function':
         return [middleware(this.el) || undefined]
       default:
-        console.trace(`Unexpected child: ${middleware}`)
+        console.trace('Unexpected child:', middleware)
         return []
     }
   }
