@@ -35,8 +35,19 @@ export class MaryElement {
   ): this {
     return this.$(el => el.style.setProperty(<string>prop, val))
   }
-  on(event: string, handler: (e: Event) => any): this {
-    return this.$(el => el.addEventListener(event, handler))
+  on(
+    event: string,
+    handler: (e: Event) => any,
+    mods?: { prevent?: boolean, stop?: boolean },
+    options?: | AddEventListenerOptions | EventListenerOptions,
+  ): this {
+    const fns = [handler]
+    if (mods) {
+      if (mods.prevent) fns.unshift(e => e.preventDefault())
+      if (mods.stop) fns.unshift(e => e.stopPropagation())
+    }
+    const handle = (e: Event) => fns.forEach(fn => fn(e))
+    return this.$(el => el.addEventListener(event, handle, options))
   }
   attr(name: string, val: any): this {
     return this.$(el => el.setAttribute(name, val))
