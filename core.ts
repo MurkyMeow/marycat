@@ -29,10 +29,7 @@ export class MaryElement {
     this._key = val
     return this
   }
-  style(
-    prop: Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule'>,
-    val: string
-  ): this {
+  style(prop: string, val: string): this {
     return this.$(el => el.style.setProperty(<string>prop, val))
   }
   on(
