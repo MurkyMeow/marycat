@@ -36,7 +36,7 @@ export class MaryElement {
     event: string,
     handler: (e: Event) => any,
     mods?: { prevent?: boolean, stop?: boolean },
-    options?: | AddEventListenerOptions | EventListenerOptions,
+    options?: AddEventListenerOptions | EventListenerOptions,
   ): this {
     const fns = [handler]
     if (mods) {
