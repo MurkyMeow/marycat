@@ -1,30 +1,31 @@
 import { State } from './state'
 
-type Effect
+export type Effect
   = string
   | number
   | boolean
   | State<any>
   | MaryElement
-  | ((el: Element) => Node | void)
+  | ((el: Element | ShadowRoot) => Node | void)
 
 const getKey = (a: Effect): any =>
   a instanceof MaryElement && a._key || a
 
-const filterShadow = (el: Element) =>
+const filterShadow = (el: Element | ShadowRoot): Element =>
   el instanceof ShadowRoot ? el.host : el
 
-function applyPlain(el: Element, str: string): Node | undefined {
+function applyPlain(el: Element | ShadowRoot, str: string): Node | undefined {
   const [prefix, rest] = [str[0], str.slice(1)]
+  const filtered = filterShadow(el)
   switch (prefix) {
-    case '.': el.classList.add(rest); break
-    case '#': el.setAttribute('id', rest); break
-    case '@': el.setAttribute('name', rest); break
+    case '.': filtered.classList.add(rest); break
+    case '#': filtered.setAttribute('id', rest); break
+    case '@': filtered.setAttribute('name', rest); break
     default: return el.appendChild(new Text(str))
   }
 }
 
-function applyObserved(el: Element, state: State<Effect | Effect[]>): Node[] {
+function applyObserved(el: Element | ShadowRoot, state: State<Effect | Effect[]>): Node[] {
   const hook = el.appendChild(new Comment(''))
   const nodes: Node[] = []
   const lookup = new Map<any, Node[]>()
@@ -56,7 +57,7 @@ function applyObserved(el: Element, state: State<Effect | Effect[]>): Node[] {
   return nodes
 }
 
-function apply(el: Element, effect: Effect | Effect[]): (Node | undefined)[] {
+function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | undefined)[] {
   if (!el) {
     throw Error(`Cant apply an effect to a not mounted element`)
   }
@@ -107,7 +108,7 @@ export class MaryElement {
   style(prop: string, val: string): this {
     return this.$(el => el instanceof HTMLElement
       ? el.style.setProperty(prop, val)
-      : console.trace(`Cant set style on a "${el.tagName}"`)
+      : console.trace(`Cant set style on a "${el.nodeName}"`)
     )
   }
   on(
@@ -137,7 +138,8 @@ export class MaryElement {
     })
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<any>[]) => this {
-    return (strings, ...keys) => this.$(el => {
+    return (strings, ...keys) => this.$(_el => {
+      const el = filterShadow(_el)
       const attr = document.createAttribute(name)
       el.setAttributeNode(attr)
       strings.forEach((str, i) => {
@@ -164,7 +166,7 @@ export class MaryElement {
       })
     })
   }
-  mount(parent: Element): Element {
+  mount(parent: Element | ShadowRoot): Element | ShadowRoot {
     if (this.name === 'fragment') {
       this.chain.forEach(m => apply(parent, m))
       return parent
@@ -175,7 +177,8 @@ export class MaryElement {
   }
 }
 
-const shorthand = (name: string) => (...args: Effect[]) =>
-  new MaryElement(name, args)
+const shorthand = (name: string) => (...effects: Effect[]) =>
+  new MaryElement(name, effects)
 
 export const div = shorthand('div')
+export const fragment = shorthand('fragment')

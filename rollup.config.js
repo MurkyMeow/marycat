@@ -1,6 +1,8 @@
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
 
+const dev = process.env.ROLLUP_WATCH;
+
 export default {
   input: 'index.ts',
   output: {
@@ -9,8 +11,8 @@ export default {
     file: 'dist/bundle.js'
   },
   plugins: [
-    terser(),
     typescript(),
+    !dev && terser(),
   ],
   watch: {
     clearScreen: false,
