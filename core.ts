@@ -1,6 +1,6 @@
 import { State } from './state'
 
-type Middleware
+type Effect
   = string
   | number
   | boolean
@@ -8,7 +8,7 @@ type Middleware
   | MaryElement
   | ((el: Element) => Node | void)
 
-const getKey = (a: Middleware): any =>
+const getKey = (a: Effect): any =>
   a instanceof MaryElement && a._key || a
 
 const filterShadow = (el: Element) =>
@@ -24,13 +24,13 @@ function applyPlain(el: Element, str: string): Node | undefined {
   }
 }
 
-function applyObserved(el: Element, state: State<Middleware | Middleware[]>): Node[] {
+function applyObserved(el: Element, state: State<Effect | Effect[]>): Node[] {
   const hook = el.appendChild(new Comment(''))
   const nodes: Node[] = []
   const lookup = new Map<any, Node[]>()
   state.sub((val, prevVal) => {
-    const next = ([] as Middleware[]).concat(val)
-    const prev = ([] as Middleware[]).concat(prevVal)
+    const next = ([] as Effect[]).concat(val)
+    const prev = ([] as Effect[]).concat(prevVal)
     prev.forEach(x => {
       const key = getKey(x)
       if (next.find(y => key === getKey(y))) return
@@ -56,32 +56,32 @@ function applyObserved(el: Element, state: State<Middleware | Middleware[]>): No
   return nodes
 }
 
-function apply(el: Element, middleware: Middleware | Middleware[]): (Node | undefined)[] {
+function apply(el: Element, effect: Effect | Effect[]): (Node | undefined)[] {
   if (!el) {
-    throw Error(`Cant apply a middleware to a not mounted element`)
+    throw Error(`Cant apply an effect to a not mounted element`)
   }
-  if (middleware === null) return []
-  if (Array.isArray(middleware)) {
+  if (effect === null) return []
+  if (Array.isArray(effect)) {
     const res: (Node | undefined)[] = []
-    return res.concat(...middleware.map(m => apply(el, m)))
+    return res.concat(...effect.map(m => apply(el, m)))
   }
-  if (middleware instanceof MaryElement) {
-    return [middleware.mount(el)]
+  if (effect instanceof MaryElement) {
+    return [effect.mount(el)]
   }
-  if (middleware instanceof State) {
-    return applyObserved(el, middleware)
+  if (effect instanceof State) {
+    return applyObserved(el, effect)
   }
-  switch (typeof middleware) {
+  switch (typeof effect) {
     case 'number':
-      return [el.appendChild(new Text(middleware.toString()))]
+      return [el.appendChild(new Text(effect.toString()))]
     case 'boolean':
       return []
     case 'string':
-      return [applyPlain(el, middleware)]
+      return [applyPlain(el, effect)]
     case 'function':
-      return [middleware(el) || undefined]
+      return [effect(el) || undefined]
     default:
-      console.trace('Unexpected child:', middleware)
+      console.trace('Unexpected child:', effect)
       return []
   }
 }
@@ -92,12 +92,12 @@ export class MaryElement {
 
   constructor(
     public name: string,
-    private chain: Middleware[],
+    private chain: Effect[],
   ) {}
 
-  $(...args: Middleware[]): this {
-    if (this.el) apply(this.el, args)
-    else this.chain.push(...args)
+  $(...effects: Effect[]): this {
+    if (this.el) apply(this.el, effects)
+    else this.chain.push(...effects)
     return this
   }
   key(val: string): this {
@@ -175,7 +175,7 @@ export class MaryElement {
   }
 }
 
-const shorthand = (name: string) => (...args: Middleware[]) =>
+const shorthand = (name: string) => (...args: Effect[]) =>
   new MaryElement(name, args)
 
 export const div = shorthand('div')
