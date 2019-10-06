@@ -26,11 +26,11 @@ const app =
   div()
     .$(div('.hello'))
     .$(div('Whoa').on('click', console.log))
-    .$(div()
+    .$(div().on('click', () => console.log('hello world'))
       .$(div('.world'))
       .$(div()
         .attr$('class')`type-${test}qweq__${test2}qeqw`
-        .text$`state: ${test}__${test2}`
+        .text`state: ${test}__${test2}`
         .$(div())
         .$(div())
       )

@@ -1,27 +1,5 @@
 import { State } from './state'
-import { MaryElement, fragment, Effect, div } from './core'
-
-class MaryComponent extends HTMLElement {
-  props: { [key: string]: State<Primitive> } = {}
-  converters: { [key: string]: (v: string) => Primitive } = {}
-  constructor() {
-    super()
-    const root = this.attachShadow({ mode: 'open' })
-    if (this.css) {
-      const style = document.createElement('style')
-      style.append(this.css)
-      root.append(style)
-    }
-  }
-  get css(): string {
-    return ''
-  }
-  attributeChangedCallback(name: string, _: string, val: string) {
-    const prop = this.props[name]
-    const converter = this.converters[name]
-    prop.v = converter ? converter(val) : val
-  }
-}
+import { MaryElement, fragment, Effect } from './core'
 
 type Converter =
   StringConstructor |
@@ -29,41 +7,58 @@ type Converter =
   BigIntConstructor |
   BooleanConstructor
 
-type Primitive = string | number | boolean | bigint
-
-type Props = { [key: string]: State<Primitive> }
+class MaryComponent extends HTMLElement {
+  root: ShadowRoot
+  props: { [key: string]: State<any> } = {}
+  converters: { [key: string]: Converter } = {}
+  constructor() {
+    super()
+    this.root = this.attachShadow({ mode: 'open' })
+  }
+  attributeChangedCallback(name: string, _: string, val: string) {
+    const prop = this.props[name]
+    const converter = this.converters[name]
+    prop.v = converter(val)
+  }
+}
 
 export function webc(
   name: string,
   args: {
     css?: string,
-    attributes: { [key: string]: [Converter, Primitive] | Converter },
-    render: (host: MaryElement, props: Props) => MaryElement,
+    attributes: [Converter, any],
+    render: (host: MaryElement, props: { [key: string]: State<any> }) => MaryElement,
   },
 ) {
-  const attributeNames = Object.keys(args.attributes)
   customElements.define(name, class extends MaryComponent {
     get css() {
       return args.css || ''
     }
     static get observedAttributes() {
-      return attributeNames
+      return Object.keys(args.attributes)
     }
   })
   class Chainable extends MaryElement {
     constructor(chain: Effect[]) {
       super(name, chain)
     }
+    attr(name: string, val: any): this {
+      if (typeof val !== 'object') return super.attr(name, val)
+      return this.$(el => {
+        const comp = <MaryComponent>el
+        const prop = comp.props[name]
+        if (prop) prop.v = val
+        else console.trace(el, 'does not support setting the prop:', { name, val })
+      })
+    }
     mount(parent: Element | ShadowRoot) {
       const el = this.el = <MaryComponent>document.createElement(name)
       Object.entries(args.attributes).forEach(([key, attr]) => {
-        const [converter, initial] = Array.isArray(attr)
-          ? attr
-          : [attr, '']
+        const [converter, initial] = attr
         el.props[key] = new State(initial)
         el.converters[key] = converter
       })
-      this.$(args.render(fragment(), el.props))
+      args.render(fragment(), el.props).mount(el.root)
       return super.mount(parent)
     }
   }

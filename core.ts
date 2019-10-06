@@ -139,23 +139,21 @@ export class MaryElement {
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<any>[]) => this {
     return (strings, ...keys) => this.$(_el => {
-      const el = filterShadow(_el)
-      const attr = document.createAttribute(name)
-      el.setAttributeNode(attr)
+      let attr = ''
       strings.forEach((str, i) => {
         const state = keys[i]
-        attr.value += str
+        this.attr(name, attr += str)
         if (!state) return
-        const start = attr.value.length
+        const start = attr.length
         state.sub((next, prev) => {
-          const left = attr.value.slice(0, start)
-          const right = attr.value.slice(start + String(prev).length)
-          attr.value = `${left}${next}${right}`
+          const left = attr.slice(0, start)
+          const right = attr.slice(start + String(prev).length - 1)
+          this.attr(name, attr = `${left}${next}${right}`)
         })
       })
     })
   }
-  text$(strings: TemplateStringsArray, ...keys: State<any>[]): this {
+  text(strings: TemplateStringsArray, ...keys: State<any>[]): this {
     return this.$(el => {
       strings.forEach((str, i) => {
         const state = keys[i]
@@ -171,8 +169,9 @@ export class MaryElement {
       this.chain.forEach(m => apply(parent, m))
       return parent
     }
-    const el = this.el = document.createElement(this.name)
+    const el = this.el = this.el || document.createElement(this.name)
     this.chain.forEach(m => apply(el, m))
+    this.chain.length = 0
     return parent.appendChild(el)
   }
 }
