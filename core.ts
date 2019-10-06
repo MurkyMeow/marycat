@@ -8,8 +8,10 @@ export type Effect
   | MaryElement
   | ((el: Element | ShadowRoot) => Node | void)
 
-const getKey = (a: Effect): any =>
-  a instanceof MaryElement && a._key || a
+function getKey(a: Effect): string | object {
+  const val = a instanceof MaryElement && a._key || a
+  return typeof val === 'object' ? val : val.toString()
+}
 
 const filterShadow = (el: Element | ShadowRoot): Element =>
   el instanceof ShadowRoot ? el.host : el
@@ -28,7 +30,7 @@ function applyPlain(el: Element | ShadowRoot, str: string): Node | undefined {
 function applyObserved(el: Element | ShadowRoot, state: State<Effect | Effect[]>): Node[] {
   const hook = el.appendChild(new Comment(''))
   const nodes: Node[] = []
-  const lookup = new Map<any, Node[]>()
+  const lookup = new Map<string | object, Node[]>()
   state.sub((val, prevVal) => {
     const next = ([] as Effect[]).concat(val)
     const prev = ([] as Effect[]).concat(prevVal)
@@ -89,7 +91,7 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
 
 export class MaryElement {
   el?: Element
-  _key?: any
+  _key?: string | object
 
   constructor(
     public name: string,
@@ -101,7 +103,7 @@ export class MaryElement {
     else this.chain.push(...effects)
     return this
   }
-  key(val: string): this {
+  key(val: string | object): this {
     this._key = val
     return this
   }
@@ -113,7 +115,7 @@ export class MaryElement {
   }
   on(
     event: string,
-    handler: (e: Event) => any,
+    handler: (e: Event) => void,
     mods: { prevent?: boolean, stop?: boolean, shadow?: boolean } = {},
     options?: AddEventListenerOptions | EventListenerOptions,
   ): this {
@@ -132,28 +134,28 @@ export class MaryElement {
       filterShadow(el).dispatchEvent(event)
     })
   }
-  attr(name: string, val: any): this {
+  attr(name: string, val: string): this {
     return this.$(el => {
       filterShadow(el).setAttribute(name, val)
     })
   }
-  attr$(name: string): (strings: TemplateStringsArray, ...keys: State<any>[]) => this {
+  attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {
     return (strings, ...keys) => this.$(_el => {
-      let attr = ''
+      let val = ''
       strings.forEach((str, i) => {
         const state = keys[i]
-        this.attr(name, attr += str)
+        this.attr(name, val += str)
         if (!state) return
-        const start = attr.length
+        const start = val.length
         state.sub((next, prev) => {
-          const left = attr.slice(0, start)
-          const right = attr.slice(start + String(prev).length - 1)
-          this.attr(name, attr = `${left}${next}${right}`)
+          const left = val.slice(0, start)
+          const right = val.slice(start + String(prev).length - 1)
+          this.attr(name, val = `${left}${next}${right}`)
         })
       })
     })
   }
-  text(strings: TemplateStringsArray, ...keys: State<any>[]): this {
+  text(strings: TemplateStringsArray, ...keys: State<string>[]): this {
     return this.$(el => {
       strings.forEach((str, i) => {
         const state = keys[i]

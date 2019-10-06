@@ -31,9 +31,6 @@ export function webc(
   },
 ) {
   customElements.define(name, class extends MaryComponent {
-    get css() {
-      return args.css || ''
-    }
     static get observedAttributes() {
       return Object.keys(args.attributes)
     }
