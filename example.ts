@@ -10,9 +10,14 @@ const app = webc('mary-sample', {
   ) {
     return h._(div().text`Hello, ${name} ${age.map(String)}`)
   },
+  extension: el => ({
+    name: (val: string) => el.attr('name', val),
+    age: (val: number) => el.attr('age', val),
+  }),
 })
 
-app()
-  .attr('name', 'qwewq')
+const inst = app()
+inst
+  .name('zzzz')
   .attr('age', 132555)
   .mount(document.body)

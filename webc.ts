@@ -35,9 +35,10 @@ export function Attr(name: string, converter?: Converter): State<any> {
   return state
 }
 
-export function webc(
+export function webc<T>(
   name: string,
   args: {
+    extension?: (el: MaryElement) => T,
     observed: string[],
     render: (host: MaryElement, ...rest: any[]) => MaryElement,
   },
@@ -63,13 +64,22 @@ export function webc(
     }
     mount(parent: Element | ShadowRoot) {
       const el = this.el = <MaryComponent>document.createElement(name)
+      // `render` mutates `conf` by calling `Attr` within it's parameters
+      // e.g.
+      // render(h, age: number = Attr('age', Number)) { }
       args.render(fragment()).mount(el.root)
       Object.entries(conf).forEach(([key, val]) => {
         el.props[key] = val.state
         if (val.converter) el.converters[key] = val.converter
       })
+      conf = {}
       return super.mount(parent)
     }
   }
-  return (...effects: Effect[]) => new Chainable(effects)
+  return (...effects: Effect[]): Chainable & T => {
+    const chainable = new Chainable(effects)
+    return Object.assign(chainable,
+      args.extension && args.extension(chainable)
+    )
+  }
 }

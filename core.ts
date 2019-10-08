@@ -183,7 +183,7 @@ export class MaryElement {
   }
 }
 
-const shorthand = (name: string) => (...effects: Effect[]) =>
+export const shorthand = (name: string) => (...effects: Effect[]) =>
   new MaryElement(name, effects)
 
 export const div = shorthand('div')
