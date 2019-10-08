@@ -6,7 +6,7 @@ function _app(h: MaryElement,
   name: State<string> = Attr('name', String),
   age: State<number> = Attr('age', Number),
 ) {
-  return h.$(div().text`Hello, ${name} ${age.map(String)}`)
+  return h._(div().text`Hello, ${name} ${age.map(String)}`)
 }
 const app = webc('mary-sample', ['name', 'age'], _app)
 

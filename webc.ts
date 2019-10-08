@@ -49,7 +49,7 @@ export function webc(
     }
     attr(name: string, val: any): this {
       if (typeof val !== 'object') return super.attr(name, val)
-      return this.$(el => {
+      return this._(el => {
         const comp = <MaryComponent>el
         const prop = comp.props[name]
         if (prop) {
