@@ -37,11 +37,13 @@ export function Attr(name: string, converter?: Converter): State<any> {
 
 export function webc(
   name: string,
-  observed: string[],
-  render: (host: MaryElement, ...rest: any[]) => MaryElement,
+  args: {
+    observed: string[],
+    render: (host: MaryElement, ...rest: any[]) => MaryElement,
+  },
 ) {
   customElements.define(name, class extends MaryComponent {
-    static get observedAttributes() { return observed }
+    static get observedAttributes() { return args.observed }
   })
   class Chainable extends MaryElement {
     constructor(chain: Effect[]) {
@@ -61,7 +63,7 @@ export function webc(
     }
     mount(parent: Element | ShadowRoot) {
       const el = this.el = <MaryComponent>document.createElement(name)
-      render(fragment()).mount(el.root)
+      args.render(fragment()).mount(el.root)
       Object.entries(conf).forEach(([key, val]) => {
         el.props[key] = val.state
         if (val.converter) el.converters[key] = val.converter

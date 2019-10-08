@@ -134,13 +134,18 @@ export class MaryElement {
       filterShadow(el).dispatchEvent(event)
     })
   }
-  attr(name: string, val: string): this {
-    return this._(el => {
-      filterShadow(el).setAttribute(name, val)
+  attr(name: string, val: string | number | boolean): this {
+    return this._(_el => {
+      const el = filterShadow(_el)
+      if (typeof val === 'boolean') {
+        el.toggleAttribute(name, val)
+      } else {
+        el.setAttribute(name, val.toString())
+      }
     })
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {
-    return (strings, ...keys) => this._(_el => {
+    return (strings, ...keys) => this._(() => {
       let val = ''
       strings.forEach((str, i) => {
         const state = keys[i]

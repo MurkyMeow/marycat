@@ -1,14 +1,16 @@
-import { div, MaryElement } from './core'
+import { div } from './core'
 import { webc, Attr } from './webc'
 import { State } from './state'
 
-function _app(h: MaryElement,
-  name: State<string> = Attr('name', String),
-  age: State<number> = Attr('age', Number),
-) {
-  return h._(div().text`Hello, ${name} ${age.map(String)}`)
-}
-const app = webc('mary-sample', ['name', 'age'], _app)
+const app = webc('mary-sample', {
+  observed: ['name', 'age'],
+  render(h,
+    name: State<string> = Attr('name', String),
+    age: State<number> = Attr('age', Number),
+  ) {
+    return h._(div().text`Hello, ${name} ${age.map(String)}`)
+  },
+})
 
 app()
   .attr('name', 'qwewq')
