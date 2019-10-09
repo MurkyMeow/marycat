@@ -35,7 +35,7 @@ export function Attr(name: string, converter?: Converter): State<any> {
   return state
 }
 
-export function webc(
+export function customElement(
   name: string,
   args: {
     observed: string[],
@@ -51,7 +51,7 @@ export function webc(
     }
     attr(name: string, val: any): this {
       if (typeof val !== 'object') return super.attr(name, val)
-      return this._(el => {
+      return this.$(el => {
         const comp = <MaryComponent>el
         const prop = comp.props[name]
         if (prop) {

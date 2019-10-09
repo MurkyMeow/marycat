@@ -14,7 +14,7 @@ export class State<T> {
     this.observers.forEach(ob => ob(val, this.val))
     this.val = val
   }
-  _([field]: TemplateStringsArray, variable: State<keyof T>) {
+  _([field]: TemplateStringsArray, variable?: State<keyof T>) {
     if (variable) {
       return zip([this, variable], (a, b) => a[b])
     }
@@ -41,13 +41,11 @@ export class State<T> {
   le<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a <= b) }
 }
 
-export const stateful = <T>(val: T) => new State<T>(val)
-
 export function zip<K>(
   states: ZipValue<any>[], map: (...values: any[]) => K,
 ): State<K> {
   const values = () => map(...states.map(x => x instanceof State ? x.v : x))
-  const res = stateful(values())
+  const res = new State(values())
   let frame: number
   const update = () => {
     if (frame) return

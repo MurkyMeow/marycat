@@ -98,7 +98,7 @@ export class MaryElement {
     private chain: Effect[],
   ) {}
 
-  _(...effects: Effect[]): this {
+  $(...effects: Effect[]): this {
     if (this.el) apply(this.el, effects)
     else this.chain.push(...effects)
     return this
@@ -188,4 +188,5 @@ export const shorthand = (name: string) => (...effects: Effect[]) =>
 
 export const div = shorthand('div')
 export const h1 = shorthand('h1')
+export const style = shorthand('style')
 export const fragment = shorthand('fragment')

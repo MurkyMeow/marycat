@@ -1,6 +1,6 @@
 import test from 'tape'
 import { div, h1 } from '../core'
-import { stateful } from '../state'
+import { State } from '../state'
 
 test('mount an element', assert => {
   assert.plan(1)
@@ -11,8 +11,8 @@ test('mount an element', assert => {
 test('append children', assert => {
   assert.plan(1)
   const el = div()
-    ._(div())
-    ._(div())
+    .$(div())
+    .$(div())
     .mount(document.head)
   assert.equal(el.children.length, 2)
 })
@@ -28,8 +28,8 @@ test('set text content, name and id', assert => {
 test('append class names', assert => {
   assert.plan(1)
   const el = <Element>div('.c1', '.c2')
-    ._('.c3')
-    ._('.c4')
+    .$('.c3')
+    .$('.c4')
     .mount(document.head)
   assert.isEquivalent(el.classList, ['c1', 'c2', 'c3', 'c4'])
 })
@@ -59,7 +59,7 @@ test('emit a custom event', assert => {
   let catched: CustomEvent
   const child = div()
   div().on('custom-evt', e => catched = <CustomEvent>e)
-    ._(child)
+    .$(child)
     .mount(document.head)
   child.emit('custom-evt', 1234, { bubbles: true })
   assert.equal(catched!.type, 'custom-evt')
@@ -68,9 +68,9 @@ test('emit a custom event', assert => {
 
 test('mount a stateful element', assert => {
   assert.plan(2)
-  const state = stateful(div())
+  const state = new State(div())
   const el = div()
-    ._(state)
+    .$(state)
     .mount(document.head)
   assert.equal(el.firstChild && el.firstChild.nodeName, 'DIV')
   state.v = h1()
@@ -79,7 +79,7 @@ test('mount a stateful element', assert => {
 
 test('set a reactive attribute', assert => {
   assert.plan(2)
-  const state = stateful('foo')
+  const state = new State('foo')
   const el = <Element>div()
     .attr$('class')`__${state}__`
     .mount(document.head)
