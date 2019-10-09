@@ -35,10 +35,9 @@ export function Attr(name: string, converter?: Converter): State<any> {
   return state
 }
 
-export function webc<T>(
+export function webc(
   name: string,
   args: {
-    extension?: (el: MaryElement) => T,
     observed: string[],
     render: (host: MaryElement, ...rest: any[]) => MaryElement,
   },
@@ -76,10 +75,5 @@ export function webc<T>(
       return super.mount(parent)
     }
   }
-  return (...effects: Effect[]): Chainable & T => {
-    const chainable = new Chainable(effects)
-    return Object.assign(chainable,
-      args.extension && args.extension(chainable)
-    )
-  }
+  return (...effects: Effect[]) => new Chainable(effects)
 }
