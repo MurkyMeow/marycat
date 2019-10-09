@@ -115,7 +115,7 @@ export class MaryElement {
   }
   on(
     event: string,
-    handler: (e: Event) => void,
+    handler: EventListener,
     mods: { prevent?: boolean, stop?: boolean, shadow?: boolean } = {},
     options?: AddEventListenerOptions | EventListenerOptions,
   ): this {
@@ -187,4 +187,5 @@ export const shorthand = (name: string) => (...effects: Effect[]) =>
   new MaryElement(name, effects)
 
 export const div = shorthand('div')
+export const h1 = shorthand('h1')
 export const fragment = shorthand('fragment')
