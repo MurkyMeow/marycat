@@ -14,11 +14,11 @@ export class State<T> {
     this.observers.forEach(ob => ob(val, this.val))
     this.val = val
   }
-  _([field]: TemplateStringsArray, variable?: State<keyof T>) {
-    if (variable) {
-      return zip([this, variable], (a, b) => a[b])
+  _<K extends keyof T>(key: K | State<K>): State<T[K]> {
+    if (key instanceof State) {
+      return zip([this, key], (a, b) => a[b])
     }
-    return this.map(v => v[field as keyof T])
+    return this.map(v => v[key])
   }
   sub(fn: Observer<T>, immediate: boolean = true): this {
     if (immediate) fn(this.v, this.v)
@@ -33,12 +33,12 @@ export class State<T> {
   }
   and<K>(s: ZipValue<K>): State<T | K> { return zip([this, s], (a, b) => a && b) }
   or<K>(s: ZipValue<K>): State<T | K> { return zip([this, s], (a, b) => a || b) }
-  eq<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a === b) }
-  ne<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a !== b) }
-  gt<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a > b) }
-  ge<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a >= b) }
-  lt<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a < b) }
-  le<K>(s: ZipValue<K>): State<boolean> { return zip([this, s], (a, b) => a <= b) }
+  eq(s: ZipValue<T>): State<boolean> { return zip([this, s], (a, b) => a === b) }
+  ne(s: ZipValue<T>): State<boolean> { return zip([this, s], (a, b) => a !== b) }
+  gt(s: ZipValue<number>): State<boolean> { return zip([this, s], (a, b) => a > b) }
+  ge(s: ZipValue<number>): State<boolean> { return zip([this, s], (a, b) => a >= b) }
+  lt(s: ZipValue<number>): State<boolean> { return zip([this, s], (a, b) => a < b) }
+  le(s: ZipValue<number>): State<boolean> { return zip([this, s], (a, b) => a <= b) }
 }
 
 export function zip<K>(

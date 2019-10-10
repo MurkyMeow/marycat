@@ -7,7 +7,7 @@ type Converter =
   BigIntConstructor |
   BooleanConstructor
 
-class MaryComponent extends HTMLElement {
+export class MaryComponent extends HTMLElement {
   root: ShadowRoot = this.attachShadow({ mode: 'open' })
   props: { [key: string]: State<unknown> } = {}
   converters: { [key: string]: Converter } = {}

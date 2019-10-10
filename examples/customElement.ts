@@ -16,7 +16,7 @@ const example = customElement('mary-example', (host, {
   return host
   .on('click', () => {
     count.v++
-    logo._`icon`.v = '👁‍'
+    logo.v = { ...logo.v, icon: '👁‍' }
   })
   .$(style().text`
     span {
@@ -24,7 +24,9 @@ const example = customElement('mary-example', (host, {
     }
   `)
   .$(span().text`You clicked ${count.map(String)} times`)
-  .$(div().text`${logo._`icon`} ${logo._`title`}`)
+  .$(div().text`
+    ${logo._('icon')} ${logo._('title')}
+  `)
   .$(supercool.and([
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),

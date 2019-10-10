@@ -1,6 +1,5 @@
 import test from 'tape'
-import { div, h1 } from '../core'
-import { State } from '../state'
+import { div } from '../core'
 
 test('mount an element', assert => {
   assert.plan(1)
@@ -64,26 +63,4 @@ test('emit a custom event', assert => {
   child.emit('custom-evt', 1234, { bubbles: true })
   assert.equal(catched!.type, 'custom-evt')
   assert.equal(catched!.detail, 1234)
-})
-
-test('mount a stateful element', assert => {
-  assert.plan(2)
-  const state = new State(div())
-  const el = div()
-    .$(state)
-    .mount(document.head)
-  assert.equal(el.firstChild && el.firstChild.nodeName, 'DIV')
-  state.v = h1()
-  assert.equal(el.firstChild && el.firstChild.nodeName, 'H1')
-})
-
-test('set a reactive attribute', assert => {
-  assert.plan(2)
-  const state = new State('foo')
-  const el = <Element>div()
-    .attr$('class')`__${state}__`
-    .mount(document.head)
-  assert.equal(el.className, '__foo__')
-  state.v = 'bar'
-  assert.equal(el.className, '__bar__')
 })
