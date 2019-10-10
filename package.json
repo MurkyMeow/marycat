@@ -1,13 +1,15 @@
 {
   "name": "marycat",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "",
   "main": "dist/bundle.js",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "ts-node ./node_modules/tape/bin/tape -r ./node_modules/jsdom-global/register \"./test/*.test.ts\" --project tsconfig.json | tap-nirvana"
   },
   "repository": {
     "type": "git",
@@ -21,7 +23,15 @@
   },
   "homepage": "https://github.com/MurkyMeow/marycat#readme",
   "devDependencies": {
+    "@types/tape": "^4.2.33",
+    "jsdom": "^15.1.1",
+    "jsdom-global": "^3.0.2",
     "rollup": "^1.17.0",
-    "rollup-plugin-terser": "^5.1.1"
+    "rollup-plugin-terser": "^5.1.1",
+    "rollup-plugin-typescript2": "^0.24.2",
+    "tap-nirvana": "^1.1.0",
+    "tape": "^4.11.0",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.3"
   }
 }
