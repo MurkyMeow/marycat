@@ -108,7 +108,7 @@ export class MaryElement {
     return this
   }
   style(prop: string, val: string): this {
-    return this._(el => el instanceof HTMLElement
+    return this.$(el => el instanceof HTMLElement
       ? el.style.setProperty(prop, val)
       : console.trace(`Cant set style on a "${el.nodeName}"`)
     )
@@ -119,7 +119,7 @@ export class MaryElement {
     mods: { prevent?: boolean, stop?: boolean, shadow?: boolean } = {},
     options?: AddEventListenerOptions | EventListenerOptions,
   ): this {
-    return this._(_el => {
+    return this.$(_el => {
       const el = mods.shadow ? _el : filterShadow(_el)
       el.addEventListener(event, e => {
         if (mods.prevent) e.preventDefault()
@@ -129,13 +129,13 @@ export class MaryElement {
     })
   }
   emit(name: string, detail: any, opts: CustomEventInit = {}) {
-    return this._(el => {
+    return this.$(el => {
       const event = new CustomEvent(name, { detail, ...opts })
       filterShadow(el).dispatchEvent(event)
     })
   }
   attr(name: string, val: string | number | boolean): this {
-    return this._(_el => {
+    return this.$(_el => {
       const el = filterShadow(_el)
       if (typeof val === 'boolean') {
         el.toggleAttribute(name, val)
@@ -145,7 +145,7 @@ export class MaryElement {
     })
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {
-    return (strings, ...keys) => this._(() => {
+    return (strings, ...keys) => this.$(() => {
       let val = ''
       strings.forEach((str, i) => {
         const state = keys[i]
@@ -161,7 +161,7 @@ export class MaryElement {
     })
   }
   text(strings: TemplateStringsArray, ...keys: State<string>[]): this {
-    return this._(el => {
+    return this.$(el => {
       strings.forEach((str, i) => {
         const state = keys[i]
         if (!state) return

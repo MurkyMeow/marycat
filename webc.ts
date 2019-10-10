@@ -8,13 +8,9 @@ type Converter =
   BooleanConstructor
 
 class MaryComponent extends HTMLElement {
-  root: ShadowRoot
+  root: ShadowRoot = this.attachShadow({ mode: 'open' })
   props: { [key: string]: State<unknown> } = {}
   converters: { [key: string]: Converter } = {}
-  constructor() {
-    super()
-    this.root = this.attachShadow({ mode: 'open' })
-  }
   attributeChangedCallback(name: string, _: string, val: string) {
     const prop = this.props[name]
     const converter = this.converters[name]
@@ -23,10 +19,7 @@ class MaryComponent extends HTMLElement {
 }
 
 let conf: {
-  [key: string]: {
-    state: State<any>,
-    converter?: Converter,
-  }
+  [key: string]: { state: State<any>, converter?: Converter }
 } = {}
 
 export function Attr(name: string, converter?: Converter): State<any> {
@@ -35,43 +28,43 @@ export function Attr(name: string, converter?: Converter): State<any> {
   return state
 }
 
-export function customElement(
+export type Props<T> = {
+  [key: string]: State<T[keyof T]>
+}
+
+export function customElement<T>(
   name: string,
-  args: {
-    observed: string[],
-    render: (host: MaryElement, ...rest: any[]) => MaryElement,
-  },
+  render: (host: MaryElement, props: Props<T>) => MaryElement,
 ) {
-  customElements.define(name, class extends MaryComponent {
-    static get observedAttributes() { return args.observed }
-  })
   class Chainable extends MaryElement {
     constructor(chain: Effect[]) {
       super(name, chain)
     }
-    attr(name: string, val: any): this {
-      if (typeof val !== 'object') return super.attr(name, val)
+    prop<K extends keyof T>(key: K, val: T[K]): this {
+      const sKey = <string>key
+      if (typeof val !== 'object') {
+        return super.attr(sKey, String(val))
+      }
       return this.$(el => {
         const comp = <MaryComponent>el
-        const prop = comp.props[name]
-        if (prop) {
-          prop.v = val
-        } else {
-          console.trace(el, 'does not support assigning an object to prop called', name)
-        }
+        comp.props[sKey].v = val
       })
     }
     mount(parent: Element | ShadowRoot) {
-      const el = this.el = <MaryComponent>document.createElement(name)
       // `render` mutates `conf` by calling `Attr` within it's parameters
-      // e.g.
-      // render(h, age: number = Attr('age', Number)) { }
-      args.render(fragment()).mount(el.root)
+      const elements = render(fragment(), {})
+      if (!customElements.get(name)) {
+        customElements.define(name, class extends MaryComponent {
+          static get observedAttributes() { return Object.keys(conf) }
+        })
+      }
+      const el = this.el = <MaryComponent>document.createElement(name)
       Object.entries(conf).forEach(([key, val]) => {
         el.props[key] = val.state
         if (val.converter) el.converters[key] = val.converter
       })
       conf = {}
+      elements.mount(el.root)
       return super.mount(parent)
     }
   }

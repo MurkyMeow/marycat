@@ -1,3 +1,5 @@
+# Marycat
+
 Web components that are
 
 - functional
@@ -10,15 +12,17 @@ function render(
   name: State<string> = Attr('name', String),
   age: State<number> = Attr('age', Number),
 ) {
-  return host.$(div().text`Name - ${name}, age - ${age}`)
+  return host.$(
+    div().text`Name - ${name}, age - ${age}`
+  )
 }
 
-const profile = customElement('mary-profile', {
-  observed: ['name', 'age'], render,
-})
+const profile = customElement('mary-profile', render)
 
 profile()
-  .attr('name', 'Mary') // TODO make this <<strongly typed>>
-  .attr('age', 9)
+  .prop('name', 'Mary')
+  .prop('age', 9)
+  .prop('age', '9') // type error 🎉
+  .prop('aage', 9) // type error 🎊
   .mount(document.body)
 ```
