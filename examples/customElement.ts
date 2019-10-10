@@ -2,11 +2,9 @@ import { State, style, customElement, Attr } from '../index'
 import { div, span } from './bindings'
 import { Props } from '../webc'
 
-type Logo = { title: string, icon: string }
-
 interface ExampleProps {
   supercool: boolean
-  logo: Logo
+  logo: { title: string, icon: string }
 }
 const example = customElement('mary-example', (host, {
   supercool = Attr('supercool', Boolean),

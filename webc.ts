@@ -14,7 +14,8 @@ class MaryComponent extends HTMLElement {
   attributeChangedCallback(name: string, _: string, val: string) {
     const prop = this.props[name]
     const converter = this.converters[name]
-    prop.v = converter(val)
+    if (converter) prop.v = converter(val)
+    else console.trace('Cant find a converter for property', name, 'of', this)
   }
 }
 
@@ -23,13 +24,13 @@ let conf: {
 } = {}
 
 export function Attr(name: string, converter?: Converter): State<any> {
-  const state = new State(converter ? converter('') : null)
+  const state = new State(converter ? converter('') : {})
   conf[name] = { converter, state }
   return state
 }
 
 export type Props<T> = {
-  [key: string]: State<T[keyof T]>
+  [key in keyof T]: State<T[key]>
 }
 
 export function customElement<T>(
@@ -52,7 +53,7 @@ export function customElement<T>(
     }
     mount(parent: Element | ShadowRoot) {
       // `render` mutates `conf` by calling `Attr` within it's parameters
-      const elements = render(fragment(), {})
+      const elements = render(fragment(), <any>{})
       if (!customElements.get(name)) {
         customElements.define(name, class extends MaryComponent {
           static get observedAttributes() { return Object.keys(conf) }
