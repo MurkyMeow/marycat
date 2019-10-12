@@ -9,10 +9,11 @@ export class State<T> {
   get v() {
     return this.val
   }
-  set v(val: T) {
-    if (val === this.val) return
-    this.observers.forEach(ob => ob(val, this.val))
-    this.val = val
+  set v(next: T) {
+    const current = this.val
+    if (next === current) return
+    this.val = next
+    this.observers.forEach(ob => ob(next, current))
   }
   _<K extends keyof T>(key: K | State<K>): State<T[K]> {
     if (key instanceof State) {
@@ -46,11 +47,7 @@ export function zip<K>(
 ): State<K> {
   const values = () => map(...states.map(x => x instanceof State ? x.v : x))
   const res = new State(values())
-  let frame: number
-  const update = () => {
-    if (frame) return
-    frame = requestAnimationFrame(() => (res.v = values(), frame = 0))
-  }
+  const update = () => res.v = values()
   states.forEach(state => {
     if (state instanceof State) state.sub(update, false)
   })
