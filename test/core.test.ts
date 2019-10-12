@@ -1,66 +1,61 @@
-import test from 'tape'
+import { assert } from 'chai'
 import { div } from '../core'
 
-test('mount an element', assert => {
-  assert.plan(1)
-  const el = div().mount(document.head)
-  assert.equal(el.nodeName, 'DIV')
-})
+describe('core', function() {
+  it('mount an element', function() {
+    const el = div().mount(document.head)
+    assert.strictEqual(el.nodeName, 'DIV')
+  })
 
-test('append children', assert => {
-  assert.plan(1)
-  const el = div()
-    .$(div())
-    .$(div())
-    .mount(document.head)
-  assert.equal(el.children.length, 2)
-})
+  it('append children', function() {
+    const el = div()
+      .$(div())
+      .$(div())
+      .mount(document.head)
+    assert.strictEqual(el.children.length, 2)
+  })
 
-test('set text content, name and id', assert => {
-  assert.plan(3)
-  const el = <Element>div('baz', '#bar', '@baz').mount(document.head)
-  assert.equal(el.textContent, 'baz')
-  assert.equal(el.getAttribute('id'), 'bar')
-  assert.equal(el.getAttribute('name'), 'baz')
-})
+  it('set text content, name and id', function() {
+    const el = <Element>div('foo', '#bar', '@baz').mount(document.head)
+    assert.strictEqual(el.textContent, 'foo')
+    assert.strictEqual(el.getAttribute('id'), 'bar')
+    assert.strictEqual(el.getAttribute('name'), 'baz')
+  })
 
-test('append class names', assert => {
-  assert.plan(1)
-  const el = <Element>div('.c1', '.c2')
-    .$('.c3')
-    .$('.c4')
-    .mount(document.head)
-  assert.isEquivalent(el.classList, ['c1', 'c2', 'c3', 'c4'])
-})
+  it('append class names', function() {
+    const el = <Element>div('.c1', '.c2')
+      .$('.c3')
+      .$('.c4')
+      .mount(document.head)
+    assert.includeMembers([...el.classList], ['c1', 'c2', 'c3', 'c4'])
+  })
 
-test('set style properties', assert => {
-  assert.plan(1)
-  const el = <Element>div()
-    .style('color', 'red')
-    .style('fontSize', '12px')
-    .mount(document.head)
-  assert.equal(el.getAttribute('style'), 'color: red; font-size: 12px;')
-})
+  it('set style properties', function() {
+    const el = <Element>div()
+      .style('color', 'red')
+      .style('font-size', '12px')
+      .mount(document.head)
+    assert.strictEqual(el.getAttribute('style'), 'color: red; font-size: 12px;')
+  })
 
-test('register click events', assert => {
-  assert.plan(1)
-  let count = 0
-  const el = <HTMLElement>div()
-    .on('click', () => count += 2)
-    .on('click', () => count += 3)
-    .mount(document.head)
-  el.click()
-  assert.equal(count, 5)
-})
+  it('register click events', function() {
+    let count = 0
+    const el = <HTMLElement>div()
+      .on('click', () => count += 2)
+      .on('click', () => count += 3)
+      .mount(document.head)
+    el.click()
+    assert.strictEqual(count, 5)
+  })
 
-test('emit a custom event', assert => {
-  assert.plan(3)
-  let catched: CustomEvent
-  const child = div()
-  div().on('custom-evt', e => catched = <CustomEvent>e)
-    .$(child)
-    .mount(document.head)
-  child.emit('custom-evt', 1234, { bubbles: true })
-  assert.equal(catched!.type, 'custom-evt')
-  assert.equal(catched!.detail, 1234)
+  it('emit a custom event', function() {
+    let catched: CustomEvent
+    const child = div()
+    div().on('custom-evt', e => catched = <CustomEvent>e)
+      .$(child)
+      .mount(document.head)
+    child.emit('custom-evt', 1234, { bubbles: true })
+    assert.strictEqual(catched!.type, 'custom-evt')
+    assert.strictEqual(catched!.detail, 1234)
+  })
 })

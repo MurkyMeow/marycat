@@ -1,7 +1,7 @@
-import test from 'tape'
+import { assert } from 'chai'
 import { MaryComponent, Props, Attr, customElement, div } from '../index'
 
-test('create web component', assert => {
+describe('webc', function() {
   interface TestProps {
     p1: boolean
     p2: string
@@ -19,26 +19,34 @@ test('create web component', assert => {
       .$(p3._('name'))
     )
   })
+
   const instance = test()
   const el = <MaryComponent>instance.mount(document.head)
-  assert.ok(customElements.get('mary-test'), 'The component is not registered')
-  assert.equal(el.children.length, 3, 'Not all children are rendered')
   const [p1, p2, p3] = el.root.children
-  assert.test('set props', _assert => {
-    _assert.plan(3)
+
+  it('create web component', function() {
+    assert.ok(
+      customElements.get('mary-test'), 'The component is not registered'
+    )
+    assert.strictEqual(
+      el.root.children.length, 3, 'Not all children are rendered'
+    )
+  })
+
+  it('set props', function() {
     instance
       .prop('p1', true)
       .prop('p2', 'hello')
       .prop('p3', { name: 'Mary' })
-    _assert.equal(p1.textContent, 'true')
-    _assert.equal(p2.textContent, 'hello')
-    _assert.equal(p3.textContent, 'Mary')
+    assert.strictEqual(p1.textContent, 'true')
+    assert.strictEqual(p2.textContent, 'hello')
+    assert.strictEqual(p3.textContent, 'Mary')
   })
-  assert.test('respond to prop updates', _assert => {
-    _assert.plan(2)
+
+  it('respond to prop updates', function() {
     el.setAttribute('p1', 'false')
     el.setAttribute('p2', 'world')
-    _assert.equal(p1.textContent, 'false')
-    _assert.equal(p2.textContent, 'world')
+    assert.strictEqual(p1.textContent, 'false')
+    assert.strictEqual(p2.textContent, 'world')
   })
 })

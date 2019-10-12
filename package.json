@@ -9,7 +9,8 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "ts-node ./node_modules/tape/bin/tape -r ./node_modules/jsdom-global/register \"./test/*.test.ts\" --project tsconfig.json | tap-nirvana"
+    "test": "rollup -c rollup.test-config.js",
+    "test:watch": "rollup -c -w rollup.test-config.js"
   },
   "repository": {
     "type": "git",
@@ -23,14 +24,15 @@
   },
   "homepage": "https://github.com/MurkyMeow/marycat#readme",
   "devDependencies": {
-    "@types/tape": "^4.2.33",
-    "jsdom": "^15.1.1",
-    "jsdom-global": "^3.0.2",
+    "@types/chai": "^4.2.3",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.1",
     "rollup": "^1.17.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-terser": "^5.1.1",
     "rollup-plugin-typescript2": "^0.24.2",
-    "tap-nirvana": "^1.1.0",
-    "tape": "^4.11.0",
     "ts-node": "^8.4.1",
     "typescript": "^3.6.3"
   }
