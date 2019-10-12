@@ -75,8 +75,10 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
     return applyObserved(el, effect)
   }
   switch (typeof effect) {
-    case 'number':
-      return [el.appendChild(new Text(effect.toString()))]
+    case 'number': {
+      const text = new Text(effect.toString())
+      return [el.appendChild(text)]
+    }
     case 'boolean':
       return []
     case 'string':
@@ -154,7 +156,7 @@ export class MaryElement {
         const start = val.length
         state.sub((next, prev) => {
           const left = val.slice(0, start)
-          const right = val.slice(start + String(prev).length - 1)
+          const right = val.slice(start + prev.length)
           this.attr(name, val = `${left}${next}${right}`)
         })
       })
