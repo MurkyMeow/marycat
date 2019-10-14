@@ -54,7 +54,7 @@ describe('core', function() {
     div().on('custom-evt', e => catched = <CustomEvent>e)
       .$(child)
       .mount(document.head)
-    child.emit('custom-evt', 1234, { bubbles: true })
+    child.dispatch('custom-evt', 1234, { bubbles: true })
     assert.strictEqual(catched!.type, 'custom-evt')
     assert.strictEqual(catched!.detail, 1234)
   })

@@ -11,7 +11,7 @@ const example = customElement('mary-example', (host, {
   logo = Attr(),
 }: Props<ExampleProps>) => {
   const count = new State(0).sub(val => {
-    host.emit('change', val)
+    host.dispatch('change', val)
   })
   return host
   .on('click', () => {

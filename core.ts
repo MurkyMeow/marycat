@@ -130,8 +130,7 @@ export class MaryElement {
       }, options)
     })
   }
-  /* Change to `dispatch` */
-  emit(name: string, detail: any, opts: CustomEventInit = {}) {
+  dispatch(name: string, detail: any, opts: CustomEventInit = {}) {
     return this.$(el => {
       const event = new CustomEvent(name, { detail, ...opts })
       filterShadow(el).dispatchEvent(event)
