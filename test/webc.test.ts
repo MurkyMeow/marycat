@@ -8,12 +8,12 @@ describe('webc', function() {
     p3: { name: string }
   }
   const test = customElement('mary-test', (host, {
-    p1 = Attr('p1', Boolean),
-    p2 = Attr('p2', String),
-    p3 = Attr('p3'),
+    p1 = Attr(Boolean),
+    p2 = Attr(String),
+    p3 = Attr(),
   }: Props<TestProps>) => {
     return host
-    .$(div(p1))
+    .$(div(p1.string))
     .$(div(p2))
     .$(div()
       .$(p3._('name'))
@@ -44,7 +44,7 @@ describe('webc', function() {
   })
 
   it('respond to prop updates', function() {
-    el.setAttribute('p1', 'false')
+    el.removeAttribute('p1')
     el.setAttribute('p2', 'world')
     assert.strictEqual(p1.textContent, 'false')
     assert.strictEqual(p2.textContent, 'world')

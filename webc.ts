@@ -23,10 +23,18 @@ let conf: {
   [key: string]: { state: State<any>, converter?: Converter }
 } = {}
 
-export function Attr(name: string, converter?: Converter): State<any> {
-  const state = new State(converter ? converter('') : {})
-  conf[name] = { converter, state }
-  return state
+const trap = new Proxy({}, {
+  get(_, key: string): void {
+    conf[key] = { state: new State({}) }
+  },
+})
+export function Attr(converter?: Converter): State<any> {
+  const [current] = Object.values(conf).slice(-1)
+  if (converter) {
+    current.converter = converter
+    current.state.v = converter('')
+  }
+  return current.state
 }
 
 export type Props<T> = {
@@ -53,7 +61,7 @@ export function customElement<T>(
     }
     mount(parent: Element | ShadowRoot) {
       // `render` mutates `conf` by calling `Attr` within it's parameters
-      const elements = render(fragment(), <any>{})
+      const elements = render(fragment(), <any>trap)
       if (!customElements.get(name)) {
         customElements.define(name, class extends MaryComponent {
           static get observedAttributes() { return Object.keys(conf) }

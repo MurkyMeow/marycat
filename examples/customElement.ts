@@ -7,8 +7,8 @@ interface ExampleProps {
   logo: { title: string, icon: string }
 }
 const example = customElement('mary-example', (host, {
-  supercool = Attr('supercool', Boolean),
-  logo = Attr('logo'),
+  supercool = Attr(Boolean),
+  logo = Attr(),
 }: Props<ExampleProps>) => {
   const count = new State(0).sub(val => {
     host.emit('change', val)
