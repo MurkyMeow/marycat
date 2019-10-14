@@ -15,6 +15,9 @@ export class State<T> {
     this.val = next
     this.observers.forEach(ob => ob(next, current))
   }
+  get string(): State<string> {
+    return this.map(String)
+  }
   _<K extends keyof T>(key: K | State<K>): State<T[K]> {
     if (key instanceof State) {
       return zip([this, key], (a, b) => a[b])
