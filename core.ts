@@ -10,7 +10,7 @@ export type Effect
 
 function getKey(a: Effect): string | object {
   const val = a instanceof MaryElement && a._key || a
-  return typeof val === 'object' ? val : val.toString()
+  return typeof val === 'object' ? val : String(val)
 }
 
 const filterShadow = (el: Element | ShadowRoot): Element =>
@@ -130,6 +130,7 @@ export class MaryElement {
       }, options)
     })
   }
+  /* Change to `dispatch` */
   emit(name: string, detail: any, opts: CustomEventInit = {}) {
     return this.$(el => {
       const event = new CustomEvent(name, { detail, ...opts })
