@@ -10,7 +10,7 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "test": "rollup -c rollup.test-config.js",
-    "test:watch": "rollup -c -w rollup.test-config.js"
+    "test:watch": "rollup -c rollup.test-config.js -w"
   },
   "repository": {
     "type": "git",
