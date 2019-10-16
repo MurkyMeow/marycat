@@ -15,9 +15,9 @@ describe('state', function() {
   it('make derivation', function() {
     const state = new State('xx')
     const len = state.map(x => x.length)
-    assert.equal(len.v, state.v.length)
+    assert.strictEqual(len.v, state.v.length)
     state.v = 'xxxx'
-    assert.equal(len.v, state.v.length)
+    assert.strictEqual(len.v, state.v.length)
   })
 
   it('mount a stateful element', function() {
@@ -25,9 +25,9 @@ describe('state', function() {
     const el = div()
       .$(state)
       .mount(document.head)
-    assert.equal(el.firstChild && el.firstChild.nodeName, 'DIV')
+    assert.strictEqual(el.firstChild && el.firstChild.nodeName, 'DIV')
     state.v = h1()
-    assert.equal(el.firstChild && el.firstChild.nodeName, 'H1')
+    assert.strictEqual(el.firstChild && el.firstChild.nodeName, 'H1')
   })
 
   it('set a reactive attribute', function() {
@@ -35,51 +35,51 @@ describe('state', function() {
     const el = <Element>div()
       .attr$('class')`__${state}__`
       .mount(document.head)
-    assert.equal(el.className, '__foo__')
+    assert.strictEqual(el.className, '__foo__')
     state.v = 'bar'
-    assert.equal(el.className, '__bar__')
+    assert.strictEqual(el.className, '__bar__')
   })
 
   it('logical operators', function() {
     const first = new State(true)
     const second = new State(false)
-    assert.equal(first.or(second).v, first.v || second.v, 'OR is working')
-    assert.equal(first.and(second).v, first.v && second.v, 'AND is working')
+    assert.strictEqual(first.or(second).v, first.v || second.v, 'OR is not working')
+    assert.strictEqual(first.and(second).v, first.v && second.v, 'AND is not working')
   })
 
   it('compare to primitive', function() {
     const state = new State(25)
 
-    assert.equal(state.gt(10).v, state.v > 10)
-    assert.equal(state.gt(25).v, state.v > 25)
+    assert.strictEqual(state.gt(10).v, state.v > 10)
+    assert.strictEqual(state.gt(25).v, state.v > 25)
 
-    assert.equal(state.lt(30).v, state.v < 30)
-    assert.equal(state.lt(25).v, state.v < 25)
+    assert.strictEqual(state.lt(30).v, state.v < 30)
+    assert.strictEqual(state.lt(25).v, state.v < 25)
 
-    assert.equal(state.ge(30).v, state.v >= 30)
-    assert.equal(state.ge(25).v, state.v >= 25)
+    assert.strictEqual(state.ge(30).v, state.v >= 30)
+    assert.strictEqual(state.ge(25).v, state.v >= 25)
 
-    assert.equal(state.le(10).v, state.v <= 10)
-    assert.equal(state.le(25).v, state.v <= 25)
+    assert.strictEqual(state.le(10).v, state.v <= 10)
+    assert.strictEqual(state.le(25).v, state.v <= 25)
 
-    assert.equal(state.eq(25).v, state.v === 25)
-    assert.equal(state.eq(0).v, state.v === 0)
+    assert.strictEqual(state.eq(25).v, state.v === 25)
+    assert.strictEqual(state.eq(0).v, state.v === 0)
   })
 
   it('compare to other state', function() {
     const first = new State(25)
     const second = new State(10)
-    assert.equal(first.gt(second).v, first.v > second.v)
-    assert.equal(first.lt(second).v, first.v < second.v)
-    assert.equal(first.eq(second).v, first.v === second.v)
+    assert.strictEqual(first.gt(second).v, first.v > second.v)
+    assert.strictEqual(first.lt(second).v, first.v < second.v)
+    assert.strictEqual(first.eq(second).v, first.v === second.v)
   })
 
   it('field reference', function() {
     const state = new State({ foo: 1 })
     const foo = state._.foo
-    assert.equal(foo.v, state.v.foo)
+    assert.strictEqual(foo.v, state.v.foo)
     state.v = { foo: 123 }
-    assert.equal(foo.v, state.v.foo)
+    assert.strictEqual(foo.v, state.v.foo)
   })
 
   it('conditional rendering', function() {
@@ -92,11 +92,11 @@ describe('state', function() {
         div('else')
       ))
       .mount(document.head)
-    assert.equal(el.children.length, 2)
-    assert.equal(el.children[0].textContent, 'then')
-    assert.equal(el.children[1].textContent, 'then2')
+    assert.strictEqual(el.children.length, 2)
+    assert.strictEqual(el.children[0].textContent, 'then')
+    assert.strictEqual(el.children[1].textContent, 'then2')
     cond.v = false
-    assert.equal(el.children[0].textContent, 'else')
+    assert.strictEqual(el.children[0].textContent, 'else')
   })
 
   it('keyed array rendering', function() {
@@ -107,14 +107,14 @@ describe('state', function() {
       ))
       .mount(document.head)
     const check = (msg?: string) => items.v.forEach((item, i) => {
-      assert.equal(el.children[i].textContent, item, msg)
+      assert.strictEqual(el.children[i].textContent, item, msg)
     })
     check()
     items.v = [...items.v].reverse()
-    check('reversing the order works')
+    check('reversing the order not working')
     items.v = items.v.filter((_, i) => i !== 1)
-    check('removing an item works')
+    check('removing an item not working')
     items.v = [...items.v, 'd', 'e']
-    check('adding items works')
+    check('adding items not working')
   })
 })
