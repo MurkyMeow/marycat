@@ -19,9 +19,7 @@ function renderExample(host: MaryElement, {
     }
   `)
   .$(span().text`You clicked ${count.map(String)} times`)
-  .$(div().text`
-    ${logo._('icon')} ${logo._('title')}
-  `)
+  .$(div().text`${logo._.icon} ${logo._.title}`)
   .$(supercool.and([
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),

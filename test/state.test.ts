@@ -74,21 +74,12 @@ describe('state', function() {
     assert.equal(first.eq(second).v, first.v === second.v)
   })
 
-  it('primitive property reference', function() {
+  it('field reference', function() {
     const state = new State({ foo: 1 })
-    const foo = state._('foo')
+    const foo = state._.foo
     assert.equal(foo.v, state.v.foo)
     state.v = { foo: 123 }
     assert.equal(foo.v, state.v.foo)
-  })
-
-  it('stateful property reference', function() {
-    const state = new State({ foo: 1, bar: 2 })
-    const key = new State('foo') as State<'foo' | 'bar'>
-    const ref = state._(key)
-    assert.equal(ref.v, state.v[key.v])
-    key.v = 'bar'
-    assert.equal(ref.v, state.v[key.v])
   })
 
   it('conditional rendering', function() {

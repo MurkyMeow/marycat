@@ -1,4 +1,4 @@
-import { State } from './state'
+import { State, ExtractStateType } from './state'
 import { MaryElement, fragment, Effect } from './core'
 
 type Converter =
@@ -35,9 +35,6 @@ export function Attr<T>(defaultValue: T): State<T> {
   props[current] = new State(defaultValue)
   return props[current]
 }
-
-type ExtractStateType<T> =
-  T extends State<infer U> ? U : never
 
 export function customElement<T>(
   name: string,
