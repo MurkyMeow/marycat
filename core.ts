@@ -139,11 +139,7 @@ export class MaryElement {
   attr(name: string, val: string | number | boolean): this {
     return this.$(_el => {
       const el = filterShadow(_el)
-      if (typeof val === 'boolean') {
-        el.toggleAttribute(name, val)
-      } else {
-        el.setAttribute(name, val.toString())
-      }
+      el.setAttribute(name, val === false ? '' : String(val))
     })
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {
