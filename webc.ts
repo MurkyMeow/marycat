@@ -7,49 +7,47 @@ type Converter =
   BigIntConstructor |
   BooleanConstructor
 
+function getConverter(type: string): Converter | undefined {
+  switch (type) {
+    case 'bigint': return BigInt
+    case 'number': return Number
+    case 'string': return String
+    case 'boolean': return Boolean
+  }
+}
+
 export class MaryComponent extends HTMLElement {
   root: ShadowRoot = this.attachShadow({ mode: 'open' })
   props: { [key: string]: State<unknown> } = {}
-  converters: { [key: string]: Converter } = {}
   attributeChangedCallback(name: string, _: string, val: string) {
     const prop = this.props[name]
-    const converter = this.converters[name]
+    const converter = getConverter(typeof prop.v)
     if (converter) prop.v = converter(val)
-    else console.trace('Cant find a converter for property', name, 'of', this)
+    else console.trace(val, 'is not assignable to', `"${name}"`, 'of', this)
   }
 }
 
-let conf: {
-  [key: string]: { state: State<any>, converter?: Converter }
-} = {}
+let props: { [key: string]: State<any> }
+let keys: string[]
 
-const trap = new Proxy({}, {
-  get(_, key: string): void {
-    conf[key] = { state: new State({}) }
-  },
-})
-export function Attr(converter?: Converter): State<any> {
-  const [current] = Object.values(conf).slice(-1)
-  if (converter) {
-    current.converter = converter
-    current.state.v = converter('')
-  }
-  return current.state
+export function Attr<T>(defaultValue: T): State<T> {
+  const [current] = keys.slice(-1)
+  props[current] = new State(defaultValue)
+  return props[current]
 }
 
-export type Props<T> = {
-  [key in keyof T]: State<T[key]>
-}
+type ExtractStateType<T> =
+  T extends State<infer U> ? U : never
 
 export function customElement<T>(
   name: string,
-  render: (host: MaryElement, props: Props<T>) => MaryElement,
+  render: (host: MaryElement, props: T) => MaryElement,
 ) {
   class Chainable extends MaryElement {
     constructor(chain: Effect[]) {
       super(name, chain)
     }
-    prop<K extends keyof T>(key: K, val: T[K]): this {
+    prop<K extends keyof T>(key: K, val: ExtractStateType<T[K]>): this {
       const sKey = <string>key
       if (typeof val !== 'object') {
         return super.attr(sKey, String(val))
@@ -60,19 +58,19 @@ export function customElement<T>(
       })
     }
     mount(parent: Element | ShadowRoot) {
-      // `render` mutates `conf` by calling `Attr` within it's parameters
+      props = {}
+      keys = []
+      const trap = new Proxy({}, {
+        get: (_, key: string) => void keys.push(key),
+      })
       const elements = render(fragment(), <any>trap)
       if (!customElements.get(name)) {
         customElements.define(name, class extends MaryComponent {
-          static get observedAttributes() { return Object.keys(conf) }
+          static get observedAttributes() { return keys }
         })
       }
       const el = this.el = <MaryComponent>document.createElement(name)
-      Object.entries(conf).forEach(([key, val]) => {
-        el.props[key] = val.state
-        if (val.converter) el.converters[key] = val.converter
-      })
-      conf = {}
+      el.props = props
       elements.mount(el.root)
       return super.mount(parent)
     }

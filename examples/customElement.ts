@@ -1,15 +1,10 @@
-import { State, style, customElement, Attr } from '../index'
+import { MaryElement, State, style, customElement, Attr } from '../index'
 import { div, span } from './bindings'
-import { Props } from '../webc'
 
-interface ExampleProps {
-  supercool: boolean
-  logo: { title: string, icon: string }
-}
-const example = customElement('mary-example', (host, {
-  supercool = Attr(Boolean),
-  logo = Attr(),
-}: Props<ExampleProps>) => {
+function renderExample(host: MaryElement, {
+  supercool = Attr(false),
+  logo = Attr({ title: '', icon: '' }),
+}) {
   const count = new State(0).sub(val => {
     host.dispatch('change', val)
   })
@@ -31,7 +26,8 @@ const example = customElement('mary-example', (host, {
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),
   ]))
-})
+}
+const example = customElement('mary-example', renderExample)
 
 example('.classname')
   .prop('supercool', true)

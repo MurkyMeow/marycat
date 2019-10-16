@@ -7,20 +7,15 @@ Web components that are
 - strongly typed
 
 ```ts
-interface ProfileProps {
-  name: string
-  age: string
-}
-function render(host, {
-  name = Attr(String),
-  age = Attr(Number),
-}: Props<ProfileProps>) {
+function renderProfile(host: MaryElement, {
+  name = Attr(''),
+  age = Attr(0),
+}) {
   return host.$(
     div().text`Name - ${name}, age - ${age}`
   )
 }
-
-const profile = customElement('mary-profile', render)
+const profile = customElement('mary-profile', renderProfile)
 
 profile()
   .prop('name', 'Mary')

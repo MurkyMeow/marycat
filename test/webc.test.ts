@@ -1,24 +1,20 @@
 import { assert } from 'chai'
-import { MaryComponent, Props, Attr, customElement, div } from '../index'
+import { MaryElement, MaryComponent, Attr, customElement, div } from '../index'
 
 describe('webc', function() {
-  interface TestProps {
-    p1: boolean
-    p2: string
-    p3: { name: string }
-  }
-  const test = customElement('mary-test', (host, {
-    p1 = Attr(Boolean),
-    p2 = Attr(String),
-    p3 = Attr(),
-  }: Props<TestProps>) => {
+  function renderTest(host: MaryElement, {
+    p1 = Attr(false),
+    p2 = Attr(''),
+    p3 = Attr({ name: '' }),
+  }) {
     return host
     .$(div(p1.string))
     .$(div(p2))
     .$(div()
       .$(p3._('name'))
     )
-  })
+  }
+  const test = customElement('mary-test', renderTest)
 
   const instance = test()
   const el = <MaryComponent>instance.mount(document.head)
