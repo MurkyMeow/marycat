@@ -1,6 +1,6 @@
 {
   "name": "marycat",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "",
   "main": "dist/bundle.js",
   "files": [
@@ -33,7 +33,6 @@
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-terser": "^5.1.1",
     "rollup-plugin-typescript2": "^0.24.2",
-    "ts-node": "^8.4.1",
     "typescript": "^3.6.3"
   }
 }
