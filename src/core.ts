@@ -8,6 +8,9 @@ export type Effect
   | VirtualNode
   | ((el: Element | ShadowRoot) => Node | void)
 
+const isVirtualNode = (arg: any): arg is VirtualNode =>
+  arg && typeof arg.mount === 'function'
+
 const filterShadow = (el: Element | ShadowRoot): Element =>
   el instanceof ShadowRoot ? el.host : el
 
@@ -47,7 +50,7 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
     const res: (Node | undefined)[] = []
     return res.concat(...effect.map(m => apply(el, m)))
   }
-  if (effect instanceof VirtualNode) {
+  if (isVirtualNode(effect)) {
     return [effect.mount(el)]
   }
   if (effect instanceof State) {
@@ -74,17 +77,17 @@ export class VirtualNode {
   el?: Element
 
   constructor(
-    public readonly name: string,
+    public readonly elName: string,
     private chain: Effect[],
   ) {}
 
-  $(...effects: Effect[]): this {
+  effect(...effects: Effect[]): this {
     if (this.el) apply(this.el, effects)
     else this.chain.push(...effects)
     return this
   }
   style(prop: string, val: string): this {
-    return this.$(el => el instanceof HTMLElement
+    return this.effect(el => el instanceof HTMLElement
       ? el.style.setProperty(prop, val)
       : console.trace(`Cant set style on a "${el.nodeName}"`)
     )
@@ -95,7 +98,7 @@ export class VirtualNode {
     mods: { prevent?: boolean, stop?: boolean, shadow?: boolean } = {},
     options?: AddEventListenerOptions | EventListenerOptions,
   ): this {
-    return this.$(_el => {
+    return this.effect(_el => {
       const el = mods.shadow ? _el : filterShadow(_el)
       el.addEventListener(event, e => {
         if (mods.prevent) e.preventDefault()
@@ -105,19 +108,19 @@ export class VirtualNode {
     })
   }
   dispatch(name: string, detail: any, opts: CustomEventInit = {}) {
-    return this.$(el => {
+    return this.effect(el => {
       const event = new CustomEvent(name, { detail, ...opts })
       filterShadow(el).dispatchEvent(event)
     })
   }
   attr(name: string, val: string | number | boolean): this {
-    return this.$(_el => {
+    return this.effect(_el => {
       const el = filterShadow(_el)
       el.setAttribute(name, val === false ? '' : String(val))
     })
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {
-    return (strings, ...keys) => this.$(() => {
+    return (strings, ...keys) => this.effect(() => {
       let val = ''
       strings.forEach((str, i) => {
         const state = keys[i]
@@ -133,7 +136,7 @@ export class VirtualNode {
     })
   }
   text$(strings: TemplateStringsArray, ...keys: State<string>[]): this {
-    return this.$(el => {
+    return this.effect(el => {
       strings.forEach((str, i) => {
         const state = keys[i]
         if (!state) return
@@ -148,7 +151,7 @@ export class VirtualNode {
     getKey: (el: T) => string | object,
     render: (el: State<T>, i: State<number>) => Effect | Effect[],
   ): this {
-    return this.$(el => {
+    return this.effect(el => {
       const hook = el.appendChild(new Comment(''))
       type ObservedItem = {
         nodes: Node[],
@@ -190,19 +193,43 @@ export class VirtualNode {
     })
   }
   mount(parent: Element | ShadowRoot): Element | ShadowRoot {
-    if (this.name === 'fragment') {
+    if (this.elName === 'fragment') {
       this.chain.forEach(m => apply(parent, m))
       return parent
     }
-    const el = this.el = this.el || document.createElement(this.name)
+    const el = this.el = this.el || document.createElement(this.elName)
     this.chain.forEach(m => apply(el, m))
     this.chain.length = 0
     return parent.appendChild(el)
   }
 }
 
+// get method names defined on the whole prototype chain
+function getMethodNames(obj: any): string[] {
+  if (obj === Object.prototype) return []
+  const methods = Object
+    .getOwnPropertyNames(obj)
+    .filter(x => typeof obj[x] === 'function' && x !== 'constructor')
+  return getMethodNames(Object.getPrototypeOf(obj)).concat(methods)
+}
+
+export function chainify<T extends VirtualNode>(vnode: T) {
+  const fn = Object.assign(function(...effects: Effect[]) {
+    vnode.effect(...effects)
+    return fn
+  }, vnode)
+  // Object.assign only inserts the state of vnode
+  // also insert the methods
+  const proto = Object.getPrototypeOf(vnode)
+  getMethodNames(proto).forEach(key => {
+    // @ts-ignore
+    fn[key] = proto[key]
+  })
+  return fn
+}
+
 export const shorthand = (name: string) => (...effects: Effect[]) =>
-  new VirtualNode(name, effects)
+  chainify(new VirtualNode(name, effects))
 
 export const div = shorthand('div')
 export const h1 = shorthand('h1')

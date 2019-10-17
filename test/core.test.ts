@@ -9,8 +9,8 @@ describe('core', function() {
 
   it('append children', function() {
     const el = div()
-      .$(div())
-      .$(div())
+      (div())
+      (div())
       .mount(document.head)
     assert.strictEqual(el.children.length, 2)
   })
@@ -23,9 +23,7 @@ describe('core', function() {
   })
 
   it('append class names', function() {
-    const el = <Element>div('.c1', '.c2')
-      .$('.c3')
-      .$('.c4')
+    const el = <Element>div('.c1', '.c2')('.c3')('.c4')
       .mount(document.head)
     assert.includeMembers([...el.classList], ['c1', 'c2', 'c3', 'c4'])
   })
@@ -51,8 +49,8 @@ describe('core', function() {
   it('emit a custom event', function() {
     let catched: CustomEvent
     const child = div()
-    div().on('custom-evt', e => catched = <CustomEvent>e)
-      .$(child)
+    div(child)
+      .on('custom-evt', e => catched = <CustomEvent>e)
       .mount(document.head)
     child.dispatch('custom-evt', 1234, { bubbles: true })
     assert.strictEqual(catched!.type, 'custom-evt')

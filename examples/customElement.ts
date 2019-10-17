@@ -1,7 +1,7 @@
 import { VirtualNode, State, style, customElement, Attr } from '../src/index'
 import { div, span } from './bindings'
 
-function renderExample(host: VirtualNode, {
+function renderExample(host: VirtualNode & Function, {
   supercool = Attr(false),
   logo = Attr({ title: '', icon: '' }),
 }) {
@@ -13,14 +13,14 @@ function renderExample(host: VirtualNode, {
     count.v++
     logo.v = { ...logo.v, icon: '👁‍' }
   })
-  .$(style().text$`
+  (style().text$`
     span {
       color: red;
     }
   `)
-  .$(span().text$`You clicked ${count.map(String)} times`)
-  .$(div().text$`${logo._.icon} ${logo._.title}`)
-  .$(supercool.and([
+  (span().text$`You clicked ${count.map(String)} times`)
+  (div().text$`${logo._.icon} ${logo._.title}`)
+  (supercool.and([
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),
   ]))

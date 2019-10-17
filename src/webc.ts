@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { VirtualNode, fragment, Effect } from './core'
+import { VirtualNode, fragment, Effect, chainify } from './core'
 
 type Converter =
   StringConstructor |
@@ -37,20 +37,20 @@ export function Attr<T>(defaultValue: T): State<T> {
 }
 
 type RenderFunction<T> =
-  (host: VirtualNode, props: T) => VirtualNode
+  (host: VirtualNode & Function, props: T) => VirtualNode & Function
 
 class ComponentVirtualNode<T> extends VirtualNode {
-  constructor(name: string, chain: Effect[],
+  constructor(elName: string, chain: Effect[],
     private render: RenderFunction<T>,
   ) {
-    super(name, chain)
+    super(elName, chain)
   }
   prop<K extends keyof T>(key: K, val: ExtractStateType<T[K]>): this {
     const sKey = <string>key
     if (typeof val !== 'object') {
       return super.attr(sKey, String(val))
     }
-    return this.$(el => {
+    return this.effect(el => {
       const comp = <MaryElement>el
       comp.props[sKey].v = val
     })
@@ -62,12 +62,12 @@ class ComponentVirtualNode<T> extends VirtualNode {
       get: (_, key: string) => void keys.push(key),
     })
     const elements = this.render(fragment(), <any>trap)
-    if (!customElements.get(this.name)) {
-      customElements.define(this.name, class extends MaryElement {
+    if (!customElements.get(this.elName)) {
+      customElements.define(this.elName, class extends MaryElement {
         static get observedAttributes() { return keys }
       })
     }
-    const el = this.el = <MaryElement>document.createElement(this.name)
+    const el = this.el = <MaryElement>document.createElement(this.elName)
     el.props = props
     elements.mount(el.root)
     // apply the chain
@@ -75,9 +75,6 @@ class ComponentVirtualNode<T> extends VirtualNode {
   }
 }
 
-export function customElement<T>(
-  name: string,
-  render: (host: VirtualNode, props: T) => VirtualNode,
-) {
-  return (...effects: Effect[]) => new ComponentVirtualNode(name, effects, render)
+export function customElement<T>(name: string, render: RenderFunction<T>) {
+  return (...effects: Effect[]) => chainify(new ComponentVirtualNode(name, effects, render))
 }

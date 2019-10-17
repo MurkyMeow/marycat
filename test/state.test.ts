@@ -22,8 +22,7 @@ describe('state', function() {
 
   it('observe an element', function() {
     const state = new State(div())
-    const el = div()
-      .$(state)
+    const el = div(state)
       .mount(document.head)
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
     state.v = h1()
@@ -85,7 +84,7 @@ describe('state', function() {
   it('conditional rendering', function() {
     const cond = new State(true)
     const el = div()
-      .$(cond.and([
+      (cond.and([
         div('then'),
         div('then2'),
       ]).or(

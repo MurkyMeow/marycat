@@ -17,8 +17,8 @@ const suit = new State([] as typeof items)
 
 const app =
   div()
-    .$(h3('What to wear'))
-    .$(button()
+    (h3('What to wear'))
+    (button()
       .on('click', () => {
         const amount = Math.random() * 5 | 0 + 1
         const newsuit = Array(amount).fill(0).map(randomItem)
