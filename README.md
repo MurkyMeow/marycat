@@ -7,13 +7,20 @@ Web components that are
 - strongly typed
 
 ```ts
-function renderProfile(host: VirtualNode, {
+function renderProfile(host: VirtualNodeFn, {
   name = Attr(''),
+  photo = Attr(''),
   age = Attr(0),
 }) {
-  return host.$(
-    div().text`Name - ${name}, age - ${age}`
+  return host
+  (img('.profile-photo')
+    .attr$('src')`/${photo}`
   )
+  (div()
+    (div('profile-name')(name))
+    (div('profile-age')(age))
+  )
+  (button().text$`Add ${name} to friends`)
 }
 const profile = customElement('mary-profile', renderProfile)
 
