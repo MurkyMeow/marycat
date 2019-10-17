@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { VirtualNode, MaryElement, Attr, customElement, div } from '../index'
+import { VirtualNode, MaryElement, Attr, customElement, div } from '../src/index'
 
 describe('webc', function() {
   function renderTest(host: VirtualNode, {

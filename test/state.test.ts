@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, div, h1 } from '../index'
+import { State, div, h1 } from '../src/index'
 
 describe('state', function() {
   it('notify state subscribers', function() {

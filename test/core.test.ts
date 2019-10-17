@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { div } from '../core'
+import { div } from '../examples/bindings'
 
 describe('core', function() {
   it('mount an element', function() {

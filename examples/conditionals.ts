@@ -1,4 +1,4 @@
-import { State } from '../state'
+import { State } from '../src/index'
 import { div, h3 } from './bindings'
 
 const a = new State(true)

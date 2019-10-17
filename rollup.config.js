@@ -4,7 +4,7 @@ import { terser } from 'rollup-plugin-terser';
 const dev = process.env.ROLLUP_WATCH;
 
 export default {
-  input: 'index.ts',
+  input: 'src/index.ts',
   output: {
     sourcemap: true,
     format: 'esm',

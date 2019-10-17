@@ -1,4 +1,4 @@
-import { State } from '../index'
+import { State } from '../src/index'
 import { div, h3, button } from './bindings.js'
 
 const items = [

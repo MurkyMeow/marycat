@@ -1,4 +1,4 @@
-import { shorthand } from '../core'
+import { shorthand } from '../src/index'
 
 export const article = shorthand('article')
 export const button = shorthand('button')

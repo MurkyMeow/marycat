@@ -1,4 +1,4 @@
-import { VirtualNode, State, style, customElement, Attr } from '../index'
+import { VirtualNode, State, style, customElement, Attr } from '../src/index'
 import { div, span } from './bindings'
 
 function renderExample(host: VirtualNode, {
