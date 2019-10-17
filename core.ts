@@ -8,11 +8,6 @@ export type Effect
   | MaryElement
   | ((el: Element | ShadowRoot) => Node | void)
 
-function getKey(a: Effect): string | object {
-  const val = a instanceof MaryElement && a._key || a
-  return typeof val === 'object' ? val : String(val)
-}
-
 const filterShadow = (el: Element | ShadowRoot): Element =>
   el instanceof ShadowRoot ? el.host : el
 
@@ -27,34 +22,18 @@ function applyPlain(el: Element | ShadowRoot, str: string): Node | undefined {
   }
 }
 
+// TODO generalize with `repeat` somehow?
 function applyObserved(el: Element | ShadowRoot, state: State<Effect | Effect[]>): Node[] {
-  const hook = el.appendChild(new Comment(''))
+  const hook: Node = el.appendChild(new Comment(''))
   const nodes: Node[] = []
-  const lookup = new Map<string | object, Node[]>()
-  state.sub((val, prevVal) => {
-    const next = ([] as Effect[]).concat(val)
-    const prev = ([] as Effect[]).concat(prevVal)
-    prev.forEach(x => {
-      const key = getKey(x)
-      if (next.find(y => key === getKey(y))) return
-      const oldNodes = lookup.get(key)
-      if (!oldNodes) return
-      lookup.delete(key)
-      oldNodes.forEach(node => el.removeChild(node))
+  state.sub(next => {
+    while (nodes.length) el.removeChild(nodes.pop()!)
+    let refNode: Node = hook
+    const _nodes = <Node[]>apply(el, next).filter(x => x)
+    _nodes.forEach(node => {
+      refNode = el.insertBefore(node, refNode.nextSibling)
+      nodes.push(node)
     })
-    let curr: Node = hook
-    next.forEach(x => {
-      const key = getKey(x)
-      const nodes = lookup.get(key) ||
-        apply(el, x).filter(_=>_) as Node[]
-      lookup.set(key, nodes)
-      nodes.forEach(node => {
-        el.insertBefore(node, curr)
-        if ([node, hook].includes(curr)) curr = curr.nextSibling!
-      })
-    })
-    nodes.length = 0
-    lookup.forEach(x => nodes.push(...x))
   })
   return nodes
 }
@@ -93,7 +72,6 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
 
 export class MaryElement {
   el?: Element
-  _key?: string | object
 
   constructor(
     public name: string,
@@ -103,10 +81,6 @@ export class MaryElement {
   $(...effects: Effect[]): this {
     if (this.el) apply(this.el, effects)
     else this.chain.push(...effects)
-    return this
-  }
-  key(val: string | object): this {
-    this._key = val
     return this
   }
   style(prop: string, val: string): this {
@@ -166,6 +140,52 @@ export class MaryElement {
         const text = new Text('')
         state.sub(next => text.textContent = str + next)
         el.appendChild(text)
+      })
+    })
+  }
+  repeat<T>(
+    items: State<T[]>,
+    getKey: (el: T) => string | object,
+    render: (el: State<T>, i: State<number>) => Effect | Effect[],
+  ): this {
+    return this.$(el => {
+      const hook = el.appendChild(new Comment(''))
+      type ObservedItem = {
+        nodes: Node[],
+        state: State<T>,
+        index: State<number>,
+      }
+      let lookup = new Map<string | object, ObservedItem>()
+      items.sub((next, prev) => {
+        let refNode: Node = hook
+        const newLookup = new Map<string | object, ObservedItem>()
+        // update existing nodes and append the new ones
+        next.forEach((item, i) => {
+          const key = getKey(item)
+          let observed = lookup.get(key)
+          if (observed) {
+            observed.index.v = i
+            observed.state.v = item
+          } else {
+            const state = new State(item)
+            const index = new State(i)
+            const effects = render(state, index)
+            const nodes = <Node[]>apply(el, effects).filter(_=>_)
+            observed = { nodes, state, index }
+          }
+          // restore the order of the nodes
+          observed.nodes.forEach(
+            node => refNode = el.insertBefore(node, refNode.nextSibling))
+          newLookup.set(key, observed)
+        })
+        // remove nodes that are not present anymore
+        prev.forEach(item => {
+          const key = getKey(item)
+          if (newLookup.has(key)) return
+          const observed = lookup.get(key)!
+          observed.nodes.forEach(node => el.removeChild(node))
+        })
+        lookup = newLookup
       })
     })
   }

@@ -20,14 +20,14 @@ describe('state', function() {
     assert.strictEqual(len.v, state.v.length)
   })
 
-  it('mount a stateful element', function() {
+  it('observe an element', function() {
     const state = new State(div())
     const el = div()
       .$(state)
       .mount(document.head)
-    assert.strictEqual(el.firstChild && el.firstChild.nodeName, 'DIV')
+    assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
     state.v = h1()
-    assert.strictEqual(el.firstChild && el.firstChild.nodeName, 'H1')
+    assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H1')
   })
 
   it('set a reactive attribute', function() {
@@ -102,12 +102,12 @@ describe('state', function() {
   it('keyed array rendering', function() {
     const items = new State(['a', 'b', 'c'])
     const el = div()
-      .$(items.map(arr =>
-        arr.map(x => div(x).key(x))
-      ))
+      .repeat(items, x => x, (x, i) =>
+        div().text`${i.string} - ${x}`
+      )
       .mount(document.head)
     const check = (msg?: string) => items.v.forEach((item, i) => {
-      assert.strictEqual(el.children[i].textContent, item, msg)
+      assert.strictEqual(el.children[i].textContent, `${i} - ${item}`, msg)
     })
     check()
     items.v = [...items.v].reverse()
