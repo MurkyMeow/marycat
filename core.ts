@@ -5,7 +5,7 @@ export type Effect
   | number
   | boolean
   | State<any>
-  | MaryElement
+  | VirtualNode
   | ((el: Element | ShadowRoot) => Node | void)
 
 const filterShadow = (el: Element | ShadowRoot): Element =>
@@ -47,7 +47,7 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
     const res: (Node | undefined)[] = []
     return res.concat(...effect.map(m => apply(el, m)))
   }
-  if (effect instanceof MaryElement) {
+  if (effect instanceof VirtualNode) {
     return [effect.mount(el)]
   }
   if (effect instanceof State) {
@@ -70,7 +70,7 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
   }
 }
 
-export class MaryElement {
+export class VirtualNode {
   el?: Element
 
   constructor(
@@ -202,7 +202,7 @@ export class MaryElement {
 }
 
 export const shorthand = (name: string) => (...effects: Effect[]) =>
-  new MaryElement(name, effects)
+  new VirtualNode(name, effects)
 
 export const div = shorthand('div')
 export const h1 = shorthand('h1')

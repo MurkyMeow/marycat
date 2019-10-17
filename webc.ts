@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { MaryElement, fragment, Effect } from './core'
+import { VirtualNode, fragment, Effect } from './core'
 
 type Converter =
   StringConstructor |
@@ -16,7 +16,7 @@ function getConverter(type: string): Converter | undefined {
   }
 }
 
-export class MaryComponent extends HTMLElement {
+export class MaryElement extends HTMLElement {
   root: ShadowRoot = this.attachShadow({ mode: 'open' })
   props: { [key: string]: State<unknown> } = {}
   attributeChangedCallback(name: string, _: string, val: string) {
@@ -38,9 +38,9 @@ export function Attr<T>(defaultValue: T): State<T> {
 
 export function customElement<T>(
   name: string,
-  render: (host: MaryElement, props: T) => MaryElement,
+  render: (host: VirtualNode, props: T) => VirtualNode,
 ) {
-  class Chainable extends MaryElement {
+  class ComponentVirtualNode extends VirtualNode {
     constructor(chain: Effect[]) {
       super(name, chain)
     }
@@ -50,7 +50,7 @@ export function customElement<T>(
         return super.attr(sKey, String(val))
       }
       return this.$(el => {
-        const comp = <MaryComponent>el
+        const comp = <MaryElement>el
         comp.props[sKey].v = val
       })
     }
@@ -62,15 +62,15 @@ export function customElement<T>(
       })
       const elements = render(fragment(), <any>trap)
       if (!customElements.get(name)) {
-        customElements.define(name, class extends MaryComponent {
+        customElements.define(name, class extends MaryElement {
           static get observedAttributes() { return keys }
         })
       }
-      const el = this.el = <MaryComponent>document.createElement(name)
+      const el = this.el = <MaryElement>document.createElement(name)
       el.props = props
       elements.mount(el.root)
       return super.mount(parent)
     }
   }
-  return (...effects: Effect[]) => new Chainable(effects)
+  return (...effects: Effect[]) => new ComponentVirtualNode(effects)
 }

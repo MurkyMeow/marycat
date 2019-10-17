@@ -7,7 +7,7 @@ Web components that are
 - strongly typed
 
 ```ts
-function renderProfile(host: MaryElement, {
+function renderProfile(host: VirtualNode, {
   name = Attr(''),
   age = Attr(0),
 }) {

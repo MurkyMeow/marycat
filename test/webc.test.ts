@@ -1,8 +1,8 @@
 import { assert } from 'chai'
-import { MaryElement, MaryComponent, Attr, customElement, div } from '../index'
+import { VirtualNode, MaryElement, Attr, customElement, div } from '../index'
 
 describe('webc', function() {
-  function renderTest(host: MaryElement, {
+  function renderTest(host: VirtualNode, {
     p1 = Attr(false),
     p2 = Attr(''),
     p3 = Attr({ name: '' }),
@@ -15,7 +15,7 @@ describe('webc', function() {
   const test = customElement('mary-test', renderTest)
 
   const instance = test()
-  const el = <MaryComponent>instance.mount(document.head)
+  const el = <MaryElement>instance.mount(document.head)
   const [p1, p2, p3] = el.root.children
 
   it('create web component', function() {
