@@ -74,7 +74,7 @@ export class VirtualNode {
   el?: Element
 
   constructor(
-    public name: string,
+    public readonly name: string,
     private chain: Effect[],
   ) {}
 
@@ -132,7 +132,7 @@ export class VirtualNode {
       })
     })
   }
-  text(strings: TemplateStringsArray, ...keys: State<string>[]): this {
+  text$(strings: TemplateStringsArray, ...keys: State<string>[]): this {
     return this.$(el => {
       strings.forEach((str, i) => {
         const state = keys[i]

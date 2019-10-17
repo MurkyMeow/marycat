@@ -24,10 +24,10 @@ const app =
         const newsuit = Array(amount).fill(0).map(randomItem)
         suit.v = [...new Set(newsuit)] // remove duplicates
       })
-      .text`${suit.map(x => String(x.length > 0 ? 'Something else...' : 'Pick'))}`
+      .text$`${suit.map(x => String(x.length > 0 ? 'Something else...' : 'Pick'))}`
     )
     .repeat(suit, item => item.name, item =>
-      div('.suit-item').text`${item._.name} ${item._.view}`
+      div('.suit-item').text$`${item._.name} ${item._.view}`
     )
 
 app.mount(document.body)

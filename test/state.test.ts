@@ -103,7 +103,7 @@ describe('state', function() {
     const items = new State(['a', 'b', 'c'])
     const el = div()
       .repeat(items, x => x, (x, i) =>
-        div().text`${i.string} - ${x}`
+        div().text$`${i.string} - ${x}`
       )
       .mount(document.head)
     const check = (msg?: string) => items.v.forEach((item, i) => {

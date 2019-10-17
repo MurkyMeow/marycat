@@ -13,13 +13,13 @@ function renderExample(host: VirtualNode, {
     count.v++
     logo.v = { ...logo.v, icon: '👁‍' }
   })
-  .$(style().text`
+  .$(style().text$`
     span {
       color: red;
     }
   `)
-  .$(span().text`You clicked ${count.map(String)} times`)
-  .$(div().text`${logo._.icon} ${logo._.title}`)
+  .$(span().text$`You clicked ${count.map(String)} times`)
+  .$(div().text$`${logo._.icon} ${logo._.title}`)
   .$(supercool.and([
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),
