@@ -1,7 +1,7 @@
-import { VirtualNode, State, style, customElement, Attr } from '../src/index'
+import { VirtualNodeFn, State, style, customElement, Attr } from '../src/index'
 import { div, span } from './bindings'
 
-function renderExample(host: VirtualNode & Function, {
+function renderExample(host: VirtualNodeFn, {
   supercool = Attr(false),
   logo = Attr({ title: '', icon: '' }),
 }) {

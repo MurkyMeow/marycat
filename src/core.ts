@@ -8,6 +8,8 @@ export type Effect
   | VirtualNode
   | ((el: Element | ShadowRoot) => Node | void)
 
+export type VirtualNodeFn = VirtualNode & Function
+
 const isVirtualNode = (arg: any): arg is VirtualNode =>
   arg && typeof arg.mount === 'function'
 

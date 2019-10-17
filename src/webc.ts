@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { VirtualNode, fragment, Effect, chainify } from './core'
+import { VirtualNode, VirtualNodeFn, fragment, Effect, chainify } from './core'
 
 type Converter =
   StringConstructor |
@@ -37,7 +37,7 @@ export function Attr<T>(defaultValue: T): State<T> {
 }
 
 type RenderFunction<T> =
-  (host: VirtualNode & Function, props: T) => VirtualNode & Function
+  (host: VirtualNodeFn, props: T) => VirtualNodeFn
 
 class ComponentVirtualNode<T> extends VirtualNode {
   constructor(elName: string, chain: Effect[],
