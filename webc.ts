@@ -36,41 +36,48 @@ export function Attr<T>(defaultValue: T): State<T> {
   return props[current]
 }
 
+type RenderFunction<T> =
+  (host: VirtualNode, props: T) => VirtualNode
+
+class ComponentVirtualNode<T> extends VirtualNode {
+  constructor(name: string, chain: Effect[],
+    private render: RenderFunction<T>,
+  ) {
+    super(name, chain)
+  }
+  prop<K extends keyof T>(key: K, val: ExtractStateType<T[K]>): this {
+    const sKey = <string>key
+    if (typeof val !== 'object') {
+      return super.attr(sKey, String(val))
+    }
+    return this.$(el => {
+      const comp = <MaryElement>el
+      comp.props[sKey].v = val
+    })
+  }
+  mount(parent: Element | ShadowRoot) {
+    props = {}
+    keys = []
+    const trap = new Proxy({}, {
+      get: (_, key: string) => void keys.push(key),
+    })
+    const elements = this.render(fragment(), <any>trap)
+    if (!customElements.get(this.name)) {
+      customElements.define(this.name, class extends MaryElement {
+        static get observedAttributes() { return keys }
+      })
+    }
+    const el = this.el = <MaryElement>document.createElement(this.name)
+    el.props = props
+    elements.mount(el.root)
+    // apply the chain
+    return super.mount(parent)
+  }
+}
+
 export function customElement<T>(
   name: string,
   render: (host: VirtualNode, props: T) => VirtualNode,
 ) {
-  class ComponentVirtualNode extends VirtualNode {
-    constructor(chain: Effect[]) {
-      super(name, chain)
-    }
-    prop<K extends keyof T>(key: K, val: ExtractStateType<T[K]>): this {
-      const sKey = <string>key
-      if (typeof val !== 'object') {
-        return super.attr(sKey, String(val))
-      }
-      return this.$(el => {
-        const comp = <MaryElement>el
-        comp.props[sKey].v = val
-      })
-    }
-    mount(parent: Element | ShadowRoot) {
-      props = {}
-      keys = []
-      const trap = new Proxy({}, {
-        get: (_, key: string) => void keys.push(key),
-      })
-      const elements = render(fragment(), <any>trap)
-      if (!customElements.get(name)) {
-        customElements.define(name, class extends MaryElement {
-          static get observedAttributes() { return keys }
-        })
-      }
-      const el = this.el = <MaryElement>document.createElement(name)
-      el.props = props
-      elements.mount(el.root)
-      return super.mount(parent)
-    }
-  }
-  return (...effects: Effect[]) => new ComponentVirtualNode(effects)
+  return (...effects: Effect[]) => new ComponentVirtualNode(name, effects, render)
 }

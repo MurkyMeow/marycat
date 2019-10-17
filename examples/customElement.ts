@@ -1,7 +1,7 @@
-import { MaryElement, State, style, customElement, Attr } from '../index'
+import { VirtualNode, State, style, customElement, Attr } from '../index'
 import { div, span } from './bindings'
 
-function renderExample(host: MaryElement, {
+function renderExample(host: VirtualNode, {
   supercool = Attr(false),
   logo = Attr({ title: '', icon: '' }),
 }) {
