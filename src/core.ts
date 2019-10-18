@@ -215,7 +215,7 @@ function getMethodNames(obj: any): string[] {
   return getMethodNames(Object.getPrototypeOf(obj)).concat(methods)
 }
 
-export function chainify<T extends VirtualNode>(vnode: T) {
+export function chainify<T extends VirtualNode>(vnode: T): VirtualNodeFn {
   const fn = Object.assign(function(...effects: Effect[]) {
     vnode.effect(...effects)
     return fn

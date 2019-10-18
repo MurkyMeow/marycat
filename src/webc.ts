@@ -48,14 +48,14 @@ class ComponentVirtualNode<T> extends VirtualNode {
   prop<K extends keyof T>(key: K, val: ExtractStateType<T[K]>): this {
     const sKey = <string>key
     if (typeof val !== 'object') {
-      return super.attr(sKey, String(val))
+      return this.attr(sKey, String(val))
     }
     return this.effect(el => {
       const comp = <MaryElement>el
       comp.props[sKey].v = val
     })
   }
-  mount(parent: Element | ShadowRoot) {
+  mount(parent: Element | ShadowRoot): Element {
     props = {}
     keys = []
     const trap = new Proxy({}, {
@@ -71,7 +71,7 @@ class ComponentVirtualNode<T> extends VirtualNode {
     el.props = props
     elements.mount(el.root)
     // apply the chain
-    return super.mount(parent)
+    return <Element>super.mount(parent)
   }
 }
 
