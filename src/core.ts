@@ -110,7 +110,7 @@ export class VirtualNode {
       }, options)
     })
   }
-  dispatch(name: string, detail: any, opts: CustomEventInit = {}) {
+  dispatch(name: string, detail?: any, opts: CustomEventInit = {}) {
     return this.effect(el => {
       const event = new CustomEvent(name, { detail, ...opts })
       filterShadow(el).dispatchEvent(event)
