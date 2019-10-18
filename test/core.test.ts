@@ -50,7 +50,7 @@ describe('core', function() {
     let catched: CustomEvent
     const child = div()
     div(child)
-      .on('custom-evt', e => catched = <CustomEvent>e)
+      .on('custom-evt', (e: Event) => catched = <CustomEvent>e)
       .mount(document.head)
     child.dispatch('custom-evt', 1234, { bubbles: true })
     assert.strictEqual(catched!.type, 'custom-evt')

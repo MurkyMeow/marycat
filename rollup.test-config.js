@@ -1,6 +1,9 @@
-import typescript from 'rollup-plugin-typescript2'
+import typescript from '@wessberg/rollup-plugin-ts'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
+import { compilerOptions } from './tsconfig.json'
+
+compilerOptions.declaration = false
 
 export default {
   input: 'test/index.ts',
@@ -15,7 +18,7 @@ export default {
         chai: ['assert'],
       },
     }),
-    typescript(),
+    typescript({ tsconfig: compilerOptions }),
   ],
   watch: {
     clearScreen: false,
