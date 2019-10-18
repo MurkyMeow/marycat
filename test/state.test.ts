@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, div, h1 } from '../src/index'
+import { State, div, h1, zipTemplate } from '../src/index'
 
 describe('state', function() {
   it('notify state subscribers', function() {
@@ -20,6 +20,17 @@ describe('state', function() {
     assert.strictEqual(len.v, state.v.length)
   })
 
+  it('make template derivation', function() {
+    const state1 = new State('foo')
+    const state2 = new State('bar')
+    const template = zipTemplate`__${state1}-${state2}__`
+    assert.strictEqual(template.v, `__foo-bar__`)
+    state1.v = 'qux'
+    assert.strictEqual(template.v, `__qux-bar__`)
+    state2.v = 'qwer'
+    assert.strictEqual(template.v, `__qux-qwer__`)
+  })
+
   it('observe an element', function() {
     const state = new State(div())
     const el = div(state)
@@ -29,7 +40,7 @@ describe('state', function() {
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H1')
   })
 
-  it('set a simple reactive attribute', function() {
+  it('set a reactive attribute', function() {
     const state = new State('foo')
     const el = <Element>div()
       .attr('class', state)
@@ -39,14 +50,14 @@ describe('state', function() {
     assert.strictEqual(el.className, 'bar')
   })
 
-  it('set a complex reactive attribute', function() {
-    const state = new State('foo')
+  it('set a reactive attribute with template', function() {
+    const state = new State('active')
     const el = <Element>div()
-      .attr$('class')`__${state}__`
+      .attr('class', zipTemplate`type--${state}`)
       .mount(document.head)
-    assert.strictEqual(el.className, '__foo__')
-    state.v = 'bar'
-    assert.strictEqual(el.className, '__bar__')
+    assert.strictEqual(el.className, 'type--active')
+    state.v = 'disabled'
+    assert.strictEqual(el.className, 'type--disabled')
   })
 
   it('set a reactive style rule', function() {

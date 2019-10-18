@@ -66,3 +66,21 @@ export function zip<R>(
   })
   return res
 }
+
+export function zipTemplate(
+  strings: TemplateStringsArray, ...keys: State<string>[]
+): State<string> {
+  const res = new State('')
+  strings.forEach((str, i) => {
+    const state = keys[i]
+    res.v += str
+    if (!state) return
+    const start = res.v.length
+    state.sub((next, prev) => {
+      const left = res.v.slice(0, start)
+      const right = res.v.slice(start + prev.length)
+      res.v = `${left}${next}${right}`
+    })
+  })
+  return res
+}

@@ -132,22 +132,6 @@ export class VirtualNode {
       }
     })
   }
-  attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {
-    return (strings, ...keys) => this.effect(() => {
-      let val = ''
-      strings.forEach((str, i) => {
-        const state = keys[i]
-        this.attr(name, val += str)
-        if (!state) return
-        const start = val.length
-        state.sub((next, prev) => {
-          const left = val.slice(0, start)
-          const right = val.slice(start + prev.length)
-          this.attr(name, val = `${left}${next}${right}`)
-        })
-      })
-    })
-  }
   text$(strings: TemplateStringsArray, ...keys: State<string>[]): this {
     return this.effect(el => {
       strings.forEach((str, i) => {
