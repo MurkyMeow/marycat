@@ -1,4 +1,4 @@
-import { State } from './state'
+import { State, StateOrPlain } from './state'
 
 export type Effect
   = string
@@ -89,11 +89,17 @@ export class VirtualNode {
     else this.chain.push(...effects)
     return this
   }
-  style(prop: string, val: string): this {
-    return this.effect(el => el instanceof HTMLElement
-      ? el.style.setProperty(prop, val)
-      : console.trace(`Cant set style on a "${el.nodeName}"`)
-    )
+  style(prop: string, val: StateOrPlain<string>): this {
+    return this.effect(el => {
+      if (!(el instanceof HTMLElement)) {
+        return console.trace(`Cant set style on a "${el.nodeName}"`)
+      }
+      if (val instanceof State) {
+        val.sub(next => this.style(prop, next))
+      } else {
+        el.style.setProperty(prop, val)
+      }
+    })
   }
   on(
     event: string,
@@ -116,10 +122,14 @@ export class VirtualNode {
       filterShadow(el).dispatchEvent(event)
     })
   }
-  attr(name: string, val: string | number | boolean): this {
+  attr<T extends string | number | boolean>(name: string, val: StateOrPlain<T>): this {
     return this.effect(_el => {
       const el = filterShadow(_el)
-      el.setAttribute(name, val === false ? '' : String(val))
+      if (val instanceof State) {
+        val.sub(next => this.attr(name, next))
+      } else {
+        el.setAttribute(name, val === false ? '' : String(val))
+      }
     })
   }
   attr$(name: string): (strings: TemplateStringsArray, ...keys: State<string>[]) => this {

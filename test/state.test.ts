@@ -29,7 +29,17 @@ describe('state', function() {
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H1')
   })
 
-  it('set a reactive attribute', function() {
+  it('set a simple reactive attribute', function() {
+    const state = new State('foo')
+    const el = <Element>div()
+      .attr('class', state)
+      .mount(document.head)
+    assert.strictEqual(el.className, 'foo')
+    state.v = 'bar'
+    assert.strictEqual(el.className, 'bar')
+  })
+
+  it('set a complex reactive attribute', function() {
     const state = new State('foo')
     const el = <Element>div()
       .attr$('class')`__${state}__`
@@ -37,6 +47,16 @@ describe('state', function() {
     assert.strictEqual(el.className, '__foo__')
     state.v = 'bar'
     assert.strictEqual(el.className, '__bar__')
+  })
+
+  it('set a reactive style rule', function() {
+    const state = new State('red')
+    const el = <HTMLElement>div()
+      .style('color', state)
+      .mount(document.head)
+    assert.strictEqual(el.style.color, state.v)
+    state.v = 'green'
+    assert.strictEqual(el.style.color, state.v)
   })
 
   it('logical operators', function() {

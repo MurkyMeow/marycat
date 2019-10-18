@@ -1,5 +1,7 @@
 type Observer<T> = (val: T, oldVal: T) => void
-type ZipValue<T> = State<T> | T
+
+export type StateOrPlain<T> =
+  State<T> | T
 
 export type ObservedFields<T> =
   T extends object ? { [key in keyof T]: State<T[key]> } : never
@@ -40,21 +42,21 @@ export class State<T> {
   not(): State<boolean> {
     return this.map(v => !v)
   }
-  and<V>(s: ZipValue<V>) { return zip([this, s], (a, b) => a ? b : a) }
-  or<V>(s: ZipValue<V>) { return zip([this, s], (a, b) => a || b) }
-  eq(s: ZipValue<T>) { return zip([this, s], (a, b) => a === b) }
-  ne(s: ZipValue<T>) { return zip([this, s], (a, b) => a !== b) }
-  gt(s: ZipValue<number>) { return zip([this, s], (a, b) => a > b) }
-  ge(s: ZipValue<number>) { return zip([this, s], (a, b) => a >= b) }
-  lt(s: ZipValue<number>) { return zip([this, s], (a, b) => a < b) }
-  le(s: ZipValue<number>) { return zip([this, s], (a, b) => a <= b) }
+  and<V>(s: StateOrPlain<V>) { return zip([this, s], (a, b) => a ? b : a) }
+  or<V>(s: StateOrPlain<V>) { return zip([this, s], (a, b) => a || b) }
+  eq(s: StateOrPlain<T>) { return zip([this, s], (a, b) => a === b) }
+  ne(s: StateOrPlain<T>) { return zip([this, s], (a, b) => a !== b) }
+  gt(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a > b) }
+  ge(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a >= b) }
+  lt(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a < b) }
+  le(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a <= b) }
 }
 
 export function zip<T, R>(states: [T], map: (arg: ExtractStateType<T>) => R): State<R>
 export function zip<T, T2, R>(states: [T, T2], map: (...args: [ExtractStateType<T>, ExtractStateType<T2>]) => R): State<R>
 
 export function zip<R>(
-  states: ZipValue<any>[], map: (...values: any[]) => R,
+  states: StateOrPlain<any>[], map: (...values: any[]) => R,
 ): State<R> {
   const values = () => map(...states.map(x => x instanceof State ? x.v : x))
   const res = new State(values())
