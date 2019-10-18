@@ -1,6 +1,6 @@
 {
   "name": "marycat",
-  "version": "2.0.1",
+  "version": "2.1.1",
   "description": "",
   "main": "dist/bundle.js",
   "files": [

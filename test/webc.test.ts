@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { VirtualNodeFn, MaryElement, Attr, customElement, div } from '../src/index'
+import { VirtualNodeFn, MaryElement, State, Attr, customElement, div } from '../src/index'
 
 describe('webc', function() {
   function renderTest(host: VirtualNodeFn, {
@@ -42,5 +42,13 @@ describe('webc', function() {
     el.setAttribute('p2', 'world')
     assert.strictEqual(p1.textContent, 'false')
     assert.strictEqual(p2.textContent, 'world')
+  })
+
+  it('observe a prop', function() {
+    const state = new State('zzz')
+    instance.prop('p2', state)
+    assert.strictEqual(p2.textContent, state.v, 'Initial value is not set')
+    state.v = 'qqqq'
+    assert.strictEqual(p2.textContent, state.v, 'Updates are not captured')
   })
 })

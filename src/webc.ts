@@ -45,14 +45,18 @@ class ComponentVirtualNode<T> extends VirtualNode {
   ) {
     super(elName, chain)
   }
-  prop<K extends keyof T>(key: K, val: ExtractStateType<T[K]>): this {
+  prop<K extends keyof T>(key: K, val: T[K] | ExtractStateType<T[K]>): this {
     const sKey = <string>key
     if (typeof val !== 'object') {
       return this.attr(sKey, String(val))
     }
     return this.effect(el => {
       const comp = <MaryElement>el
-      comp.props[sKey].v = val
+      if (val instanceof State) {
+        val.sub(next => comp.props[sKey].v = next)
+      } else {
+        comp.props[sKey].v = val
+      }
     })
   }
   mount(parent: Element | ShadowRoot): Element {
