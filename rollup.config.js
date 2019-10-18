@@ -1,12 +1,11 @@
-import typescript from 'rollup-plugin-typescript2';
-import { terser } from 'rollup-plugin-terser';
+import typescript from '@wessberg/rollup-plugin-ts'
+import { terser } from 'rollup-plugin-terser'
 
-const dev = process.env.ROLLUP_WATCH;
+const dev = process.env.ROLLUP_WATCH
 
 export default {
   input: 'src/index.ts',
   output: {
-    sourcemap: true,
     format: 'esm',
     file: 'dist/bundle.js'
   },
@@ -17,4 +16,4 @@ export default {
   watch: {
     clearScreen: false,
   },
-};
+}

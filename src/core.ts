@@ -102,7 +102,7 @@ export class VirtualNode {
   ): this {
     return this.effect(_el => {
       const el = mods.shadow ? _el : filterShadow(_el)
-      el.addEventListener(event, e => {
+      el.addEventListener(event, (e: Event) => {
         if (mods.prevent) e.preventDefault()
         if (mods.stop) e.stopPropagation()
         handler(e)
