@@ -126,6 +126,22 @@ describe('state', function() {
     assert.strictEqual(el.children[0].textContent, 'then')
     assert.strictEqual(el.children[1].textContent, 'then2')
     cond.v = false
+    assert.strictEqual(el.children.length, 1)
+    assert.strictEqual(el.children[0].textContent, 'else')
+  })
+
+  it('lazy conditional rendering', function() {
+    const cond = new State(true)
+    const el = div()
+      (cond
+        .and(() => div('then'))
+        .or(() => div('else'))
+      )
+      .mount(document.head)
+    assert.strictEqual(el.children.length, 1)
+    assert.strictEqual(el.children[0].textContent, 'then')
+    cond.v = false
+    assert.strictEqual(el.children.length, 1)
     assert.strictEqual(el.children[0].textContent, 'else')
   })
 

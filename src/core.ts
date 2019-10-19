@@ -6,6 +6,7 @@ export type Effect
   | boolean
   | State<any>
   | VirtualNode
+  | (() => VirtualNode) // lazy nodes for conditional rendering
   | ((el: Element | ShadowRoot) => Node | void)
 
 export type GenericVirtualNodeFn<T extends VirtualNode> =
@@ -32,7 +33,7 @@ function applyPlain(el: Element | ShadowRoot, str: string): Node | undefined {
 }
 
 // TODO generalize with `repeat` somehow?
-function applyObserved(el: Element | ShadowRoot, state: State<Effect | Effect[]>): Node[] {
+function applyObserved(el: Element | ShadowRoot, state: State<Effect>): Node[] {
   const hook: Node = el.appendChild(new Comment(''))
   const nodes: Node[] = []
   state.sub(next => {
@@ -71,8 +72,10 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
       return []
     case 'string':
       return [applyPlain(el, effect)]
-    case 'function':
-      return [effect(el) || undefined]
+    case 'function': {
+      const val = effect(el)
+      return [isVirtualNode(val) ? val.mount(el) : val || undefined]
+    }
     default:
       console.trace('Unexpected child:', effect)
       return []
