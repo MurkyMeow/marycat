@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, div, h1, zipTemplate } from '../src/index'
+import { State, div, h1, zip$ } from '../src/index'
 
 describe('state', function() {
   it('notify state subscribers', function() {
@@ -23,7 +23,7 @@ describe('state', function() {
   it('make template derivation', function() {
     const state1 = new State('foo')
     const state2 = new State('bar')
-    const template = zipTemplate`__${state1}-${state2}__`
+    const template = zip$`__${state1}-${state2}__`
     assert.strictEqual(template.v, `__foo-bar__`)
     state1.v = 'qux'
     assert.strictEqual(template.v, `__qux-bar__`)
@@ -54,7 +54,7 @@ describe('state', function() {
   it('set a reactive attribute with template', function() {
     const state = new State('active')
     const el = <Element>div()
-      .attr('class', zipTemplate`type--${state}`)
+      .attr('class', zip$`type--${state}`)
       .mount(document.head)
     assert.strictEqual(el.className, 'type--active')
     state.v = 'disabled'
@@ -150,7 +150,7 @@ describe('state', function() {
     const items = new State(['a', 'b', 'c'])
     const el = div()
       .repeat(items, x => x, (x, i) =>
-        div().text$`${i.string} - ${x}`
+        div()(zip$`${i.string} - ${x}`)
       )
       .mount(document.head)
     const check = (msg?: string) => items.v.forEach((item, i) => {

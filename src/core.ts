@@ -4,7 +4,7 @@ export type Effect
   = string
   | number
   | boolean
-  | State<any>
+  | State<any> // FIXME
   | VirtualNode
   | (() => VirtualNode) // lazy nodes for conditional rendering
   | ((el: Element | ShadowRoot) => Node | void)
@@ -139,17 +139,6 @@ export class VirtualNode {
       } else {
         el.setAttribute(name, val === false ? '' : String(val))
       }
-    })
-  }
-  text$(strings: TemplateStringsArray, ...keys: State<string>[]): this {
-    return this.effect(el => {
-      strings.forEach((str, i) => {
-        const state = keys[i]
-        if (!state) return
-        const text = new Text('')
-        state.sub(next => text.textContent = str + next)
-        el.appendChild(text)
-      })
     })
   }
   repeat<T>(

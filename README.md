@@ -13,14 +13,12 @@ function renderProfile(host: VirtualNodeFn, {
   age = Attr(0),
 }) {
   return host
-  (img('.profile-photo')
-    .attr$('src')`/${photo}`
-  )
+  (img('.profile-photo').attr('src', zip$`/${photo}`))
   (div()
     (div('profile-name')(name))
     (div('profile-age')(age))
   )
-  (button().text$`Add ${name} to friends`)
+  (button()(zip$`Add ${name} to friends`))
 }
 const profile = customElement('mary-profile', renderProfile)
 

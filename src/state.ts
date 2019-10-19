@@ -67,7 +67,7 @@ export function zip<R>(
   return res
 }
 
-export function zipTemplate(
+export function zip$(
   strings: TemplateStringsArray, ...keys: State<string>[]
 ): State<string> {
   const res = new State('')

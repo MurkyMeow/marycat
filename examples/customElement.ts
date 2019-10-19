@@ -1,4 +1,4 @@
-import { VirtualNodeFn, State, style, customElement, Attr } from '../src/index'
+import { VirtualNodeFn, State, style, customElement, Attr, zip$ } from '../src/index'
 import { div, span } from './bindings'
 
 function renderExample(host: VirtualNodeFn, {
@@ -13,13 +13,11 @@ function renderExample(host: VirtualNodeFn, {
     count.v++
     logo.v = { ...logo.v, icon: '👁‍' }
   })
-  (style().text$`
-    span {
-      color: red;
-    }
-  `)
-  (span().text$`You clicked ${count.map(String)} times`)
-  (div().text$`${logo._.icon} ${logo._.title}`)
+  (style()(`
+    span { color: red; }
+  `))
+  (span()(zip$`You clicked ${count.map(String)} times`))
+  (div()(zip$`${logo._.icon} ${logo._.title}`))
   (supercool.and([
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),
