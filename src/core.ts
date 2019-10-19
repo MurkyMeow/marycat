@@ -8,8 +8,11 @@ export type Effect
   | VirtualNode
   | ((el: Element | ShadowRoot) => Node | void)
 
+export type GenericVirtualNodeFn<T extends VirtualNode> =
+  T & ((...effects: Effect[]) => GenericVirtualNodeFn<T>)
+
 export type VirtualNodeFn =
-  VirtualNode & ((...effects: Effect[]) => VirtualNodeFn)
+  GenericVirtualNodeFn<VirtualNode>
 
 const isVirtualNode = (arg: any): arg is VirtualNode =>
   arg && typeof arg.mount === 'function'
@@ -210,7 +213,7 @@ function getMethodNames(obj: any): string[] {
   return getMethodNames(Object.getPrototypeOf(obj)).concat(methods)
 }
 
-export function chainify<T extends VirtualNode>(vnode: T) {
+export function chainify<T extends VirtualNode>(vnode: T): GenericVirtualNodeFn<T> {
   const fn = Object.assign(function(...effects: Effect[]) {
     vnode.effect(...effects)
     return fn

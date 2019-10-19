@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { VirtualNode, VirtualNodeFn, fragment, Effect, chainify } from './core'
+import { VirtualNode, VirtualNodeFn, fragment, Effect, chainify, GenericVirtualNodeFn } from './core'
 
 type Converter =
   StringConstructor |
@@ -79,6 +79,6 @@ class ComponentVirtualNode<T> extends VirtualNode {
   }
 }
 
-export function customElement<T>(name: string, render: RenderFunction<T>) {
-  return (...effects: Effect[]) => chainify(new ComponentVirtualNode(name, effects, render))
-}
+export const customElement = <T>(name: string, render: RenderFunction<T>) =>
+  (...effects: Effect[]): GenericVirtualNodeFn<ComponentVirtualNode<T>> =>
+    chainify(new ComponentVirtualNode(name, effects, render))
