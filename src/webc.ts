@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { VirtualNode, VirtualNodeFn, fragment, Effect, chainify, GenericVirtualNodeFn } from './core'
+import { VirtualNode, VirtualNodeFn, fragment, chainify, GenericVirtualNodeFn } from './core'
 
 type Converter =
   StringConstructor |

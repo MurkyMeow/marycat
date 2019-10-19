@@ -1,7 +1,6 @@
 type Observer<T> = (val: T, oldVal: T) => void
 
-export type StateOrPlain<T> =
-  State<T> | T
+export type StateOrPlain<T> = State<T> | T
 
 export type ObservedFields<T> =
   T extends object ? { [key in keyof T]: State<T[key]> } : never
