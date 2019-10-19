@@ -40,10 +40,10 @@ type RenderFunction<T> =
   (host: VirtualNodeFn, props: T) => VirtualNodeFn
 
 class ComponentVirtualNode<T> extends VirtualNode {
-  constructor(elName: string, chain: Effect[],
+  constructor(elName: string, setup: string[],
     private render: RenderFunction<T>,
   ) {
-    super(elName, chain)
+    super(elName, setup)
   }
   prop<K extends keyof T>(key: K, val: T[K] | ExtractStateType<T[K]>): this {
     const sKey = <string>key
@@ -80,5 +80,5 @@ class ComponentVirtualNode<T> extends VirtualNode {
 }
 
 export const customElement = <T>(name: string, render: RenderFunction<T>) =>
-  (...effects: Effect[]): GenericVirtualNodeFn<ComponentVirtualNode<T>> =>
-    chainify(new ComponentVirtualNode(name, effects, render))
+  (...setup: string[]): GenericVirtualNodeFn<ComponentVirtualNode<T>> =>
+    chainify(new ComponentVirtualNode(name, setup, render))

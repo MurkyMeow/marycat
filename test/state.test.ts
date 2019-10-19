@@ -33,7 +33,8 @@ describe('state', function() {
 
   it('observe an element', function() {
     const state = new State(div())
-    const el = div(state)
+    const el = div()
+      (state)
       .mount(document.head)
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
     state.v = h1()

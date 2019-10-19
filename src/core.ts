@@ -21,17 +21,6 @@ const isVirtualNode = (arg: any): arg is VirtualNode =>
 const filterShadow = (el: Element | ShadowRoot): Element =>
   el instanceof ShadowRoot ? el.host : el
 
-function applyPlain(el: Element | ShadowRoot, str: string): Node | undefined {
-  const [prefix, rest] = [str[0], str.slice(1)]
-  const filtered = filterShadow(el)
-  switch (prefix) {
-    case '.': filtered.classList.add(rest); break
-    case '#': filtered.setAttribute('id', rest); break
-    case '@': filtered.setAttribute('name', rest); break
-    default: return el.appendChild(new Text(str))
-  }
-}
-
 // TODO generalize with `repeat` somehow?
 function applyObserved(el: Element | ShadowRoot, state: State<Effect>): Node[] {
   const hook: Node = el.appendChild(new Comment(''))
@@ -71,7 +60,7 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
     case 'boolean':
       return []
     case 'string':
-      return [applyPlain(el, effect)]
+      return [el.appendChild(new Text(effect))]
     case 'function': {
       const val = effect(el)
       return [isVirtualNode(val) ? val.mount(el) : val || undefined]
@@ -84,11 +73,25 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
 
 export class VirtualNode {
   el?: Element
+  chain: Effect[] = []
 
   constructor(
     public readonly elName: string,
-    private chain: Effect[],
-  ) {}
+    setup: string[],
+  ) {
+    this.effect(_el => {
+      const el = filterShadow(_el)
+      setup.forEach(str => {
+        const [prefix, rest] = [str[0], str.slice(1)]
+        switch (prefix) {
+          case '.': return el.classList.add(rest)
+          case '#': return el.setAttribute('id', rest)
+          case '@': return el.setAttribute('name', rest)
+          default: el.textContent += str
+        }
+      })
+    })
+  }
 
   effect(...effects: Effect[]): this {
     if (this.el) apply(this.el, effects)
@@ -231,8 +234,8 @@ export function chainify<T extends VirtualNode>(vnode: T): GenericVirtualNodeFn<
   return fn
 }
 
-export const shorthand = (name: string) => (...effects: Effect[]) =>
-  chainify(new VirtualNode(name, effects))
+export const shorthand = (name: string) => (...setup: string[]) =>
+  chainify(new VirtualNode(name, setup))
 
 export const div = shorthand('div')
 export const h1 = shorthand('h1')

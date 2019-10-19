@@ -8,9 +8,9 @@ describe('webc', function() {
     p3 = Attr({ name: '' }),
   }) {
     return host
-    (div(p1.string))
-    (div(p2))
-    (div(p3._.name))
+    (div()(p1.string))
+    (div()(p2))
+    (div()(p3._.name))
   }
   const test = customElement('mary-test', renderTest)
 
