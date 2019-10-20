@@ -1,5 +1,6 @@
 import { assert } from 'chai'
-import { State, div, h1, zip$ } from '../src/index'
+import { State, zip$, mount, attr, style, repeat } from '../src/index'
+import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
   it('notify state subscribers', function() {
@@ -33,19 +34,17 @@ describe('state', function() {
 
   it('observe an element', function() {
     const state = new State(div())
-    const el = div()
-      (state)
-      .mount(document.head)
+    const el = mount(document.head, div()(state))
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
-    state.v = h1()
-    assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H1')
+    state.v = h3()
+    assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H3')
   })
 
   it('set a reactive attribute', function() {
     const state = new State('foo')
-    const el = <Element>div()
-      .attr('class', state)
-      .mount(document.head)
+    const el = <Element>mount(document.head, div()
+      (attr('class', state))
+    )
     assert.strictEqual(el.className, 'foo')
     state.v = 'bar'
     assert.strictEqual(el.className, 'bar')
@@ -53,9 +52,9 @@ describe('state', function() {
 
   it('set a reactive attribute with template', function() {
     const state = new State('active')
-    const el = <Element>div()
-      .attr('class', zip$`type--${state}`)
-      .mount(document.head)
+    const el = <Element>mount(document.head, div()
+      (attr('class', zip$`type--${state}`))
+    )
     assert.strictEqual(el.className, 'type--active')
     state.v = 'disabled'
     assert.strictEqual(el.className, 'type--disabled')
@@ -63,9 +62,9 @@ describe('state', function() {
 
   it('set a reactive style rule', function() {
     const state = new State('red')
-    const el = <HTMLElement>div()
-      .style('color', state)
-      .mount(document.head)
+    const el = <HTMLElement>mount(document.head, div()
+      (style('color', state))
+    )
     assert.strictEqual(el.style.color, state.v)
     state.v = 'green'
     assert.strictEqual(el.style.color, state.v)
@@ -115,14 +114,14 @@ describe('state', function() {
 
   it('conditional rendering', function() {
     const cond = new State(true)
-    const el = div()
+    const el = mount(document.head, div()
       (cond.and([
         div('then'),
         div('then2'),
       ]).or(
         div('else')
       ))
-      .mount(document.head)
+    )
     assert.strictEqual(el.children.length, 2)
     assert.strictEqual(el.children[0].textContent, 'then')
     assert.strictEqual(el.children[1].textContent, 'then2')
@@ -133,12 +132,12 @@ describe('state', function() {
 
   it('lazy conditional rendering', function() {
     const cond = new State(true)
-    const el = div()
+    const el = mount(document.head, div()
       (cond
         .and(() => div('then'))
         .or(() => div('else'))
       )
-      .mount(document.head)
+    )
     assert.strictEqual(el.children.length, 1)
     assert.strictEqual(el.children[0].textContent, 'then')
     cond.v = false
@@ -148,11 +147,11 @@ describe('state', function() {
 
   it('keyed array rendering', function() {
     const items = new State(['a', 'b', 'c'])
-    const el = div()
-      .repeat(items, x => x, (x, i) =>
+    const el = mount(document.head, div()
+      (repeat(items, x => x, (x, i) =>
         div()(zip$`${i.string} - ${x}`)
-      )
-      .mount(document.head)
+      ))
+    )
     const check = (msg?: string) => items.v.forEach((item, i) => {
       assert.strictEqual(el.children[i].textContent, `${i} - ${item}`, msg)
     })

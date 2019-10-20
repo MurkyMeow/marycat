@@ -1,11 +1,12 @@
 import { assert } from 'chai'
-import { VirtualNodeFn, MaryElement, State, Attr, customElement, div } from '../src/index'
+import { MaryElement, State, defAttr, customElement, _, PipeFn, mount } from '../src/index'
+import { div } from '../examples/bindings'
 
 describe('webc', function() {
-  function renderTest(host: VirtualNodeFn, {
-    p1 = Attr(false),
-    p2 = Attr(''),
-    p3 = Attr({ name: '' }),
+  function renderTest(host: PipeFn, {
+    p1 = defAttr(false),
+    p2 = defAttr(''),
+    p3 = defAttr({ name: '' }),
   }) {
     return host
     (div()(p1.string))
@@ -14,8 +15,8 @@ describe('webc', function() {
   }
   const test = customElement('mary-test', renderTest)
 
-  const instance = test()
-  const el = <MaryElement>instance.mount(document.head)
+  const instance = test.new()
+  const el = <MaryElement>mount(document.head, instance)
   const [p1, p2, p3] = el.root.children
 
   it('create web component', function() {
@@ -29,9 +30,9 @@ describe('webc', function() {
 
   it('set props', function() {
     instance
-      .prop('p1', true)
-      .prop('p2', 'hello')
-      .prop('p3', { name: 'Mary' })
+      (test.prop('p1', true))
+      (test.prop('p2', 'hello'))
+      (test.prop('p3', { name: 'Mary' }))
     assert.strictEqual(p1.textContent, 'true')
     assert.strictEqual(p2.textContent, 'hello')
     assert.strictEqual(p3.textContent, 'Mary')
@@ -46,7 +47,7 @@ describe('webc', function() {
 
   it('observe a prop', function() {
     const state = new State('zzz')
-    instance.prop('p2', state)
+    instance(test.prop('p2', state))
     assert.strictEqual(p2.textContent, state.v, 'Initial value is not set')
     state.v = 'qqqq'
     assert.strictEqual(p2.textContent, state.v, 'Updates are not captured')

@@ -8,12 +8,14 @@ Web components that are
 
 ```ts
 function renderProfile(host: VirtualNodeFn, {
-  name = Attr(''),
-  photo = Attr(''),
-  age = Attr(0),
+  name = defAttr(''),
+  photo = defAttr(''),
+  age = defAttr(0),
 }) {
   return host
-  (img('.profile-photo').attr('src', zip$`/${photo}`))
+  (img('.profile-photo')
+    (attr('src', zip$`/${photo}`))
+  )
   (div()
     (div('profile-name')(name))
     (div('profile-age')(age))
@@ -22,10 +24,12 @@ function renderProfile(host: VirtualNodeFn, {
 }
 const profile = customElement('mary-profile', renderProfile)
 
-profile()
-  .prop('name', 'Mary')
-  .prop('age', 9)
-  .prop('age', '9') // type error 🎉
-  .prop('aage', 9) // type error 🎉
-  .mount(document.body)
+mount(document.body,
+  (profile.new()
+    (profile.prop('name', 'Mary'))
+    (profile.prop('age', 9))
+    (profile.prop('age', '9')) // type error 🎉
+    (profile.prop('aage', 9)) // type error 🎉
+  )
+)
 ```

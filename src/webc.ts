@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { VirtualNode, VirtualNodeFn, fragment, chainify, GenericVirtualNodeFn } from './core'
+import { PipeFn, mount, _, fragment, shorthand } from './core'
 
 type Converter =
   StringConstructor |
@@ -30,55 +30,45 @@ export class MaryElement extends HTMLElement {
 let props: { [key: string]: State<any> }
 let keys: string[]
 
-export function Attr<T>(defaultValue: T): State<T> {
+export function defAttr<T>(defaultValue: T): State<T> {
   const [current] = keys.slice(-1)
   props[current] = new State(defaultValue)
   return props[current]
 }
 
-type RenderFunction<T> =
-  (host: VirtualNodeFn, props: T) => VirtualNodeFn
-
-class ComponentVirtualNode<T> extends VirtualNode {
-  constructor(elName: string, setup: string[],
-    private render: RenderFunction<T>,
-  ) {
-    super(elName, setup)
-  }
-  prop<K extends keyof T>(key: K, val: T[K] | ExtractStateType<T[K]>): this {
-    const sKey = <string>key
-    if (typeof val !== 'object') {
-      return this.attr(sKey, String(val))
-    }
-    return this.effect(el => {
-      const comp = <MaryElement>el
-      if (val instanceof State) {
-        val.sub(next => comp.props[sKey].v = next)
-      } else {
-        comp.props[sKey].v = val
-      }
+function mountComponent(parent: Element | ShadowRoot): Element {
+  props = {}
+  keys = []
+  const trap = new Proxy({}, {
+    get: (_, key: string) => void keys.push(key),
+  })
+  const elements = render(fragment(), <any>trap)
+  if (!customElements.get(elName)) {
+    customElements.define(elName, class extends MaryElement {
+      static get observedAttributes() { return keys }
     })
   }
-  mount(parent: Element | ShadowRoot): Element {
-    props = {}
-    keys = []
-    const trap = new Proxy({}, {
-      get: (_, key: string) => void keys.push(key),
-    })
-    const elements = this.render(fragment(), <any>trap)
-    if (!customElements.get(this.elName)) {
-      customElements.define(this.elName, class extends MaryElement {
-        static get observedAttributes() { return keys }
-      })
-    }
-    const el = this.el = <MaryElement>document.createElement(this.elName)
-    el.props = props
-    elements.mount(el.root)
-    // apply the chain
-    return <Element>super.mount(parent)
-  }
+  const el = <MaryElement>document.createElement(elName)
+  el.props = props
+  mount(el.root, elements)
+  // apply the chain
+  return <Element>super.mount(parent)
 }
 
-export const customElement = <T>(name: string, render: RenderFunction<T>) =>
-  (...setup: string[]): GenericVirtualNodeFn<ComponentVirtualNode<T>> =>
-    chainify(new ComponentVirtualNode(name, setup, render))
+export const customElement = <T>(name: string, render: (host: PipeFn, props: T) => PipeFn) => ({
+  new: shorthand(name),
+  prop: <K extends keyof T>(
+    key: K,
+    val: T[K] | ExtractStateType<T[K]>,
+  ) => (el: Element | ShadowRoot) => {
+    const sKey = <string>key
+    const comp = <MaryElement>el
+    if (typeof val !== 'object') {
+      comp.setAttribute(sKey, String(val))
+    } else if (val instanceof State) {
+      val.sub(next => comp.props[sKey].v = next)
+    } else {
+      comp.props[sKey].v = val
+    }
+  },
+})
