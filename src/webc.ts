@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { PipeFn, mount, _, fragment, shorthand, VirtualNode } from './core'
+import { PipeFn, mount, _, fragment, shorthand } from './core'
 
 type Converter =
   StringConstructor |
@@ -16,17 +16,6 @@ function getConverter(type: string): Converter | undefined {
   }
 }
 
-export class MaryElement extends HTMLElement {
-  root: ShadowRoot = this.attachShadow({ mode: 'open' })
-  props: { [key: string]: State<unknown> } = {}
-  attributeChangedCallback(name: string, _: string, val: string) {
-    const prop = this.props[name]
-    const converter = getConverter(typeof prop.v)
-    if (converter) prop.v = converter(val)
-    else console.trace(val, 'is not assignable to', `"${name}"`, 'of', this)
-  }
-}
-
 let props: { [key: string]: State<any> }
 let keys: string[]
 
@@ -36,47 +25,57 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return props[current]
 }
 
-function mountComponent(
-  parent: Element | ShadowRoot,
-  node: VirtualNode | PipeFn,
-): Element {
-  props = {}
-  keys = []
-  const trap = new Proxy({}, {
-    get: (_, key: string) => void keys.push(key),
-  })
-  const elements = render(fragment(), <any>trap)
-  if (!customElements.get(elName)) {
-    customElements.define(elName, class extends MaryElement {
-      static get observedAttributes() { return keys }
-    })
+export class MaryElement extends HTMLElement {
+  root: ShadowRoot = this.attachShadow({ mode: 'open' })
+  props: { [key: string]: State<unknown> } = {}
+  constructor(
+    private render: (host: PipeFn, props: any) => PipeFn,
+  ) {
+    super()
+    const observer = new MutationObserver(changes => changes.forEach(x => {
+      const name = x.attributeName!
+      const prop = this.props[name]
+      const val = this.getAttribute(name)
+      const converter = getConverter(typeof prop.v)
+      if (converter) prop.v = converter(val)
+      else console.trace(val, 'is not assignable to', `"${name}"`, 'of', this)
+    }))
+    observer.observe(this, { attributes: true })
   }
-  const el = <MaryElement>document.createElement(elName)
-  el.props = props
-  mount(el.root, elements)
-  const _node = node instanceof VirtualNode ? node : node.__vnode
-  _node.el = el
-  // apply the chain
-  return <Element>mount(parent, _node)
+  connectedCallback() {
+    props = {}, keys = []
+    const trap = new Proxy({}, {
+      get: (_, key: string) => void keys.push(key),
+    })
+    const children = this
+      .render(fragment(), <any>trap)
+    this.props = props
+    mount(this.root, children)
+  }
 }
 
 export const customElement = <T>(
-  name: string,
+  elName: string,
   render: (host: PipeFn, props: T) => PipeFn,
-) => ({
-  new: shorthand(name),
-  prop: <K extends keyof T>(
-    key: K,
-    val: T[K] | ExtractStateType<T[K]>,
-  ) => (el: Element | ShadowRoot) => {
-    const sKey = <string>key
-    const comp = <MaryElement>el
-    if (typeof val !== 'object') {
-      comp.setAttribute(sKey, String(val))
-    } else if (val instanceof State) {
-      val.sub(next => comp.props[sKey].v = next)
-    } else {
-      comp.props[sKey].v = val
-    }
-  },
-})
+) => {
+  customElements.define(elName, class extends MaryElement {
+    constructor() { super(render) }
+  })
+  return {
+    new: shorthand(elName),
+    prop: <K extends keyof T>(
+      key: K,
+      val: T[K] | ExtractStateType<T[K]>,
+    ) => (el: Element | ShadowRoot) => {
+      const sKey = <string>key
+      const comp = <MaryElement>el
+      if (typeof val !== 'object') {
+        comp.setAttribute(sKey, String(val))
+      } else if (val instanceof State) {
+        val.sub(next => comp.props[sKey].v = next)
+      } else {
+        comp.props[sKey].v = val
+      }
+    },
+  }
+}
