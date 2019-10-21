@@ -28,7 +28,10 @@ function applyObserved<T extends Effect>(el: Element | ShadowRoot, state: T exte
   return nodes
 }
 
-function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | undefined)[] {
+function apply(
+  el: Element | ShadowRoot,
+  effect: Effect | Effect[],
+): (Node | undefined)[] {
   if (Array.isArray(effect)) {
     const res: (Node | undefined)[] = []
     return res.concat(...effect.map(m => apply(el, m)))
@@ -60,24 +63,27 @@ function apply(el: Element | ShadowRoot, effect: Effect | Effect[]): (Node | und
 
 export class VirtualNode {
   el?: Element
-  chain: Effect[] = []
+  chain: Effect[]
   constructor(
     public readonly elName: string,
     setup: string[],
   ) {
-    this.chain.push(...setup.map(str => {
+    this.chain = setup.map(str => {
       const [prefix, rest] = [str[0], str.slice(1)]
       switch (prefix) {
         case '.': return attr('class', rest)
         case '#': return attr('id', rest)
         case '@': return attr('name', rest)
-        default: return (el: Element | ShadowRoot) => el.textContent += str
+        default: return str
       }
-    }))
+    })
   }
 }
 
-export const style = (prop: string, val: StateOrPlain<string>) => (el: Element | ShadowRoot) => {
+export const style = (
+  prop: string,
+  val: StateOrPlain<string>,
+) => (el: Element | ShadowRoot) => {
   if (!(el instanceof HTMLElement)) {
     return console.trace('Cant set style on', el)
   }
@@ -102,12 +108,19 @@ export const on = (
   }, options)
 }
 
-export const dispatch = (name: string, detail?: any, opts: CustomEventInit = {}) => (el: Element | ShadowRoot) => {
+export const dispatch = (
+  name: string,
+  detail?: any,
+  opts: CustomEventInit = {},
+) => (el: Element | ShadowRoot) => {
   const event = new CustomEvent(name, { detail, ...opts })
   filterShadow(el).dispatchEvent(event)
 }
 
-export const attr = <T extends string | number | boolean>(name: string, val: StateOrPlain<T>) => (_el: Element | ShadowRoot) => {
+export const attr = <T extends string | number | boolean>(
+  name: string,
+  val: StateOrPlain<T>
+) => (_el: Element | ShadowRoot) => {
   const el = filterShadow(_el)
   const setAttr = (value: T) =>
     el.setAttribute(name, val === false ? '' : String(value))
@@ -163,7 +176,10 @@ export const repeat = <T>(
   })
 }
 
-export function mount(parent: Element | ShadowRoot, node: VirtualNode | PipeFn): Element | ShadowRoot {
+export function mount(
+  parent: Element | ShadowRoot,
+  node: VirtualNode | PipeFn,
+): Element | ShadowRoot {
   if (isPipeFn(node)) {
     return mount(parent, node.__vnode)
   }

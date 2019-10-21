@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { PipeFn, mount, _, fragment, shorthand } from './core'
+import { PipeFn, mount, _, fragment, shorthand, VirtualNode } from './core'
 
 type Converter =
   StringConstructor |
@@ -36,7 +36,10 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return props[current]
 }
 
-function mountComponent(parent: Element | ShadowRoot): Element {
+function mountComponent(
+  parent: Element | ShadowRoot,
+  node: VirtualNode | PipeFn,
+): Element {
   props = {}
   keys = []
   const trap = new Proxy({}, {
@@ -51,11 +54,16 @@ function mountComponent(parent: Element | ShadowRoot): Element {
   const el = <MaryElement>document.createElement(elName)
   el.props = props
   mount(el.root, elements)
+  const _node = node instanceof VirtualNode ? node : node.__vnode
+  _node.el = el
   // apply the chain
-  return <Element>super.mount(parent)
+  return <Element>mount(parent, _node)
 }
 
-export const customElement = <T>(name: string, render: (host: PipeFn, props: T) => PipeFn) => ({
+export const customElement = <T>(
+  name: string,
+  render: (host: PipeFn, props: T) => PipeFn,
+) => ({
   new: shorthand(name),
   prop: <K extends keyof T>(
     key: K,
