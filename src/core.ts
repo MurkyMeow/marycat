@@ -200,7 +200,7 @@ export type PipeFn =
   { __vnode: VirtualNode } & ((arg: PipeArg) => PipeFn)
 
 const isPipeFn = (arg: any): arg is PipeFn =>
-  Boolean(arg.__vnode)
+  arg && arg.__vnode
 
 export function _(vnode: VirtualNode): PipeFn {
   const pipe = Object.assign(function(arg: PipeArg) {
