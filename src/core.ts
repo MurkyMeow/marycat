@@ -212,7 +212,7 @@ const isPipeFn = (arg: any): arg is PipeFn =>
 
 /**
  * turns a vnode into a function which can be called
- * infinite amount of times each time adding effects to the vnode
+ * infinite amount of times adding effects to the vnode
 */
 export function _(vnode: VirtualNode): PipeFn {
   const pipe = Object.assign(
