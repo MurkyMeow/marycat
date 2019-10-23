@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { PipeFn, mount, _, fragment, shorthand } from './core'
+import { PipeFn, mount, _, fragment, shorthand, VirtualNode } from './core'
 
 type Converter =
   StringConstructor |
@@ -16,6 +16,22 @@ function getConverter(type: string): Converter | undefined {
   }
 }
 
+export class MaryElement extends HTMLElement {
+  root: ShadowRoot = this.attachShadow({ mode: 'open' })
+  props: { [key: string]: State<unknown> } = {}
+  attributeChangedCallback(name: string, _: string, val: string) {
+    const prop = this.props[name]
+    const converter = getConverter(typeof prop.v)
+    if (converter) prop.v = converter(val)
+    else console.trace(val, 'is not assignable to', `"${name}"`, 'of', this)
+  }
+}
+
+type RenderFunction<T = any> =
+  (host: PipeFn, props: T) => PipeFn
+
+const renderLookup = new Map<string, RenderFunction>()
+
 let props: { [key: string]: State<any> }
 let keys: string[]
 
@@ -25,42 +41,30 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return props[current]
 }
 
-export class MaryElement extends HTMLElement {
-  root: ShadowRoot = this.attachShadow({ mode: 'open' })
-  props: { [key: string]: State<unknown> } = {}
-  constructor(
-    private render: (host: PipeFn, props: any) => PipeFn,
-  ) {
-    super()
-    const observer = new MutationObserver(changes => changes.forEach(x => {
-      const name = x.attributeName!
-      const prop = this.props[name]
-      const val = this.getAttribute(name)
-      const converter = getConverter(typeof prop.v)
-      if (converter) prop.v = converter(val)
-      else console.trace(val, 'is not assignable to', `"${name}"`, 'of', this)
-    }))
-    observer.observe(this, { attributes: true })
-  }
-  connectedCallback() {
-    props = {}, keys = []
-    const trap = new Proxy({}, {
-      get: (_, key: string) => void keys.push(key),
+export function createComponent(_node: VirtualNode | PipeFn): MaryElement {
+  const node = _node instanceof VirtualNode
+    ? _node : _node.__vnode
+  props = {}, keys = []
+  const trap = new Proxy({}, {
+    get: (_, key: string) => void keys.push(key),
+  })
+  const render = renderLookup.get(node.elName)!
+  const elements = render(fragment(), <any>trap)
+  if (!customElements.get(node.elName)) {
+    customElements.define(node.elName, class extends MaryElement {
+      get observedAttributes() { return keys }
     })
-    const children = this
-      .render(fragment(), <any>trap)
-    this.props = props
-    mount(this.root, children)
   }
+  const el = node.el = <MaryElement>document.createElement(node.elName)
+  el.props = props
+  return <MaryElement>mount(el, elements)
 }
 
 export const customElement = <T>(
   elName: string,
-  render: (host: PipeFn, props: T) => PipeFn,
+  render: RenderFunction<T>,
 ) => {
-  customElements.define(elName, class extends MaryElement {
-    constructor() { super(render) }
-  })
+  renderLookup.set(elName, render)
   return {
     new: shorthand(elName),
     prop: <K extends keyof T>(

@@ -1,4 +1,5 @@
 import { State, StateOrPlain } from './state'
+import { createComponent } from './webc'
 
 export type Effect = StateOrPlain<
   | string
@@ -187,7 +188,9 @@ export function mount(
     node.chain.forEach(m => apply(parent, m))
     return parent
   }
-  const el = node.el = node.el || document.createElement(node.elName)
+  const el = node.el = node.el || node.elName.includes('-')
+    ? createComponent(node)
+    : document.createElement(node.elName)
   node.chain.forEach(m => apply(el, m))
   node.chain.length = 0
   return parent.appendChild(el)
