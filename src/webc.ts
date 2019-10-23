@@ -1,5 +1,5 @@
 import { State, ExtractStateType } from './state'
-import { PipeFn, mount, _, fragment, shorthand, VirtualNode } from './core'
+import { PipeFn, mount, _, fragment, shorthand, VirtualNode, attr } from './core'
 
 type Converter =
   StringConstructor |
@@ -48,7 +48,10 @@ export function createComponent(_node: VirtualNode | PipeFn): MaryElement {
   const trap = new Proxy({}, {
     get: (_, key: string) => void keys.push(key),
   })
-  const render = renderLookup.get(node.elName)!
+  const render = renderLookup.get(node.elName)
+  if (!render) {
+    throw Error(`Cant find a render function for "${node.elName}"`)
+  }
   const elements = render(fragment(), <any>trap)
   if (!customElements.get(node.elName)) {
     customElements.define(node.elName, class extends MaryElement {
@@ -73,8 +76,12 @@ export const customElement = <T>(
     ) => (el: Element | ShadowRoot) => {
       const sKey = <string>key
       const comp = <MaryElement>el
-      if (typeof val !== 'object') {
-        comp.setAttribute(sKey, String(val))
+      if (
+        typeof val === 'string' ||
+        typeof val === 'number' ||
+        typeof val === 'boolean'
+      ) {
+        attr(sKey, val)(comp)
       } else if (val instanceof State) {
         val.sub(next => comp.props[sKey].v = next)
       } else {
