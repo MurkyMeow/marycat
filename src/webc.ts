@@ -55,12 +55,14 @@ export function createComponent(_node: VirtualNode | PipeFn): MaryElement {
   const elements = render(fragment(), <any>trap)
   if (!customElements.get(node.elName)) {
     customElements.define(node.elName, class extends MaryElement {
-      get observedAttributes() { return keys }
+      static get observedAttributes() { return keys }
     })
   }
-  const el = node.el = <MaryElement>document.createElement(node.elName)
+  const el = node.el = <MaryElement>document
+    .createElement(node.elName)
   el.props = props
-  return <MaryElement>mount(el, elements)
+  mount(el.root, elements)
+  return el
 }
 
 export const customElement = <T>(

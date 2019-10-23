@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat } from '../src/index'
+import { State, zip$, mount, attr, style, repeat, fragment } from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
