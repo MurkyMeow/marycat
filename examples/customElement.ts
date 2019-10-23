@@ -16,7 +16,7 @@ function renderExample(host: PipeFn, {
   (styleEl()(`
     span { color: red; }
   `))
-  (span()(zip$`You clicked ${count.map(String)} times`))
+  (span()(zip$`You clicked ${count.string} times`))
   (div()(zip$`${logo._.icon} ${logo._.title}`))
   (supercool.and([
     div('💫 ⭐️ 🌟 ✨'),
