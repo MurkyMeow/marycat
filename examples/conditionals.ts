@@ -1,4 +1,4 @@
-import { State } from '../src/index'
+import { State, mount } from '../src/index'
 import { div, h3 } from './bindings'
 
 const a = new State(true)
@@ -20,4 +20,4 @@ const app =
     (a.and(b).and(
       div('A and B')
     ))
-app.mount(document.body)
+mount(document.body, app)

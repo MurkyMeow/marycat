@@ -66,20 +66,10 @@ export function zip<R>(
   return res
 }
 
-export function zip$(
-  strings: TemplateStringsArray, ...keys: State<string>[]
-): State<string> {
-  const res = new State('')
-  strings.forEach((str, i) => {
+export const zip$ = (strings: TemplateStringsArray, ...keys: State<string>[]): State<string> =>
+  strings.reduce((acc, str, i) => {
     const state = keys[i]
-    res.v += str
-    if (!state) return
-    const start = res.v.length
-    state.sub((next, prev) => {
-      const left = res.v.slice(0, start)
-      const right = res.v.slice(start + prev.length)
-      res.v = `${left}${next}${right}`
-    })
-  })
-  return res
-}
+    return state
+      ? zip([acc, state], (a, b) => `${a}${str}${b}`)
+      : acc.map(v => `${v}${str}`)
+  }, new State(''))
