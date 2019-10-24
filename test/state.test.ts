@@ -24,12 +24,13 @@ describe('state', function() {
   it('make template derivation', function() {
     const state1 = new State('foo')
     const state2 = new State('bar')
-    const template = zip$`__${state1}-${state2}__`
-    assert.strictEqual(template.v, `__foo-bar__`)
+    const plain = '>>'
+    const template = zip$`__${state1}-${state2}${plain}`
+    assert.strictEqual(template.v, `__foo-bar>>`)
     state1.v = 'qux'
-    assert.strictEqual(template.v, `__qux-bar__`)
+    assert.strictEqual(template.v, `__qux-bar>>`)
     state2.v = 'qwer'
-    assert.strictEqual(template.v, `__qux-qwer__`)
+    assert.strictEqual(template.v, `__qux-qwer>>`)
   })
 
   it('observe an element', function() {

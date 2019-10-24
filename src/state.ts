@@ -66,7 +66,10 @@ export function zip<R>(
   return res
 }
 
-export const zip$ = (strings: TemplateStringsArray, ...keys: State<string>[]): State<string> =>
+export const zip$ = (
+  strings: TemplateStringsArray,
+  ...keys: StateOrPlain<string>[]
+): State<string> =>
   strings.reduce((acc, str, i) => {
     const state = keys[i]
     return state
