@@ -1,3 +1,3 @@
 export * from './core'
 export * from './state'
-export { MaryElement, customElement, defAttr } from './webc'
+export { MaryElement, ElementOf, customElement, defAttr } from './webc'

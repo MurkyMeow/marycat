@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { MaryElement, State, defAttr, customElement, _, PipeFn, mount } from '../src/index'
+import { State, defAttr, customElement, _, PipeFn, mount, ElementOf } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('webc', function() {
@@ -16,7 +16,7 @@ describe('webc', function() {
   const test = customElement('mary-test', renderTest)
 
   const instance = test.new()
-  const el = <MaryElement>mount(document.head, instance)
+  const el = <ElementOf<typeof test>>mount(document.head, instance)
   const [p1, p2, p3] = el.root.children
 
   it('create web component', function() {

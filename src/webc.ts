@@ -1,13 +1,10 @@
-import { State, ExtractStateType } from './state'
+import { State, StateOrPlain } from './state'
 import { PipeFn, mount, _, fragment, shorthand, VirtualNode, attr } from './core'
 
-type Converter =
-  StringConstructor |
-  NumberConstructor |
-  BigIntConstructor |
-  BooleanConstructor
+type Props<T> =
+  { [key in keyof T]: State<T[key]> }
 
-function getConverter(type: string): Converter | undefined {
+function getConverter(type: string) {
   switch (type) {
     case 'bigint': return BigInt
     case 'number': return Number
@@ -16,21 +13,24 @@ function getConverter(type: string): Converter | undefined {
   }
 }
 
-export class MaryElement extends HTMLElement {
+export class MaryElement<T> extends HTMLElement {
   root: ShadowRoot = this.attachShadow({ mode: 'open' })
-  props: { [key: string]: State<unknown> } = {}
-  attributeChangedCallback(name: string, _: string, val: string) {
+  props!: Props<T>
+  attributeChangedCallback(name: keyof T, _: string, val: string) {
     const prop = this.props[name]
     const converter = getConverter(typeof prop.v)
-    if (converter) prop.v = converter(val)
-    else console.trace(val, 'is not assignable to', `"${name}"`, 'of', this)
+    if (converter) prop.v = <any>converter(val) // fixme
+    else console.trace(val, 'is not assignable to', name, 'of', this)
   }
 }
 
-type RenderFunction<T = any> =
-  (host: PipeFn, props: T) => PipeFn
+export type ElementOf<T> =
+  T extends CustomElementConstructor<infer U> ? MaryElement<U> : never
 
-const renderLookup = new Map<string, RenderFunction>()
+type RenderFunction<T> =
+  (host: PipeFn, props: Props<T>) => PipeFn
+
+const renderLookup = new Map<string, RenderFunction<any>>()
 
 let props: { [key: string]: State<any> }
 let keys: string[]
@@ -41,7 +41,7 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return props[current]
 }
 
-export function createComponent(_node: VirtualNode | PipeFn): MaryElement {
+export function createComponent(_node: VirtualNode | PipeFn): MaryElement<any> {
   const node = _node instanceof VirtualNode
     ? _node : _node.__vnode
   props = {}, keys = []
@@ -54,40 +54,43 @@ export function createComponent(_node: VirtualNode | PipeFn): MaryElement {
   }
   const elements = render(fragment(), <any>trap)
   if (!customElements.get(node.elName)) {
-    customElements.define(node.elName, class extends MaryElement {
+    customElements.define(node.elName, class extends MaryElement<any> {
       static get observedAttributes() { return keys }
     })
   }
-  const el = node.el = <MaryElement>document
-    .createElement(node.elName)
+  const el = node.el =
+    <MaryElement<any>>document.createElement(node.elName)
   el.props = props
   mount(el.root, elements)
   return el
 }
 
+interface CustomElementConstructor<T> {
+  new: () => PipeFn
+  prop:
+    <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) =>
+    (el: Element | ShadowRoot) => void
+}
+
 export const customElement = <T>(
   elName: string,
   render: RenderFunction<T>,
-) => {
+): CustomElementConstructor<T> => {
   renderLookup.set(elName, render)
   return {
     new: shorthand(elName),
-    prop: <K extends keyof T>(
-      key: K,
-      val: T[K] | ExtractStateType<T[K]>,
-    ) => (el: Element | ShadowRoot) => {
-      const sKey = <string>key
-      const comp = <MaryElement>el
+    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: Element | ShadowRoot) => {
+      const comp = <MaryElement<T>>el
       if (
         typeof val === 'string' ||
         typeof val === 'number' ||
         typeof val === 'boolean'
       ) {
-        attr(sKey, val)(comp)
+        attr(<string>key, val)(comp)
       } else if (val instanceof State) {
-        val.sub(next => comp.props[sKey].v = next)
+        val.sub(next => comp.props[key].v = next)
       } else {
-        comp.props[sKey].v = val
+        comp.props[key].v = val
       }
     },
   }
