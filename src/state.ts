@@ -13,7 +13,7 @@ export class State<T> {
   constructor(
     private val: T,
   ) {}
-  get v() {
+  get v(): T {
     return this.val
   }
   set v(next: T) {
@@ -26,11 +26,13 @@ export class State<T> {
     return this.map(String)
   }
   get _(): ObservedFields<T> {
-    return <ObservedFields<T>>new Proxy({}, {
-      get: (_, key: keyof T) => this.map(v => v[key])
-    })
+    return new Proxy({}, {
+      get: <K extends keyof T>(_: unknown, key: K): State<T[K]> => {
+        return this.map(v => v[key])
+      },
+    }) as ObservedFields<T>
   }
-  sub(fn: Observer<T>, immediate: boolean = true): this {
+  sub(fn: Observer<T>, immediate = true): this {
     if (immediate) fn(this.v, this.v)
     this.observers.push(fn)
     return this
@@ -41,25 +43,29 @@ export class State<T> {
   not(): State<boolean> {
     return this.map(v => !v)
   }
-  and<V>(s: StateOrPlain<V>) { return zip([this, s], (a, b) => a ? b : a) }
-  or<V>(s: StateOrPlain<V>) { return zip([this, s], (a, b) => a || b) }
-  eq(s: StateOrPlain<T>) { return zip([this, s], (a, b) => a === b) }
-  ne(s: StateOrPlain<T>) { return zip([this, s], (a, b) => a !== b) }
-  gt(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a > b) }
-  ge(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a >= b) }
-  lt(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a < b) }
-  le(s: StateOrPlain<number>) { return zip([this, s], (a, b) => a <= b) }
+  and<V>(s: V): State<ExtractStateType<this> | ExtractStateType<V>> { return zip([this, s], (a, b) => a ? b : a) }
+  or<V>(s: V): State<ExtractStateType<this> | ExtractStateType<V>> { return zip([this, s], (a, b) => a || b) }
+  eq(s: StateOrPlain<T>): State<boolean> { return zip([this, s], (a, b) => a === b) }
+  ne(s: StateOrPlain<T>): State<boolean> { return zip([this, s], (a, b) => a !== b) }
+  gt(s: StateOrPlain<number>): State<boolean> { return zip([this, s], (a, b) => a > b) }
+  ge(s: StateOrPlain<number>): State<boolean> { return zip([this, s], (a, b) => a >= b) }
+  lt(s: StateOrPlain<number>): State<boolean> { return zip([this, s], (a, b) => a < b) }
+  le(s: StateOrPlain<number>): State<boolean> { return zip([this, s], (a, b) => a <= b) }
 }
 
 export function zip<T, R>(states: [T], map: (arg: ExtractStateType<T>) => R): State<R>
 export function zip<T, T2, R>(states: [T, T2], map: (...args: [ExtractStateType<T>, ExtractStateType<T2>]) => R): State<R>
 
 export function zip<R>(
-  states: StateOrPlain<any>[], map: (...values: any[]) => R,
+  states: StateOrPlain<unknown>[], map: (...values: unknown[]) => R,
 ): State<R> {
-  const values = () => map(...states.map(x => x instanceof State ? x.v : x))
+  const values = (): R => {
+    return map(...states.map(x => x instanceof State ? x.v : x))
+  }
   const res = new State(values())
-  const update = () => res.v = values()
+  const update = (): void => {
+    res.v = values()
+  }
   states.forEach(state => {
     if (state instanceof State) state.sub(update, false)
   })

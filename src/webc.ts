@@ -1,26 +1,21 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, mount, _, fragment, shorthand, VirtualNode, attr } from './core'
+import { PipeFn, mount, fragment, shorthand, VirtualNode, attr } from './core'
 
 type Props<T> =
   { [key in keyof T]: State<T[key]> }
 
-function getConverter(type: string) {
-  switch (type) {
-    case 'bigint': return BigInt
-    case 'number': return Number
-    case 'string': return String
-    case 'boolean': return Boolean
-  }
-}
-
 export class MaryElement<T> extends HTMLElement {
   root: ShadowRoot = this.attachShadow({ mode: 'open' })
   props!: Props<T>
-  attributeChangedCallback(name: keyof T, _: string, val: string) {
-    const prop = this.props[name]
-    const converter = getConverter(typeof prop.v)
-    if (converter) prop.v = <any>converter(val) // fixme
-    else console.trace(val, 'is not assignable to', name, 'of', this)
+  attributeChangedCallback(name: keyof T, _: string, val: string): void {
+    const prop = this.props[name] as State<unknown>
+    switch (typeof prop.v) {
+      case 'bigint': prop.v = BigInt(val); break
+      case 'number': prop.v = Number(val); break
+      case 'string': prop.v = String(val); break
+      case 'boolean': prop.v =  Boolean(val); break
+      default: console.trace(val, 'is not assignable to', name, 'of', this)
+    }
   }
 }
 
@@ -30,63 +25,66 @@ export type ElementOf<T> =
 type RenderFunction<T> =
   (host: PipeFn, props: Props<T>) => PipeFn
 
-const renderLookup = new Map<string, RenderFunction<any>>()
+const renderLookup = new Map<string, RenderFunction<unknown>>()
 
-let props: { [key: string]: State<any> }
+let props: Record<string, State<unknown>>
 let keys: string[]
 
 export function defAttr<T>(defaultValue: T): State<T> {
   const [current] = keys.slice(-1)
-  props[current] = new State(defaultValue)
-  return props[current]
+  const state = new State(defaultValue)
+  props[current] = state as State<unknown>
+  return state
 }
 
-export function createComponent(_node: VirtualNode | PipeFn): MaryElement<any> {
+export function createComponent(_node: VirtualNode | PipeFn): MaryElement<unknown> {
   const node = _node instanceof VirtualNode
     ? _node : _node.__vnode
   props = {}, keys = []
   const trap = new Proxy({}, {
-    get: (_, key: string) => void keys.push(key),
+    get: (_, key: string): void => {
+      keys.push(key)
+    },
   })
   const render = renderLookup.get(node.elName)
   if (!render) {
     throw Error(`Cant find a render function for "${node.elName}"`)
   }
-  const elements = render(fragment(), <any>trap)
+  const elements = render(fragment(), trap)
   if (!customElements.get(node.elName)) {
-    customElements.define(node.elName, class extends MaryElement<any> {
-      static get observedAttributes() { return keys }
+    customElements.define(node.elName, class extends MaryElement<unknown> {
+      static get observedAttributes(): string[] { return keys }
     })
   }
   const el = node.el =
-    <MaryElement<any>>document.createElement(node.elName)
+    document.createElement(node.elName) as MaryElement<unknown>
   el.props = props
   mount(el.root, elements)
   return el
 }
 
 interface CustomElementConstructor<T> {
-  new: () => PipeFn
+  new: () => PipeFn;
   prop:
     <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) =>
-    (el: Element | ShadowRoot) => void
+    (el: Element | ShadowRoot) => void;
 }
 
 export const customElement = <T>(
   elName: string,
   render: RenderFunction<T>,
 ): CustomElementConstructor<T> => {
-  renderLookup.set(elName, render)
+  renderLookup.set(elName, render as RenderFunction<unknown>)
   return {
     new: shorthand(elName),
-    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: Element | ShadowRoot) => {
-      const comp = <MaryElement<T>>el
+    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: Element | ShadowRoot): void => {
+      const comp = el as MaryElement<T>
       if (
         typeof val === 'string' ||
         typeof val === 'number' ||
         typeof val === 'boolean'
       ) {
-        attr(<string>key, val)(comp)
+        attr(key as string, val)(comp)
       } else if (val instanceof State) {
         val.sub(next => comp.props[key].v = next)
       } else {

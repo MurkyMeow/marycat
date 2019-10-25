@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat, fragment } from '../src/index'
+import { State, zip$, mount, attr, style, repeat } from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
@@ -43,9 +43,9 @@ describe('state', function() {
 
   it('set a reactive attribute', function() {
     const state = new State('foo')
-    const el = <Element>mount(document.head, div()
+    const el = mount(document.head, div()
       (attr('class', state))
-    )
+    ) as Element
     assert.strictEqual(el.className, 'foo')
     state.v = 'bar'
     assert.strictEqual(el.className, 'bar')
@@ -53,9 +53,9 @@ describe('state', function() {
 
   it('set a reactive attribute with template', function() {
     const state = new State('active')
-    const el = <Element>mount(document.head, div()
+    const el = mount(document.head, div()
       (attr('class', zip$`type--${state}`))
-    )
+    ) as Element
     assert.strictEqual(el.className, 'type--active')
     state.v = 'disabled'
     assert.strictEqual(el.className, 'type--disabled')
@@ -63,9 +63,9 @@ describe('state', function() {
 
   it('set a reactive style rule', function() {
     const state = new State('red')
-    const el = <HTMLElement>mount(document.head, div()
+    const el = mount(document.head, div()
       (style('color', state))
-    )
+    ) as HTMLElement
     assert.strictEqual(el.style.color, state.v)
     state.v = 'green'
     assert.strictEqual(el.style.color, state.v)
@@ -153,7 +153,7 @@ describe('state', function() {
         div()(zip$`${i.string} - ${x}`)
       ))
     )
-    const check = (msg?: string) => items.v.forEach((item, i) => {
+    const check = (msg?: string): void => items.v.forEach((item, i) => {
       assert.strictEqual(el.children[i].textContent, `${i} - ${item}`, msg)
     })
     check()

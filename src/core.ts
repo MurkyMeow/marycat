@@ -20,7 +20,8 @@ function applyobservedEffect<T extends Effect>(
   const hook: Node = el.appendChild(new Comment(''))
   const nodes: Node[] = []
   state.sub((next: T | T[]) => {
-    while (nodes.length) el.removeChild(nodes.pop()!)
+    nodes.forEach(node => el.removeChild(node))
+    nodes.length = 0
     let refNode: Node = hook
     const _nodes = applyEffect(el, next)
     _nodes.forEach(node => {
@@ -57,9 +58,9 @@ function applyEffect(
     case 'function':
       if (isPipeFn(effect)) return [mount(el, effect.__vnode)]
       const val = ([] as (PipeFn | Node | void)[]).concat(effect(el))
-      return <Node[]>val
+      return val
         .map(x => isPipeFn(x) ? mount(el, x.__vnode) : x)
-        .filter(_=>_)
+        .filter(_=>_) as Node[]
     default:
       console.trace('Unexpected child:', effect)
       return []
@@ -76,7 +77,7 @@ export class VirtualNode {
     this.chain = setup.map(str => {
       const [prefix, rest] = [str[0], str.slice(1)]
       switch (prefix) {
-        case '.': return (el: Element | ShadowRoot) => {
+        case '.': return (el: Element | ShadowRoot): void => {
           filterShadow(el).classList.add(rest)
         }
         case '#': return attr('id', rest)
@@ -90,7 +91,7 @@ export class VirtualNode {
 export const style = (
   prop: string,
   val: StateOrPlain<string>,
-) => (el: Element | ShadowRoot) => {
+) => (el: Element | ShadowRoot): void => {
   if (!(el instanceof HTMLElement)) {
     return console.trace('Cant set style on', el)
   }
@@ -104,9 +105,9 @@ export const style = (
 export const on = (
   event: string,
   handler: EventListener,
-  mods: { prevent?: boolean, stop?: boolean, shadow?: boolean } = {},
+  mods: { prevent?: boolean; stop?: boolean; shadow?: boolean } = {},
   options?: AddEventListenerOptions | EventListenerOptions,
-) => (_el: Element | ShadowRoot) => {
+) => (_el: Element | ShadowRoot): void => {
   const el = mods.shadow ? _el : filterShadow(_el)
   el.addEventListener(event, (e: Event) => {
     if (mods.prevent) e.preventDefault()
@@ -119,7 +120,7 @@ export const dispatch = (
   name: string,
   detail?: any,
   opts: CustomEventInit = {},
-) => (el: Element | ShadowRoot) => {
+) => (el: Element | ShadowRoot): void => {
   const event = new CustomEvent(name, { detail, ...opts })
   filterShadow(el).dispatchEvent(event)
 }
@@ -127,9 +128,9 @@ export const dispatch = (
 export const attr = <T extends string | number | boolean>(
   name: string,
   val: StateOrPlain<T>
-) => (_el: Element | ShadowRoot) => {
+) => (_el: Element | ShadowRoot): void => {
   const el = filterShadow(_el)
-  const setAttr = (value: T) =>
+  const setAttr = (value: T): void =>
     el.setAttribute(name, val === false ? '' : String(value))
   if (val instanceof State) {
     val.sub(setAttr)
@@ -142,12 +143,12 @@ export const repeat = <T>(
   items: State<T[]>,
   getKey: (el: T) => string | object,
   render: (el: State<T>, i: State<number>) => Effect | Effect[],
-) => (el: Element | ShadowRoot) => {
+) => (el: Element | ShadowRoot): void => {
   const hook = el.appendChild(new Comment(''))
-  type ObservedItem = {
-    nodes: Node[],
-    state: State<T>,
-    index: State<number>,
+  interface ObservedItem {
+    nodes: Node[];
+    state: State<T>;
+    index: State<number>;
   }
   let lookup = new Map<string | object, ObservedItem>()
   items.sub((next, prev) => {
@@ -176,8 +177,8 @@ export const repeat = <T>(
     prev.forEach(item => {
       const key = getKey(item)
       if (newLookup.has(key)) return
-      const observed = lookup.get(key)!
-      observed.nodes.forEach(node => el.removeChild(node))
+      const observed = lookup.get(key)
+      if (observed) observed.nodes.forEach(node => el.removeChild(node))
     })
     lookup = newLookup
   })
@@ -207,8 +208,8 @@ export type PipeFn =
   & (<T extends Effect | Effect[]>(...args: StateOrPlain<T>[]) => PipeFn)
   & { __vnode: VirtualNode }
 
-const isPipeFn = (arg: any): arg is PipeFn =>
-  typeof arg === 'function' && arg.__vnode
+const isPipeFn = (arg: unknown): arg is PipeFn =>
+  typeof arg === 'function' && '__vnode' in arg
 
 /**
  * turns a vnode into a function which can be called
@@ -231,7 +232,7 @@ export function _(vnode: VirtualNode): PipeFn {
   return pipe
 }
 
-export const shorthand = (elName: string) => (...setup: string[]) =>
+export const shorthand = (elName: string) => (...setup: string[]): PipeFn =>
   _(new VirtualNode(elName, setup))
 
 export const styleEl = shorthand('style')
