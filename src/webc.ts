@@ -1,5 +1,5 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, mount, fragment, shorthand, VirtualNode, attr } from './core'
+import { PipeFn, mount, fragment, shorthand, VirtualNode, attr } from './core__simple'
 
 type Props<T> =
   { [key in keyof T]: State<T[key]> }
@@ -23,7 +23,7 @@ export type ElementOf<T> =
   T extends CustomElementConstructor<infer U> ? MaryElement<U> : never
 
 type RenderFunction<T> =
-  (host: PipeFn, props: Props<T>) => PipeFn
+  (host: PipeFn<MaryElement<T>>, props: Props<T>) => PipeFn<MaryElement<T>>
 
 const renderLookup = new Map<string, RenderFunction<unknown>>()
 
@@ -37,7 +37,9 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return state
 }
 
-export function createComponent(_node: VirtualNode | PipeFn): MaryElement<unknown> {
+export function createComponent<T extends MaryElement<unknown>>(
+  _node: VirtualNode<T> | PipeFn<T>,
+): MaryElement<unknown> {
   const node = _node instanceof VirtualNode
     ? _node : _node.__vnode
   props = {}, keys = []
@@ -50,7 +52,7 @@ export function createComponent(_node: VirtualNode | PipeFn): MaryElement<unknow
   if (!render) {
     throw Error(`Cant find a render function for "${node.elName}"`)
   }
-  const elements = render(fragment(), trap)
+  const children = render(fragment(), trap)
   if (!customElements.get(node.elName)) {
     customElements.define(node.elName, class extends MaryElement<unknown> {
       static get observedAttributes(): string[] { return keys }
@@ -59,36 +61,34 @@ export function createComponent(_node: VirtualNode | PipeFn): MaryElement<unknow
   const el = node.el =
     document.createElement(node.elName) as MaryElement<unknown>
   el.props = props
-  mount(el.root, elements)
+  mount(el.root, [children])
   return el
 }
 
 interface CustomElementConstructor<T> {
-  new: () => PipeFn;
+  new: () => PipeFn<MaryElement<T>>;
   prop:
     <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) =>
-    (el: Element | ShadowRoot) => void;
+    (el: MaryElement<T>) => void;
 }
 
 export const customElement = <T>(
-  elName: string,
-  render: RenderFunction<T>,
+  elName: string, render: RenderFunction<T>,
 ): CustomElementConstructor<T> => {
   renderLookup.set(elName, render as RenderFunction<unknown>)
   return {
     new: shorthand(elName),
-    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: Element | ShadowRoot): void => {
-      const comp = el as MaryElement<T>
+    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: MaryElement<T>): void => {
       if (
         typeof val === 'string' ||
         typeof val === 'number' ||
         typeof val === 'boolean'
       ) {
-        attr(key as string, val)(comp)
+        attr(key as string, val)(el)
       } else if (val instanceof State) {
-        val.sub(next => comp.props[key].v = next)
+        val.sub(next => el.props[key].v = next)
       } else {
-        comp.props[key].v = val
+        el.props[key].v = val
       }
     },
   }
