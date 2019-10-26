@@ -6,17 +6,17 @@ type ElOrShadow = Element | ShadowRoot
 type ElName = keyof HTMLElementTagNameMap
 type ElByName<T extends ElName> = HTMLElementTagNameMap[T]
 
-export type Effect<T extends ElName> =
-  (el: ElByName<T>) => void
+export type Effect<T extends ElOrShadow> =
+  (el: T) => void
 
 const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
-export class VirtualNode<T extends ElName> {
-  el?: ElByName<T>
+export class GenericVirtualNode<T extends ElOrShadow> {
+  el?: T
   chain: Effect<T>[] = []
   constructor(
-    public readonly elName: T, setup: string[],
+    public readonly elName: string, setup: string[],
   ) {
     this.chain.push(_el => {
       const el = filterShadow(_el)
@@ -33,21 +33,26 @@ export class VirtualNode<T extends ElName> {
   }
 }
 
-// yes, this is a monkey-patched function
-export type PipeFn<T extends ElName> =
-  & ((effect: Effect<T>) => PipeFn<T>)
-  & { __vnode: VirtualNode<T> }
+export class VirtualNode<T extends ElName> extends GenericVirtualNode<ElByName<T>> {}
 
-export function mount<T extends ElName>(
+// yes, this is a monkey-patched function
+export type PipeFn<T extends ElOrShadow> =
+  & ((effect: Effect<T>) => PipeFn<T>)
+  & { __vnode: GenericVirtualNode<T> }
+
+export function mount<T extends ElOrShadow>(
   parent: ElOrShadow,
-  vnodes: (VirtualNode<T> | PipeFn<T>)[],
-): ElByName<T>[] {
-  return ([] as ElByName<T>[]).concat(...vnodes.map(vnode => {
+  vnodes: (GenericVirtualNode<T> | PipeFn<T>)[],
+): T[] {
+  return ([] as T[]).concat(...vnodes.map(vnode => {
     if (vnode instanceof VirtualNode) {
       const el = document.createElement(vnode.elName)
       vnode.chain.forEach(effect => effect(el))
       vnode.chain.length = 0
-      return parent.appendChild(el)
+      return [parent.appendChild(el)]
+    }
+    if (vnode instanceof GenericVirtualNode) {
+      return []
     }
     return mount(parent, [vnode.__vnode])
   }))
@@ -57,7 +62,7 @@ export function mount<T extends ElName>(
  * turns a vnode into a function which can be called
  * infinite amount of times adding effects to the vnode
 */
-export function pipe<T extends ElName>(vnode: VirtualNode<T>): PipeFn<T> {
+export function pipe<T extends ElOrShadow>(vnode: GenericVirtualNode<T>): PipeFn<T> {
   const fn = Object.assign(function(effect: Effect<T>) {
     if (vnode.el) effect(vnode.el)
     else vnode.chain.push(effect)
@@ -125,7 +130,7 @@ export function attr<T extends string | number | boolean>(
 export function repeat<T>(
   items: State<T[]>,
   getKey: (el: T) => string | object,
-  render: (el: State<T>, i: State<number>) => PipeFn<ElName> | PipeFn<ElName>[],
+  render: (el: State<T>, i: State<number>) => PipeFn<ElOrShadow> | PipeFn<ElOrShadow>[],
 ) {
   return (el: ElOrShadow): void => {
     const hook = el.appendChild(new Comment(''))
@@ -149,7 +154,7 @@ export function repeat<T>(
           const state = new State(item)
           const index = new State(i)
           const vnodes = render(state, index)
-          const nodes = mount(el, ([] as PipeFn<ElName>[]).concat(vnodes))
+          const nodes = mount(el, ([] as PipeFn<ElOrShadow>[]).concat(vnodes))
           observed = { nodes, state, index }
         }
         // restore the order of the nodes
@@ -170,7 +175,7 @@ export function repeat<T>(
 }
 
 export const shorthand = <T extends ElName>(elName: T) =>
-  (...setup: string[]): PipeFn<T> =>
+  (...setup: string[]): PipeFn<ElByName<T>> =>
     pipe(new VirtualNode<T>(elName, setup))
 
 // export const fragment = shorthand('fragment')

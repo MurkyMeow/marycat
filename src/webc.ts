@@ -1,5 +1,5 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, mount, shorthand, VirtualNode, attr } from './core__simple'
+import { PipeFn, mount, shorthand, GenericVirtualNode, attr, pipe } from './core__simple'
 
 type Props<T> =
   { [key in keyof T]: State<T[key]> }
@@ -40,9 +40,9 @@ export function defAttr<T>(defaultValue: T): State<T> {
 const maryFragment = shorthand('fragment')
 
 export function createComponent(
-  _node: VirtualNode<MaryElement<unknown>> | PipeFn<MaryElement<unknown>>,
+  _node: GenericVirtualNode<MaryElement<unknown>> | PipeFn<MaryElement<unknown>>,
 ): MaryElement<unknown> {
-  const node = _node instanceof VirtualNode
+  const node = _node instanceof GenericVirtualNode
     ? _node : _node.__vnode
   props = {}, keys = []
   const trap = new Proxy({}, {
@@ -78,7 +78,9 @@ export const customElement = <T>(
 ): CustomElementConstructor<T> => {
   renderLookup.set(elName, render as RenderFunction<unknown>)
   return {
-    new: shorthand(elName),
+    new(...setup: string[]) {
+      return pipe(new GenericVirtualNode(elName, setup))
+    },
     prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: MaryElement<T>): void => {
       if (
         typeof val === 'string' ||
