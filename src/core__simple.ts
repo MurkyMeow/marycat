@@ -1,5 +1,4 @@
 import { StateOrPlain, State } from './state'
-import { createComponent } from './webc'
 
 type ElOrShadow = Element | ShadowRoot
 
@@ -12,67 +11,54 @@ export type Effect<T extends ElOrShadow> =
 const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
-export class GenericVirtualNode<T extends ElOrShadow> {
-  el?: T
-  chain: Effect<T>[] = []
+export class VirtualNode<T extends ElOrShadow> {
   constructor(
-    public readonly elName: string, setup: string[],
+    public readonly el: T, setup: string[],
   ) {
-    this.chain.push(_el => {
-      const el = filterShadow(_el)
-      setup.forEach(str => {
-        const [prefix, rest] = [str[0], str.slice(1)]
-        switch (prefix) {
-          case '.': return el.classList.add(rest)
-          case '#': return el.setAttribute('id', rest)
-          case '@': return el.setAttribute('name', rest)
-          default: return el.textContent += str
-        }
-      })
+    const _el = filterShadow(el)
+    setup.forEach(str => {
+      const [prefix, rest] = [str[0], str.slice(1)]
+      switch (prefix) {
+        case '.': return _el.classList.add(rest)
+        case '#': return _el.setAttribute('id', rest)
+        case '@': return _el.setAttribute('name', rest)
+        default: return el.textContent += str
+      }
     })
   }
 }
 
-export class VirtualNode<T extends ElName> extends GenericVirtualNode<ElByName<T>> {}
-
 // yes, this is a monkey-patched function
 export type PipeFn<T extends ElOrShadow> =
   & ((effect: Effect<T>) => PipeFn<T>)
-  & { __vnode: GenericVirtualNode<T> }
+  & { __vnode: VirtualNode<T> }
 
 export function mount<T extends ElOrShadow>(
   parent: ElOrShadow,
-  vnodes: (GenericVirtualNode<T> | PipeFn<T>)[],
+  vnodes: (VirtualNode<T> | PipeFn<T>)[],
 ): T[] {
-  return ([] as T[]).concat(...vnodes.map(vnode => {
-    if (vnode instanceof VirtualNode) {
-      const el = document.createElement(vnode.elName)
-      vnode.chain.forEach(effect => effect(el))
-      vnode.chain.length = 0
-      return [parent.appendChild(el)]
-    }
-    if (vnode instanceof GenericVirtualNode) {
-      return []
-    }
-    return mount(parent, [vnode.__vnode])
-  }))
+  return ([] as T[]).concat(...vnodes.map(vnode =>
+    vnode instanceof VirtualNode
+      ? parent.appendChild(vnode.el)
+      : mount(parent, [vnode.__vnode])
+    )
+  )
 }
 
 /**
  * turns a vnode into a function which can be called
  * infinite amount of times adding effects to the vnode
 */
-export function pipe<T extends ElOrShadow>(vnode: GenericVirtualNode<T>): PipeFn<T> {
+export function pipe<T extends ElOrShadow>(vnode: VirtualNode<T>): PipeFn<T> {
   const fn = Object.assign(function(effect: Effect<T>) {
-    if (vnode.el) effect(vnode.el)
-    else vnode.chain.push(effect)
+    effect(vnode.el)
     return fn
   }, { __vnode: vnode })
   return fn
 }
 
 export function text(val: StateOrPlain<string>) {
-  return (el: Element): void => {
+  return (el: ElOrShadow): void => {
     const textNode = el.appendChild(document.createTextNode(''))
     if (val instanceof State) {
       val.sub(next => textNode.textContent = next)
@@ -83,7 +69,8 @@ export function text(val: StateOrPlain<string>) {
 }
 
 export function style(rule: string, val: StateOrPlain<string>) {
-  return (el: HTMLElement): void => {
+  return (_el: ElOrShadow): void => {
+    const el = <HTMLElement>filterShadow(_el)
     if (val instanceof State) {
       val.sub(next => el.style.setProperty(rule, next))
     } else {
@@ -95,10 +82,11 @@ export function style(rule: string, val: StateOrPlain<string>) {
 export function on(
   event: string,
   handler: EventListener,
-  mods: { prevent?: boolean; stop?: boolean } = {},
+  mods: { prevent?: boolean; stop?: boolean, shadow?: boolean } = {},
   options?: AddEventListenerOptions | EventListenerOptions
 ) {
-  return (el: ElOrShadow): void => {
+  return (_el: ElOrShadow): void => {
+    const el = mods.shadow ? _el : filterShadow(_el)
     el.addEventListener(event, (e: Event) => {
       if (mods.prevent) e.preventDefault()
       if (mods.stop) e.stopPropagation()
@@ -119,7 +107,8 @@ export function dispatch<T>(
 export function attr<T extends string | number | boolean>(
   name: string, val: StateOrPlain<T>,
 ) {
-  return (el: Element): void => {
+  return (_el: ElOrShadow): void => {
+    const el = filterShadow(_el)
     const setAttr = (value: T): void =>
       el.setAttribute(name, val === false ? '' : String(value))
     if (val instanceof State) val.sub(setAttr)
@@ -176,7 +165,7 @@ export function repeat<T>(
 
 export const shorthand = <T extends ElName>(elName: T) =>
   (...setup: string[]): PipeFn<ElByName<T>> =>
-    pipe(new VirtualNode<T>(elName, setup))
+    pipe(new VirtualNode(document.createElement(elName), setup))
 
 // export const fragment = shorthand('fragment')
 export const styleEl = shorthand('style')
