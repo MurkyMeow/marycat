@@ -3,11 +3,11 @@ import { State, defAttr, customElement, PipeFn, mount, ElementOf } from '../src/
 import { div } from '../examples/bindings'
 
 describe('webc', function() {
-  function renderTest(host: PipeFn, {
+  function renderTest(host: PipeFn<ShadowRoot>, {
     p1 = defAttr(false),
     p2 = defAttr(''),
     p3 = defAttr({ name: '' }),
-  }): PipeFn {
+  }): PipeFn<ShadowRoot> {
     return host
     (div()(p1.string))
     (div()(p2))
