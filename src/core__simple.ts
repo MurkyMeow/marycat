@@ -1,17 +1,22 @@
 import { StateOrPlain, State } from './state'
 import { createComponent } from './webc'
 
-export type Effect<T extends Element | ShadowRoot> =
-  (el: T) => void
+type ElOrShadow = Element | ShadowRoot
 
-const filterShadow = (el: Element | ShadowRoot): Element =>
+type ElName = keyof HTMLElementTagNameMap
+type ElByName<T extends ElName> = HTMLElementTagNameMap[T]
+
+export type Effect<T extends ElName> =
+  (el: ElByName<T>) => void
+
+const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
-export class VirtualNode<T extends Element | ShadowRoot> {
-  el?: T
+export class VirtualNode<T extends ElName> {
+  el?: ElByName<T>
   chain: Effect<T>[] = []
   constructor(
-    public readonly elName: string, setup: string[],
+    public readonly elName: T, setup: string[],
   ) {
     this.chain.push(_el => {
       const el = filterShadow(_el)
@@ -29,48 +34,37 @@ export class VirtualNode<T extends Element | ShadowRoot> {
 }
 
 // yes, this is a monkey-patched function
-export type PipeFn<T extends Element | ShadowRoot> =
+export type PipeFn<T extends ElName> =
   & ((effect: Effect<T>) => PipeFn<T>)
   & { __vnode: VirtualNode<T> }
 
-export function mount<T extends Element | ShadowRoot>(
-  parent: Element | ShadowRoot,
+export function mount<T extends ElName>(
+  parent: ElOrShadow,
   vnodes: (VirtualNode<T> | PipeFn<T>)[],
-): (Element | ShadowRoot)[] {
-  return vnodes.map(vnode => {
-    if (!(vnode instanceof VirtualNode)) {
-      return mount(parent, [vnode.__vnode])
+): ElByName<T>[] {
+  return ([] as ElByName<T>[]).concat(...vnodes.map(vnode => {
+    if (vnode instanceof VirtualNode) {
+      const el = document.createElement(vnode.elName)
+      vnode.chain.forEach(effect => effect(el))
+      vnode.chain.length = 0
+      return parent.appendChild(el)
     }
-    const el = vnode.el = vnode.el || vnode.elName.includes('-')
-      ? createComponent(vnode)
-      : document.createElement(vnode.elName)
-    vnode.chain.forEach(effect => effect(el))
-    vnode.chain.length = 0
-    return parent.appendChild(el)
-  })
+    return mount(parent, [vnode.__vnode])
+  }))
 }
 
 /**
  * turns a vnode into a function which can be called
  * infinite amount of times adding effects to the vnode
 */
-export function _<T extends Element | ShadowRoot>(vnode: VirtualNode<T>): PipeFn<T> {
-  const fn = Object.assign(
-    function pipe(effect: Effect<T>) {
-      if (vnode.el) effect(vnode.el)
-      else vnode.chain.push(effect)
-      return fn
-    }, {
-      __vnode: vnode
-    }
-  )
+export function pipe<T extends ElName>(vnode: VirtualNode<T>): PipeFn<T> {
+  const fn = Object.assign(function(effect: Effect<T>) {
+    if (vnode.el) effect(vnode.el)
+    else vnode.chain.push(effect)
+    return fn
+  }, { __vnode: vnode })
   return fn
 }
-
-export const shorthand =
-  <T extends Element | ShadowRoot>(elName: string) =>
-    (...setup: string[]): PipeFn<T> =>
-      _(new VirtualNode<T>(elName, setup))
 
 export function text(val: StateOrPlain<string>) {
   return (el: Element): void => {
@@ -99,7 +93,7 @@ export function on(
   mods: { prevent?: boolean; stop?: boolean } = {},
   options?: AddEventListenerOptions | EventListenerOptions
 ) {
-  return (el: Element | ShadowRoot): void => {
+  return (el: ElOrShadow): void => {
     el.addEventListener(event, (e: Event) => {
       if (mods.prevent) e.preventDefault()
       if (mods.stop) e.stopPropagation()
@@ -108,11 +102,11 @@ export function on(
   }
 }
 
-export function dispatch(
-  eventName: string, detail?: any, opts: CustomEventInit = {},
+export function dispatch<T>(
+  eventName: string, detail?: T, opts: CustomEventInit = {},
 ) {
-  return (el: Element | ShadowRoot): void => {
-   const event = new CustomEvent(eventName, { detail, ...opts })
+  return (el: ElOrShadow): void => {
+    const event = new CustomEvent<T>(eventName, { detail, ...opts })
     filterShadow(el).dispatchEvent(event)
   }
 }
@@ -128,12 +122,12 @@ export function attr<T extends string | number | boolean>(
   }
 }
 
-export function repeat<T, K extends Element | ShadowRoot>(
+export function repeat<T>(
   items: State<T[]>,
   getKey: (el: T) => string | object,
-  render: (el: State<T>, i: State<number>) => PipeFn<K> | PipeFn<K>[],
+  render: (el: State<T>, i: State<number>) => PipeFn<ElName> | PipeFn<ElName>[],
 ) {
-  return (el: Element | ShadowRoot): void => {
+  return (el: ElOrShadow): void => {
     const hook = el.appendChild(new Comment(''))
     interface ObservedItem {
       nodes: Node[];
@@ -155,7 +149,7 @@ export function repeat<T, K extends Element | ShadowRoot>(
           const state = new State(item)
           const index = new State(i)
           const vnodes = render(state, index)
-          const nodes = mount(el, ([] as PipeFn<K>[]).concat(vnodes))
+          const nodes = mount(el, ([] as PipeFn<ElName>[]).concat(vnodes))
           observed = { nodes, state, index }
         }
         // restore the order of the nodes
@@ -175,5 +169,9 @@ export function repeat<T, K extends Element | ShadowRoot>(
   }
 }
 
-const shadow = shorthand<ShadowRoot>('')
-const styleEl = shorthand<HTMLStyleElement>('style')
+export const shorthand = <T extends ElName>(elName: T) =>
+  (...setup: string[]): PipeFn<T> =>
+    pipe(new VirtualNode<T>(elName, setup))
+
+// export const fragment = shorthand('fragment')
+export const styleEl = shorthand('style')

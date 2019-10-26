@@ -1,5 +1,5 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, mount, fragment, shorthand, VirtualNode, attr } from './core__simple'
+import { PipeFn, mount, shorthand, VirtualNode, attr } from './core__simple'
 
 type Props<T> =
   { [key in keyof T]: State<T[key]> }
@@ -37,8 +37,10 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return state
 }
 
-export function createComponent<T extends MaryElement<unknown>>(
-  _node: VirtualNode<T> | PipeFn<T>,
+const maryFragment = shorthand('fragment')
+
+export function createComponent(
+  _node: VirtualNode<MaryElement<unknown>> | PipeFn<MaryElement<unknown>>,
 ): MaryElement<unknown> {
   const node = _node instanceof VirtualNode
     ? _node : _node.__vnode
@@ -52,14 +54,13 @@ export function createComponent<T extends MaryElement<unknown>>(
   if (!render) {
     throw Error(`Cant find a render function for "${node.elName}"`)
   }
-  const children = render(fragment(), trap)
+  const children = render(maryFragment(), trap)
   if (!customElements.get(node.elName)) {
     customElements.define(node.elName, class extends MaryElement<unknown> {
       static get observedAttributes(): string[] { return keys }
     })
   }
-  const el = node.el =
-    document.createElement(node.elName) as MaryElement<unknown>
+  const el = document.createElement(node.elName) as MaryElement<unknown>
   el.props = props
   mount(el.root, [children])
   return el
