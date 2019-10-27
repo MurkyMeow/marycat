@@ -17,8 +17,8 @@ function viewProfile(host: PipeFn, {
     (attr('src', zip$`/${photo}`))
   )
   (div()
-    (div('.profile-name')(name))
-    (div('.profile-age')(age))
+    (div('.profile-name')(text(name)))
+    (div('.profile-age')(text(age)))
   )
   (button()(zip$`Add ${name} to friends`))
 }

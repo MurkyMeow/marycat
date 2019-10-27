@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, defAttr, customElement, PipeFn, mount, ElementOf } from '../src/index'
+import { State, defAttr, customElement, PipeFn, mount, text } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('webc', function() {
@@ -9,14 +9,14 @@ describe('webc', function() {
     p3 = defAttr({ name: '' }),
   }): PipeFn<ShadowRoot> {
     return host
-    (div()(p1.string))
-    (div()(p2))
-    (div()(p3._.name))
+    (div()(text(p1.string)))
+    (div()(text(p2)))
+    (div()(text(p3._.name)))
   }
   const test = customElement('mary-test', renderTest)
 
   const instance = test.new()
-  const el = mount(document.head, instance) as ElementOf<typeof test>
+  const [el] = mount(document.head, instance)
   const [p1, p2, p3] = el.root.children
 
   it('create web component', function() {
