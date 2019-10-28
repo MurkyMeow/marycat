@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat, text } from '../src/index'
+import { State, zip$, mount, attr, style, repeat } from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
@@ -13,7 +13,7 @@ describe('state', function() {
     assert.includeMembers(values, [9, 9])
   })
 
-  it('make derivation', function() {
+  it('make a derivation', function() {
     const state = new State('xx')
     const len = state.map(x => x.length)
     assert.strictEqual(len.v, state.v.length)
@@ -21,7 +21,7 @@ describe('state', function() {
     assert.strictEqual(len.v, state.v.length)
   })
 
-  it('make template derivation', function() {
+  it('make a template derivation', function() {
     const state1 = new State('foo')
     const state2 = new State('bar')
     const plain = '>>'
@@ -137,7 +137,7 @@ describe('state', function() {
     const items = new State(['a', 'b', 'c'])
     const [el] = mount(document.head, div()
       (repeat(items, x => x, (x, i) =>
-        div()(text(zip$`${i.string} - ${x}`))
+        div()(zip$`${i.string} - ${x}`)
       ))
     )
     const check = (msg?: string): void => items.v.forEach((item, i) => {

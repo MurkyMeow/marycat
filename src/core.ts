@@ -2,45 +2,58 @@ import { State, StateOrPlain } from './state'
 
 type ElOrShadow = Element | ShadowRoot
 
-type ElName = keyof HTMLElementTagNameMap
-type ElByName<T extends ElName> = HTMLElementTagNameMap[T]
-
 export type Effect<T extends Node> =
-  | StateOrPlain<PipeFn<T>>
-  | StateOrPlain<PipeFn<T>[]>
+  | StateOrPlain<string>
+  | StateOrPlain<number>
+  | StateOrPlain<boolean>
+  | StateOrPlain<PipeFn<Node>>
+  | StateOrPlain<PipeFn<Node>[]>
   | ((el: T) => void)
 
 const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
 // TODO generalize with `repeat` somehow?
-function watch <T extends Node>(
+function watch<T extends Effect<Node>>(
   el: Node,
-  state: State<PipeFn<T>> | State<PipeFn<T>[]>,
-): void {
-  const hook: Node = el.appendChild(new Comment(''))
-  let nodes: Node[] = []
-  state.sub((next: PipeFn<T> | PipeFn<T>[]) => {
+  state: T extends State<infer U> ? State<U> : never
+): Node[] {
+  const hook: Node = el.appendChild(document.createComment(''))
+  const nodes: Node[] = []
+  state.sub((next: Effect<Node>) => {
     nodes.forEach(node => el.removeChild(node))
-    let refNode: Node = hook
-    nodes = mount(el, next)
+    nodes.length = 0
+    let cur: Node = hook
+    nodes.push(...applyEffect(el, next))
     nodes.forEach(node => {
-      refNode = el.insertBefore(node, refNode.nextSibling)
-      nodes.push(node)
+      cur = el.insertBefore(node, cur.nextSibling)
     })
   })
+  return nodes
 }
 
-export const text = <K extends string | number | boolean>(
-  val: StateOrPlain<K>,
-) => (el: Node): void => {
-  const textNode = document.createTextNode('')
-  if (val instanceof State) {
-    val.sub(next => textNode.textContent = String(next))
-  } else {
-    textNode.textContent = String(val)
+function applyEffect<T extends Node>(el: T, effect: Effect<T> | Effect<T>[]): Node[] {
+  if (Array.isArray(effect)) {
+    const res: Node[] = []
+    for (const m of effect) res.push(...applyEffect(el, m))
+    return res
   }
-  el.appendChild(textNode)
+  if (effect instanceof VirtualNode || isPipeFn(effect)) {
+    return mount(el, effect)
+  }
+  if (effect instanceof State) {
+    return watch(el, effect)
+  }
+  switch (typeof effect) {
+    case 'number':
+    case 'string': {
+      const text = document.createTextNode(String(effect))
+      return [el.appendChild(text)]
+    }
+    case 'boolean': return []
+    case 'function': return effect(el), []
+    default: return console.trace('Unexpected child', effect), []
+  }
 }
 
 export class VirtualNode<T extends Node> {
@@ -162,29 +175,27 @@ export type PipeFn<T extends Node> =
   & ((effect: Effect<T>) => PipeFn<T>)
   & { __vnode: VirtualNode<T> }
 
+const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
+  typeof arg === 'function' && '__vnode' in arg
+
 /**
  * turns a vnode into a function which can be called
  * infinite amount of times adding effects to the vnode
 */
 export function pipe<T extends Node>(vnode: VirtualNode<T>): PipeFn<T> {
   const fn = Object.assign(function(effect: Effect<T>) {
-    if (Array.isArray(effect) || '__vnode' in effect) {
-      mount(vnode.el, effect)
-    } else if (effect instanceof State) {
-      watch(vnode.el, effect)
-    } else {
-      effect(vnode.el)
-    }
+    applyEffect(vnode.el, effect)
     return fn
   }, { __vnode: vnode })
   return fn
 }
 
-export const shorthand = <T extends ElName>(elName: T) =>
-  (...setup: string[]): PipeFn<ElByName<T>> =>
+export const shorthand = <T extends keyof HTMLElementTagNameMap>(elName: T) =>
+  (...setup: string[]): PipeFn<HTMLElementTagNameMap[T]> =>
     pipe(new VirtualNode(document.createElement(elName), setup))
 
 export const frag = (): PipeFn<DocumentFragment> =>
   pipe(new VirtualNode(document.createDocumentFragment()))
 
 export const styleEl = shorthand('style')
+ 

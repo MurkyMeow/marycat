@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { mount, style, on, dispatch, text } from '../src/index'
+import { mount, style, on, dispatch } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('core', function() {
@@ -25,9 +25,7 @@ describe('core', function() {
   })
 
   it('set text', function() {
-    const [el] = mount(document.head, div()
-      (text('foobar'))
-    )
+    const [el] = mount(document.head, div()('foobar'))
     assert.strictEqual(el.textContent, 'foobar')
   })
 
@@ -44,7 +42,7 @@ describe('core', function() {
     assert.strictEqual(el.getAttribute('style'), 'color: red; font-size: 12px;')
   })
 
-  it('register click events', function() {
+  it('register events', function() {
     let count = 0
     const [el] = mount(document.head, div()
       (on('click', () => count += 2))

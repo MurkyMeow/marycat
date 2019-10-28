@@ -7,7 +7,7 @@ Web components that are
 - strongly typed
 
 ```ts
-function viewProfile(host: PipeFn, {
+function viewProfile(host: PipeFn<ShadowRoot>, {
   name = defAttr(''),
   photo = defAttr(''),
   age = defAttr(0),
@@ -17,8 +17,8 @@ function viewProfile(host: PipeFn, {
     (attr('src', zip$`/${photo}`))
   )
   (div()
-    (div('.profile-name')(text(name)))
-    (div('.profile-age')(text(age)))
+    (div('.profile-name')(name))
+    (div('.profile-age')(age))
   )
   (button()(zip$`Add ${name} to friends`))
 }
