@@ -28,19 +28,22 @@ describe('webc', function() {
     )
   })
 
-  it('set props', function() {
+  it('set props', async function() {
     instance
       (test.prop('p1', true))
       (test.prop('p2', 'hello'))
       (test.prop('p3', { name: 'Mary' }))
+    // MutationObserver appears to be asynchronous
+    await new Promise(_ => requestAnimationFrame(_))
     assert.strictEqual(p1.textContent, 'true')
     assert.strictEqual(p2.textContent, 'hello')
     assert.strictEqual(p3.textContent, 'Mary')
   })
 
-  it('respond to prop updates', function() {
+  it('respond to prop updates', async function() {
     el.removeAttribute('p1')
     el.setAttribute('p2', 'world')
+    await new Promise(_ => requestAnimationFrame(_))
     assert.strictEqual(p1.textContent, 'false')
     assert.strictEqual(p2.textContent, 'world')
   })

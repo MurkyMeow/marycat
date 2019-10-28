@@ -47,8 +47,8 @@ export abstract class MaryElement<T> extends HTMLElement {
     const vnode = new VirtualNode<ShadowRoot>(this.root)
     this.render(pipe(vnode), trap as Props<T>)
     this.props = props as Props<T>
-    const attributeObserver = new MutationObserver(this.onAttributeChange);
-    attributeObserver.observe(this, {
+    const observer = new MutationObserver(m => this.onAttributeChange(m))
+    observer.observe(this, {
       attributes: true,
       attributeFilter: Object.keys(props),
     })
