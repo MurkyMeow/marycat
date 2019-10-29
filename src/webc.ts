@@ -17,7 +17,10 @@ export function defAttr<T>(defaultValue: T): State<T> {
 
 export abstract class MaryElement<T> extends HTMLElement {
   root: ShadowRoot = this.attachShadow({ mode: 'open' })
-  props!: Props<T>
+  // as props are defined using default parameters
+  // they're considered to be optional and thus nullable
+  // `Required` frees from the need of writing null checks
+  props!: Required<Props<T>>
   constructor(
     private readonly render: RenderFunction<T>,
   ) {
@@ -46,7 +49,7 @@ export abstract class MaryElement<T> extends HTMLElement {
     })
     const vnode = new VirtualNode<ShadowRoot>(this.root)
     this.render(pipe(vnode), trap as Props<T>)
-    this.props = props as Props<T>
+    this.props = props as Required<Props<T>>
     const observer = new MutationObserver(m => this.onAttributeChange(m))
     observer.observe(this, {
       attributes: true,
