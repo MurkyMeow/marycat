@@ -1,13 +1,13 @@
 import { assert } from 'chai'
-import { State, defAttr, customElement, PipeFn, mount, ElementOf } from '../src/index'
+import { State, defAttr, customElement, PipeFn, mount } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('webc', function() {
-  function renderTest(host: PipeFn, {
+  function renderTest(host: PipeFn<ShadowRoot>, {
     p1 = defAttr(false),
     p2 = defAttr(''),
     p3 = defAttr({ name: '' }),
-  }): PipeFn {
+  }): PipeFn<ShadowRoot> {
     return host
     (div()(p1.string))
     (div()(p2))
@@ -16,7 +16,7 @@ describe('webc', function() {
   const test = customElement('mary-test', renderTest)
 
   const instance = test.new()
-  const el = mount(document.head, instance) as ElementOf<typeof test>
+  const [el] = mount(document.head, instance)
   const [p1, p2, p3] = el.root.children
 
   it('create web component', function() {
@@ -28,19 +28,22 @@ describe('webc', function() {
     )
   })
 
-  it('set props', function() {
+  it('set props', async function() {
     instance
       (test.prop('p1', true))
       (test.prop('p2', 'hello'))
       (test.prop('p3', { name: 'Mary' }))
+    // MutationObserver appears to be asynchronous
+    await new Promise(_ => requestAnimationFrame(_))
     assert.strictEqual(p1.textContent, 'true')
     assert.strictEqual(p2.textContent, 'hello')
     assert.strictEqual(p3.textContent, 'Mary')
   })
 
-  it('respond to prop updates', function() {
+  it('respond to prop updates', async function() {
     el.removeAttribute('p1')
     el.setAttribute('p2', 'world')
+    await new Promise(_ => requestAnimationFrame(_))
     assert.strictEqual(p1.textContent, 'false')
     assert.strictEqual(p2.textContent, 'world')
   })

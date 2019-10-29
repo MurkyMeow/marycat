@@ -6,7 +6,7 @@ export type ObservedFields<T> =
   T extends object ? { [key in keyof T]: State<T[key]> } : never
 
 export type ExtractStateType<T> =
-  T extends State<infer U> ? U : never
+  T extends State<infer U> ? U : T
 
 export class State<T> {
   private observers: Observer<T>[] = []

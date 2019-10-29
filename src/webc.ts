@@ -1,31 +1,9 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, mount, fragment, shorthand, VirtualNode, attr } from './core'
+import { PipeFn, VirtualNode, attr, pipe, Effect } from './core'
 
 type Props<T> =
   { [key in keyof T]: State<T[key]> }
 
-export class MaryElement<T> extends HTMLElement {
-  root: ShadowRoot = this.attachShadow({ mode: 'open' })
-  props!: Props<T>
-  attributeChangedCallback(name: keyof T, _: string, val: string): void {
-    const prop = this.props[name] as State<unknown>
-    switch (typeof prop.v) {
-      case 'bigint': prop.v = BigInt(val); break
-      case 'number': prop.v = Number(val); break
-      case 'string': prop.v = String(val); break
-      case 'boolean': prop.v =  Boolean(val); break
-      default: console.trace(val, 'is not assignable to', name, 'of', this)
-    }
-  }
-}
-
-export type ElementOf<T> =
-  T extends CustomElementConstructor<infer U> ? MaryElement<U> : never
-
-type RenderFunction<T> =
-  (host: PipeFn, props: Props<T>) => PipeFn
-
-const renderLookup = new Map<string, RenderFunction<unknown>>()
 
 let props: Record<string, State<unknown>>
 let keys: string[]
@@ -37,58 +15,71 @@ export function defAttr<T>(defaultValue: T): State<T> {
   return state
 }
 
-export function createComponent(_node: VirtualNode | PipeFn): MaryElement<unknown> {
-  const node = _node instanceof VirtualNode
-    ? _node : _node.__vnode
-  props = {}, keys = []
-  const trap = new Proxy({}, {
-    get: (_, key: string): void => {
-      keys.push(key)
-    },
-  })
-  const render = renderLookup.get(node.elName)
-  if (!render) {
-    throw Error(`Cant find a render function for "${node.elName}"`)
-  }
-  const elements = render(fragment(), trap)
-  if (!customElements.get(node.elName)) {
-    customElements.define(node.elName, class extends MaryElement<unknown> {
-      static get observedAttributes(): string[] { return keys }
+export abstract class MaryElement<T> extends HTMLElement {
+  root: ShadowRoot = this.attachShadow({ mode: 'open' })
+  // as props are defined using default parameters
+  // they're considered to be optional and thus nullable
+  // `Required` frees from the need of writing null checks
+  props: Required<Props<T>>
+  constructor(render: RenderFunction<T>) {
+    super()
+    props = {}, keys = []
+    const trap = new Proxy({}, {
+      get: (_, key: string): void => {
+        keys.push(key)
+      },
+    })
+    const vnode = new VirtualNode<ShadowRoot>(this.root)
+    render(pipe(vnode), trap as Props<T>)
+    this.props = props as Required<Props<T>>
+    const observer = new MutationObserver(m => this.onAttributeChange(m))
+    observer.observe(this, {
+      attributes: true,
+      attributeFilter: Object.keys(props),
     })
   }
-  const el = node.el =
-    document.createElement(node.elName) as MaryElement<unknown>
-  el.props = props
-  mount(el.root, elements)
-  return el
+  onAttributeChange(mutations: MutationRecord[]): void {
+    mutations.forEach(m => {
+      const attrName = m.attributeName as keyof T
+      const val = this.getAttribute(attrName as string)
+      const prop = this.props[attrName] as State<unknown>
+      switch (typeof prop.v) {
+        case 'bigint': prop.v = BigInt(val); break
+        case 'number': prop.v = Number(val); break
+        case 'string': prop.v = String(val); break
+        case 'boolean': prop.v =  Boolean(val); break
+        default: console.trace(val, 'is not assignable to', name, 'of', this)
+      }
+    })
+  }
 }
 
-interface CustomElementConstructor<T> {
-  new: () => PipeFn;
-  prop:
-    <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) =>
-    (el: Element | ShadowRoot) => void;
+type RenderFunction<T> =
+  (host: PipeFn<ShadowRoot>, props: Props<T>) => PipeFn<ShadowRoot>
+
+export interface CustomElementConstructor<T> {
+  new: (...setup: string[]) => PipeFn<MaryElement<T>>;
+  prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => Effect<MaryElement<T>>;
 }
 
 export const customElement = <T>(
-  elName: string,
-  render: RenderFunction<T>,
+  elName: string, render: RenderFunction<T>,
 ): CustomElementConstructor<T> => {
-  renderLookup.set(elName, render as RenderFunction<unknown>)
+  class CustomElement extends MaryElement<T> {
+    constructor() { super(render) }
+  }
+  customElements.define(elName, CustomElement)
   return {
-    new: shorthand(elName),
-    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: Element | ShadowRoot): void => {
-      const comp = el as MaryElement<T>
-      if (
-        typeof val === 'string' ||
-        typeof val === 'number' ||
-        typeof val === 'boolean'
-      ) {
-        attr(key as string, val)(comp)
+    new(...setup: string[]): PipeFn<MaryElement<T>> {
+      return pipe(new VirtualNode(new CustomElement(), setup))
+    },
+    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: MaryElement<T>): void => {
+      if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+        attr(key as string, val)(el)
       } else if (val instanceof State) {
-        val.sub(next => comp.props[key].v = next)
+        val.sub(next => el.props[key].v = next)
       } else {
-        comp.props[key].v = val
+        el.props[key].v = val
       }
     },
   }

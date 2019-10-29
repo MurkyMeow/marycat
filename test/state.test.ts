@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat } from '../src/index'
+import { State, zip$, mount, attr, style, repeat, PipeFn } from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
@@ -13,7 +13,7 @@ describe('state', function() {
     assert.includeMembers(values, [9, 9])
   })
 
-  it('make derivation', function() {
+  it('make a derivation', function() {
     const state = new State('xx')
     const len = state.map(x => x.length)
     assert.strictEqual(len.v, state.v.length)
@@ -21,7 +21,7 @@ describe('state', function() {
     assert.strictEqual(len.v, state.v.length)
   })
 
-  it('make template derivation', function() {
+  it('make a template derivation', function() {
     const state1 = new State('foo')
     const state2 = new State('bar')
     const plain = '>>'
@@ -34,8 +34,8 @@ describe('state', function() {
   })
 
   it('observe an element', function() {
-    const state = new State(div())
-    const el = mount(document.head, div()(state))
+    const state = new State(div() as PipeFn<Node>)
+    const [el] = mount(document.head, div()(state))
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
     state.v = h3()
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H3')
@@ -43,9 +43,9 @@ describe('state', function() {
 
   it('set a reactive attribute', function() {
     const state = new State('foo')
-    const el = mount(document.head, div()
+    const [el] = mount(document.head, div()
       (attr('class', state))
-    ) as Element
+    )
     assert.strictEqual(el.className, 'foo')
     state.v = 'bar'
     assert.strictEqual(el.className, 'bar')
@@ -53,9 +53,9 @@ describe('state', function() {
 
   it('set a reactive attribute with template', function() {
     const state = new State('active')
-    const el = mount(document.head, div()
+    const [el] = mount(document.head, div()
       (attr('class', zip$`type--${state}`))
-    ) as Element
+    )
     assert.strictEqual(el.className, 'type--active')
     state.v = 'disabled'
     assert.strictEqual(el.className, 'type--disabled')
@@ -63,9 +63,9 @@ describe('state', function() {
 
   it('set a reactive style rule', function() {
     const state = new State('red')
-    const el = mount(document.head, div()
+    const [el] = mount(document.head, div()
       (style('color', state))
-    ) as HTMLElement
+    )
     assert.strictEqual(el.style.color, state.v)
     state.v = 'green'
     assert.strictEqual(el.style.color, state.v)
@@ -115,13 +115,15 @@ describe('state', function() {
 
   it('conditional rendering', function() {
     const cond = new State(true)
-    const el = mount(document.head, div()
-      (cond.and([
-        div('then'),
-        div('then2'),
-      ]).or(
-        div('else')
-      ))
+    const [el] = mount(document.head,
+      (div()
+        (cond.map(v => v ? [
+          div('then'),
+          div('then2'),
+        ] as PipeFn<Node>[] : [
+          div('else'),
+        ]))
+      )
     )
     assert.strictEqual(el.children.length, 2)
     assert.strictEqual(el.children[0].textContent, 'then')
@@ -131,24 +133,9 @@ describe('state', function() {
     assert.strictEqual(el.children[0].textContent, 'else')
   })
 
-  it('lazy conditional rendering', function() {
-    const cond = new State(true)
-    const el = mount(document.head, div()
-      (cond
-        .and(() => div('then'))
-        .or(() => div('else'))
-      )
-    )
-    assert.strictEqual(el.children.length, 1)
-    assert.strictEqual(el.children[0].textContent, 'then')
-    cond.v = false
-    assert.strictEqual(el.children.length, 1)
-    assert.strictEqual(el.children[0].textContent, 'else')
-  })
-
   it('keyed array rendering', function() {
     const items = new State(['a', 'b', 'c'])
-    const el = mount(document.head, div()
+    const [el] = mount(document.head, div()
       (repeat(items, x => x, (x, i) =>
         div()(zip$`${i.string} - ${x}`)
       ))
