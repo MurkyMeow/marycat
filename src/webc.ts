@@ -62,7 +62,7 @@ type RenderFunction<T> =
   (host: PipeFn<ShadowRoot>, props: Props<T>) => PipeFn<ShadowRoot>
 
 export interface CustomElementConstructor<T> {
-  new: () => PipeFn<MaryElement<T>>;
+  new: (...setup: string[]) => PipeFn<MaryElement<T>>;
   prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => Effect<MaryElement<T>>;
 }
 
