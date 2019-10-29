@@ -20,11 +20,23 @@ export abstract class MaryElement<T> extends HTMLElement {
   // as props are defined using default parameters
   // they're considered to be optional and thus nullable
   // `Required` frees from the need of writing null checks
-  props!: Required<Props<T>>
-  constructor(
-    private readonly render: RenderFunction<T>,
-  ) {
+  props: Required<Props<T>>
+  constructor(render: RenderFunction<T>) {
     super()
+    props = {}, keys = []
+    const trap = new Proxy({}, {
+      get: (_, key: string): void => {
+        keys.push(key)
+      },
+    })
+    const vnode = new VirtualNode<ShadowRoot>(this.root)
+    render(pipe(vnode), trap as Props<T>)
+    this.props = props as Required<Props<T>>
+    const observer = new MutationObserver(m => this.onAttributeChange(m))
+    observer.observe(this, {
+      attributes: true,
+      attributeFilter: Object.keys(props),
+    })
   }
   onAttributeChange(mutations: MutationRecord[]): void {
     mutations.forEach(m => {
@@ -38,22 +50,6 @@ export abstract class MaryElement<T> extends HTMLElement {
         case 'boolean': prop.v =  Boolean(val); break
         default: console.trace(val, 'is not assignable to', name, 'of', this)
       }
-    })
-  }
-  connectedCallback(): void {
-    props = {}, keys = []
-    const trap = new Proxy({}, {
-      get: (_, key: string): void => {
-        keys.push(key)
-      },
-    })
-    const vnode = new VirtualNode<ShadowRoot>(this.root)
-    this.render(pipe(vnode), trap as Props<T>)
-    this.props = props as Required<Props<T>>
-    const observer = new MutationObserver(m => this.onAttributeChange(m))
-    observer.observe(this, {
-      attributes: true,
-      attributeFilter: Object.keys(props),
     })
   }
 }
