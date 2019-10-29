@@ -1,10 +1,10 @@
 import { PipeFn, defAttr, State, dispatch, on, styleEl, zip$, customElement, mount } from '../src/index'
 import { div, span } from './bindings'
 
-function renderExample(host: PipeFn, {
+function renderExample(host: PipeFn<ShadowRoot>, {
   supercool = defAttr(false),
   logo = defAttr({ title: '', icon: '' }),
-}) {
+}): PipeFn<ShadowRoot> {
   const count = new State(0).sub(val => {
     host(dispatch('change', val))
   })
