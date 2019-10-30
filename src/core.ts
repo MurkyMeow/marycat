@@ -175,7 +175,7 @@ export function mount<T extends Node>(
 
 // yes, this is a monkey-patched function
 export type PipeFn<T extends Node> =
-  & (<K extends Node>(effect: Effect<T, K>) => PipeFn<T>)
+  & (<K extends Node>(...effects: Effect<T, K>[]) => PipeFn<T>)
   & { __vnode: VirtualNode<T> }
 
 const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
@@ -187,8 +187,8 @@ const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
 */
 export function pipe<T extends Node>(vnode: VirtualNode<T>): PipeFn<T> {
   const fn = Object.assign(
-    function<K extends Node>(effect: Effect<T, K>) {
-      applyEffect(vnode.el, effect)
+    function<K extends Node>(...effects: Effect<T, K>[]) {
+      applyEffect(vnode.el, effects)
       return fn
     }, {
     __vnode: vnode,
