@@ -59,7 +59,8 @@ type RenderFunction<T> =
 
 export interface CustomElementConstructor<T> {
   new: (...setup: string[]) => PipeFn<MaryElement<T>>;
-  prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => Effect<MaryElement<T>>;
+  prop: <K extends keyof T, E extends Node>(key: K, val: StateOrPlain<T[K]>) =>
+    Effect<MaryElement<T>, E>;
 }
 
 export const customElement = <T>(

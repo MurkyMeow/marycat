@@ -2,25 +2,25 @@ import { State, StateOrPlain } from './state'
 
 type ElOrShadow = Element | ShadowRoot
 
-export type Effect<T extends Node> =
+export type Effect<T extends Node, K extends Node> =
   | StateOrPlain<string>
   | StateOrPlain<number>
   | StateOrPlain<boolean>
-  | StateOrPlain<PipeFn<Node>>
-  | StateOrPlain<PipeFn<Node>[]>
+  | StateOrPlain<PipeFn<K>>
+  | StateOrPlain<PipeFn<K>[]>
   | ((el: T) => void)
 
 const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
 // TODO generalize with `repeat` somehow?
-function watch<T extends Effect<Node>>(
-  el: Node,
-  state: T extends State<infer U> ? State<U> : never
+function watch<T extends Node, K extends Node, E extends Effect<T, K>>(
+  el: T,
+  state: E extends State<infer U> ? State<U> : never,
 ): Node[] {
   const hook: Node = el.appendChild(document.createComment(''))
   const nodes: Node[] = []
-  state.sub((next: Effect<Node>) => {
+  state.sub((next: Effect<T, K>) => {
     nodes.forEach(node => el.removeChild(node))
     nodes.length = 0
     let cur: Node = hook
@@ -32,7 +32,10 @@ function watch<T extends Effect<Node>>(
   return nodes
 }
 
-function applyEffect<T extends Node>(el: T, effect: Effect<T> | Effect<T>[]): Node[] {
+function applyEffect<T extends Node, K extends Node>(
+  el: T,
+  effect: Effect<T, K> | Effect<T, K>[],
+): Node[] {
   if (Array.isArray(effect)) {
     const res: Node[] = []
     for (const m of effect) res.push(...applyEffect(el, m))
@@ -42,7 +45,7 @@ function applyEffect<T extends Node>(el: T, effect: Effect<T> | Effect<T>[]): No
     return mount(el, effect)
   }
   if (effect instanceof State) {
-    return watch(el, effect)
+    return watch<T, K, Effect<T, K>>(el, effect)
   }
   switch (typeof effect) {
     case 'number':
@@ -172,7 +175,7 @@ export function mount<T extends Node>(
 
 // yes, this is a monkey-patched function
 export type PipeFn<T extends Node> =
-  & ((effect: Effect<T>) => PipeFn<T>)
+  & (<K extends Node>(effect: Effect<T, K>) => PipeFn<T>)
   & { __vnode: VirtualNode<T> }
 
 const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
@@ -183,10 +186,13 @@ const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
  * infinite amount of times adding effects to the vnode
 */
 export function pipe<T extends Node>(vnode: VirtualNode<T>): PipeFn<T> {
-  const fn = Object.assign(function(effect: Effect<T>) {
-    applyEffect(vnode.el, effect)
-    return fn
-  }, { __vnode: vnode })
+  const fn = Object.assign(
+    function<K extends Node>(effect: Effect<T, K>) {
+      applyEffect(vnode.el, effect)
+      return fn
+    }, {
+    __vnode: vnode,
+  })
   return fn
 }
 
@@ -198,4 +204,3 @@ export const frag = (): PipeFn<DocumentFragment> =>
   pipe(new VirtualNode(document.createDocumentFragment()))
 
 export const styleEl = shorthand('style')
- 

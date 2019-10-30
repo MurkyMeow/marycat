@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat, PipeFn } from '../src/index'
+import { State, zip$, mount, attr, style, repeat } from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
@@ -34,7 +34,7 @@ describe('state', function() {
   })
 
   it('observe an element', function() {
-    const state = new State(div() as PipeFn<Node>)
+    const state = new State(div())
     const [el] = mount(document.head, div()(state))
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
     state.v = h3()
@@ -120,7 +120,7 @@ describe('state', function() {
         (cond.map(v => v ? [
           div('then'),
           div('then2'),
-        ] as PipeFn<Node>[] : [
+        ] : [
           div('else'),
         ]))
       )
