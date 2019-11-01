@@ -8,6 +8,15 @@ describe('core', function() {
     assert.strictEqual(el.nodeName, 'DIV')
   })
 
+  it('add middlewares', function() {
+    const [el] = mount(document.head, div()
+      ((el: HTMLDivElement) => el.setAttribute('hidden', 'true'))
+      ((el: HTMLDivElement) => el.textContent = 'foo')
+    )
+    assert.strictEqual(el.getAttribute('hidden'), 'true')
+    assert.strictEqual(el.textContent, 'foo')
+  })
+
   it('append children', function() {
     const [el] = mount(document.head, div()
       (div())
