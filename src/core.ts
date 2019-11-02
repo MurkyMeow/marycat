@@ -1,4 +1,5 @@
 import { State, StateOrPlain } from './state'
+import { div } from '../examples/bindings'
 
 type ElOrShadow = Element | ShadowRoot
 
@@ -97,7 +98,7 @@ export const on = (
 }
 
 export const dispatch = <T>(
-  eventName: string, detail?: T, opts: CustomEventInit = {},
+  eventName: string, detail?: T, opts: Omit<CustomEventInit, 'detail'> = {},
 ) => (el: ElOrShadow): void => {
   const event = new CustomEvent<T>(eventName, { detail, ...opts })
   filterShadow(el).dispatchEvent(event)
