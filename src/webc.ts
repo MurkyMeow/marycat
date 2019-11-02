@@ -88,7 +88,7 @@ export const customElement = <T, E>(
       return pipe(new VirtualNode(new CustomElement(), setup))
     },
     on<K extends keyof E>(event: K, handler: (event: CustomEvent<E[K]>) => void) {
-      return on(event as string, e => handler(e as CustomEvent<E[K]>))
+      return on(event as string, (e: Event) => handler(e as CustomEvent<E[K]>))
     },
     prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: MaryElement<T, E>): void => {
       if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {

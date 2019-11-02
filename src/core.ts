@@ -1,5 +1,4 @@
 import { State, StateOrPlain } from './state'
-import { div } from '../examples/bindings'
 
 type ElOrShadow = Element | ShadowRoot
 
