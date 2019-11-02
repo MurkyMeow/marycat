@@ -50,7 +50,9 @@ function viewCounter(host: PipeFn<ShadowRoot>, {
     host(dispatch('changeee', val)) // type error
   })
   return host
-  (button(count)(on('click', () => count.v++)))
+  (button()(count)
+    (on('click', () => count.v++))
+  )
 }
 
 const counter = customElement('mary-counter', viewCounter)
