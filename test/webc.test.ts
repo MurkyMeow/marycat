@@ -1,14 +1,22 @@
 import { assert } from 'chai'
-import { State, defAttr, customElement, PipeFn, mount } from '../src/index'
+import { State, defAttr, customElement, PipeFn, mount, TypedDispatch, on } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('webc', function() {
+  type TestDispatch =
+    TypedDispatch<{ disturb: string }>
+
+  const TEST_MESSAGE = 'you fail to amuse me'
+
   function renderTest(host: PipeFn<ShadowRoot>, {
     p1 = defAttr(false),
     p2 = defAttr(''),
     p3 = defAttr({ name: '' }),
-  }): PipeFn<ShadowRoot> {
+  }, t_dispatch: TestDispatch): PipeFn<ShadowRoot> {
     return host
+    (on('click', () => {
+      host(t_dispatch('disturb', TEST_MESSAGE))
+    }))
     (div()(p1.string))
     (div()(p2))
     (div()(p3._.name))
@@ -54,5 +62,12 @@ describe('webc', function() {
     assert.strictEqual(p2.textContent, state.v, 'Initial value is not set')
     state.v = 'qqqq'
     assert.strictEqual(p2.textContent, state.v, 'Updates are not captured')
+  })
+
+  it('listen to a custom event', function() {
+    let text = ''
+    instance(test.on('disturb', e => text = e.detail))
+    el.click()
+    assert.strictEqual(text, TEST_MESSAGE)
   })
 })

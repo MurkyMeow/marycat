@@ -1,12 +1,15 @@
-import { PipeFn, defAttr, State, dispatch, on, styleEl, zip$, customElement, mount } from '../src/index'
+import { PipeFn, defAttr, State, on, styleEl, zip$, customElement, mount, TypedDispatch } from '../src/index'
 import { div, span } from './bindings'
 
-function renderExample(host: PipeFn<ShadowRoot>, {
+type ExampleDispatch =
+  TypedDispatch<{ change: number }>
+
+function viewExample(host: PipeFn<ShadowRoot>, {
   supercool = defAttr(false),
   logo = defAttr({ title: '', icon: '' }),
-}): PipeFn<ShadowRoot> {
+}, t_dispatch: ExampleDispatch) {
   const count = new State(0).sub(val => {
-    host(dispatch('change', val))
+    host(t_dispatch('change', val))
   })
   return host
   (on('click', () => {
@@ -23,12 +26,13 @@ function renderExample(host: PipeFn<ShadowRoot>, {
     div('⚡️ ☄️ 💥 🔥'),
   ]))
 }
-const example = customElement('mary-example', renderExample)
+const example = customElement('mary-example', viewExample)
 
 mount(document.body,
   (example.new('.classname')
     (example.prop('supercool', true))
     (example.prop('logo', { title: 'web component', icon: '🌞' }))
-    (on('change', console.log))
+    // ts infers that the detail is a number
+    (example.on('change', e => console.log(e.detail - 5)))
   )
 )
