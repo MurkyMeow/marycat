@@ -56,7 +56,7 @@ function viewCounter(host: PipeFn<ShadowRoot>, {
 const counter = customElement('mary-counter', viewCounter)
 
 counter.new()
-  // typeof e => CustomEvent<number>
+  // typeof e = CustomEvent<number>
   (counter.on('change', e => e.detail))
   // error: number is not assignable to string 🎉
   (counter.on('change', e => document.title = e.detail))
