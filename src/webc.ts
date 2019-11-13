@@ -1,5 +1,5 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, VirtualNode, attr, pipe, Effect, on, dispatch } from './core'
+import { PipeFn, attr, pipe, Effect, on, dispatch, PipeConstructor } from './core'
 
 type Props<T> =
   { [key in keyof T]: State<T[key]> }
@@ -29,8 +29,7 @@ export abstract class MaryElement<T, E> extends HTMLElement {
         keys.push(key)
       },
     })
-    const vnode = new VirtualNode<ShadowRoot>(this.root)
-    render(pipe(vnode), trap as Props<T>, t_dispatch)
+    render(pipe(this.root), trap as Props<T>, t_dispatch)
     this.props = props as Required<Props<T>>
     const observer = new MutationObserver(m => this.onAttributeChange(m))
     observer.observe(this, {
@@ -67,7 +66,7 @@ type RenderFunction<T, E> =
   (host: PipeFn<ShadowRoot>, props: Props<T>, t_dispatch: TypedDispatch<E>) => PipeFn<ShadowRoot>
 
 export interface CustomElementConstructor<T, E> {
-  new: (...setup: string[]) => PipeFn<MaryElement<T, E>>
+  new: PipeConstructor<MaryElement<T, E>>
 
   on: <K extends keyof E>(event: K, handler: (event: CustomEvent<E[K]>) => void) =>
     (el: MaryElement<T, E>) => void
@@ -84,8 +83,9 @@ export const customElement = <T, E>(
   }
   customElements.define(elName, CustomElement)
   return {
-    new(...setup: string[]): PipeFn<MaryElement<T, E>> {
-      return pipe(new VirtualNode(new CustomElement(), setup))
+    new(...effects) {
+      const el = new CustomElement()
+      return pipe(el)(...effects)
     },
     on<K extends keyof E>(event: K, handler: (event: CustomEvent<E[K]>) => void) {
       return on(event as string, (e: Event) => handler(e as CustomEvent<E[K]>))

@@ -1,4 +1,4 @@
-import { State, StateOrPlain } from './state'
+import { State, StateOrPlain, zip$ } from './state'
 
 type ElOrShadow = Element | ShadowRoot
 
@@ -38,7 +38,7 @@ function applyEffect<T extends Node, K extends Node>(
     for (const m of effect) res.push(...applyEffect(el, m))
     return res
   }
-  if (effect instanceof VirtualNode || isPipeFn(effect)) {
+  if (isPipeFn(effect)) {
     return mount(el, effect)
   }
   if (effect instanceof State) {
@@ -53,23 +53,6 @@ function applyEffect<T extends Node, K extends Node>(
     case 'boolean': return []
     case 'function': return effect(el), []
     default: return console.trace('Unexpected child', effect), []
-  }
-}
-
-export class VirtualNode<T extends Node> {
-  constructor(
-    public readonly el: T, setup: string[] = [],
-  ) {
-    if (!(el instanceof Element)) return
-    setup.forEach(str => {
-      const [prefix, rest] = [str[0], str.slice(1)]
-      switch (prefix) {
-        case '.': return el.classList.add(rest)
-        case '#': return el.setAttribute('id', rest)
-        case '@': return el.setAttribute('name', rest)
-        default: return el.textContent += str
-      }
-    })
   }
 }
 
@@ -112,6 +95,12 @@ export const attr = <T extends string | number | boolean>(
   if (val instanceof State) val.sub(setAttr)
   else setAttr(val)
 }
+
+export const cx = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
+  attr('class', zip$(strings, ...values))
+
+export const name = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
+  attr('name', zip$(strings, ...values))
 
 export const repeat = <T, K extends Node>(
   items: State<T[]>,
@@ -158,46 +147,43 @@ export const repeat = <T, K extends Node>(
   })
 }
 
-export function mount<T extends Node>(
-  parent: Node,
-  vnode: (VirtualNode<T> | PipeFn<T>) | (VirtualNode<T> | PipeFn<T>)[],
-): T[] {
+export function mount<T extends Node>(parent: Node, vnode: PipeFn<T> | PipeFn<T>[]): T[] {
   if (Array.isArray(vnode)) {
     return ([] as T[]).concat(...vnode.map(x => mount(parent, x)))
   }
-  return vnode instanceof VirtualNode
-    ? [parent.appendChild(vnode.el)]
-    : mount(parent, vnode.__vnode)
+  return [parent.appendChild(vnode.__node)]
 }
+
+export type PipeConstructor<T extends Node> =
+  <E extends Effect<T, Node>>(...effects: StateOrPlain<E>[]) => PipeFn<T>
 
 // yes, this is a monkey-patched function
 export type PipeFn<T extends Node> =
   & (<K extends Node, E extends Effect<T, K>>(...effects: StateOrPlain<E>[]) => PipeFn<T>)
-  & { __vnode: VirtualNode<T> }
+  & { __node: T }
 
 const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
-  typeof arg === 'function' && '__vnode' in arg
+  typeof arg === 'function' && '__node' in arg
 
 /**
  * turns a vnode into a function which can be called
  * infinite amount of times adding effects to the vnode
 */
-export function pipe<T extends Node>(vnode: VirtualNode<T>): PipeFn<T> {
+export function pipe<T extends Node>(node: T): PipeFn<T> {
   const fn = Object.assign(
     function<K extends Node, E extends Effect<T, K>>(...effects: StateOrPlain<E>[]) {
-      applyEffect(vnode.el, effects as Effect<T, K>)
+      applyEffect(node, effects as Effect<T, K>)
       return fn
     }, {
-    __vnode: vnode,
+    __node: node,
   })
   return fn
 }
 
-export const shorthand = <T extends keyof HTMLElementTagNameMap>(elName: T) =>
-  (...setup: string[]): PipeFn<HTMLElementTagNameMap[T]> =>
-    pipe(new VirtualNode(document.createElement(elName), setup))
+export const shorthand = <T extends keyof HTMLElementTagNameMap>(elName: T): PipeConstructor<HTMLElementTagNameMap[T]> =>
+  (...effects) => pipe(document.createElement(elName))(...effects)
 
 export const frag = (): PipeFn<DocumentFragment> =>
-  pipe(new VirtualNode(document.createDocumentFragment()))
+  pipe(document.createDocumentFragment())
 
 export const styleEl = shorthand('style')

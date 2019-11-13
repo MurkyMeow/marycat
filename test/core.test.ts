@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { mount, style, on, dispatch } from '../src/index'
+import { mount, style, on, dispatch, cx, name } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('core', function() {
@@ -26,9 +26,8 @@ describe('core', function() {
   })
 
   it('set common attributes with their shorthands', function() {
-    const [el] = mount(document.head, div('foo', '#bar', '@baz', '.qux'))
+    const [el] = mount(document.head, div('foo')(name`baz`, cx`qux`))
     assert.strictEqual(el.textContent, 'foo')
-    assert.strictEqual(el.getAttribute('id'), 'bar')
     assert.strictEqual(el.getAttribute('name'), 'baz')
     assert.strictEqual(el.getAttribute('class'), 'qux')
   })
@@ -36,11 +35,6 @@ describe('core', function() {
   it('set text', function() {
     const [el] = mount(document.head, div()('foobar'))
     assert.strictEqual(el.textContent, 'foobar')
-  })
-
-  it('append class names', function() {
-    const [el] = mount(document.head, div('.c1', '.c2'))
-    assert.includeMembers([...el.classList], ['c1', 'c2'])
   })
 
   it('set style properties', function() {

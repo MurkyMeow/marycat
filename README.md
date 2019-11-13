@@ -13,14 +13,14 @@ function viewProfile(host: PipeFn<ShadowRoot>, {
   age = defAttr(0),
 }) {
   return host
-  (img('.profile-photo')
+  (img(cx`.profile-photo`)
     (attr('src', zip$`/${photo}`))
   )
   (div()
-    (div('.profile-name')(name))
-    (div('.profile-age')(age))
+    (div(cx`.profile-name`)(name))
+    (div(cx`.profile-age`)(age))
   )
-  (button()(zip$`Add ${name} to friends`))
+  (button(zip$`Add ${name} to friends`))
 }
 const profile = customElement('mary-profile', viewProfile)
 
@@ -50,7 +50,7 @@ function viewCounter(host: PipeFn<ShadowRoot>, {
     host(dispatch('changeee', val)) // type error
   })
   return host
-  (button()(count)
+  (button(count)
     (on('click', () => count.v++))
   )
 }
@@ -59,7 +59,6 @@ const counter = customElement('mary-counter', viewCounter)
 
 counter.new()
   // typeof e = CustomEvent<number>
-  (counter.on('change', e => e.detail))
   // error: number is not assignable to string 🎉
   (counter.on('change', e => document.title = e.detail))
 ```

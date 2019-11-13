@@ -12,14 +12,14 @@ describe('webc', function() {
     p1 = defAttr(false),
     p2 = defAttr(''),
     p3 = defAttr({ name: '' }),
-  }, t_dispatch: TestDispatch): PipeFn<ShadowRoot> {
+  }, t_dispatch: TestDispatch) {
     return host
     (on('click', () => {
       host(t_dispatch('disturb', TEST_MESSAGE))
     }))
-    (div()(p1.string))
-    (div()(p2))
-    (div()(p3._.name))
+    (div(p1.string))
+    (div(p2))
+    (div(p3._.name))
   }
   const test = customElement('mary-test', renderTest)
 
