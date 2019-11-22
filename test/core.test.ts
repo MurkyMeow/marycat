@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { mount, style, on, dispatch, cx, name } from '../src/index'
+import { mount, style, on, dispatch, cx, name, attrs } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('core', function() {
@@ -23,6 +23,16 @@ describe('core', function() {
       (div())
     )
     assert.strictEqual(el.children.length, 2)
+  })
+
+  it('set multiple attributes', function() {
+    const obj = { id: 'foo', hidden: true, 'data-stuff': 1234 }
+    const [el] = mount(document.head, div()
+      (...attrs(obj))
+    )
+    Object.entries(obj).forEach(([key, val]) => {
+      assert.strictEqual(el.getAttribute(key), val.toString())
+    })
   })
 
   it('set common attributes with their shorthands', function() {

@@ -96,6 +96,11 @@ export const attr = <T extends string | number | boolean>(
   else setAttr(val)
 }
 
+export const attrs = <T extends string | number | boolean>(
+  attrs: { [key: string]: StateOrPlain<T> }
+) =>
+  Object.entries(attrs).map(([key, val]) => attr(key, val))
+
 export const cx = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
   attr('class', zip$(strings, ...values))
 
