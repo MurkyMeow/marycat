@@ -16,15 +16,12 @@ const filterShadow = (el: ElOrShadow): Element =>
 // TODO generalize with `repeat` somehow?
 function watch<T extends Node, K extends Node, E extends Effect<T, K>>(el: T, state: State<E>): Node[] {
   const hook: Node = el.appendChild(document.createComment(''))
-  const nodes: Node[] = []
+  let nodes: Node[] = []
   state.sub((next: Effect<T, K>) => {
     nodes.forEach(node => el.removeChild(node))
-    nodes.length = 0
-    let cur: Node = hook
-    nodes.push(...applyEffect(el, next))
-    nodes.forEach(node => {
-      cur = el.insertBefore(node, cur.nextSibling)
-    })
+    nodes = applyEffect(el, next)
+    nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
+    return nodes
   })
   return nodes
 }
