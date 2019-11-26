@@ -1,17 +1,14 @@
-import { State, StateOrPlain } from './state'
-import { PipeFn, attr, pipe, Effect, on, dispatch, PipeConstructor } from './core'
+import { StateOrPlain } from './state'
+import { PipeFn, attr, pipe, on, dispatch, PipeConstructor } from './core'
+import { observable, observe } from '@nx-js/observer-util'
 
-type Props<T> =
-  { [key in keyof T]: State<T[key]> }
-
-
-let props: Record<string, State<unknown>>
+let props: Record<string, unknown>
 let keys: string[]
 
-export function defAttr<T>(defaultValue: T): State<T> {
+export function defAttr<T>(defaultValue: T): T {
   const [current] = keys.slice(-1)
-  const state = new State(defaultValue)
-  props[current] = state as State<unknown>
+  const state = observable(defaultValue)
+  props[current] = state
   return state
 }
 
@@ -20,35 +17,33 @@ export abstract class MaryElement<T, E> extends HTMLElement {
   // as props are defined using default parameters
   // they're considered to be optional and thus nullable
   // `Required` frees from the need of writing null checks
-  props: Required<Props<T>>
+  props: T
   constructor(render: RenderFunction<T, E>) {
     super()
     props = {}, keys = []
     const trap = new Proxy({}, {
-      get: (_, key: string): void => {
-        keys.push(key)
-      },
+      get(_, key: string): void { keys.push(key) },
     })
-    render(pipe(this.root), trap as Props<T>, t_dispatch)
-    this.props = props as Required<Props<T>>
+    render(pipe(this.root), trap as T, t_dispatch)
+    this.props = props as Required<T>
     const observer = new MutationObserver(m => this.onAttributeChange(m))
     observer.observe(this, {
       attributes: true,
-      attributeFilter: Object.keys(props),
+      attributeFilter: keys,
     })
   }
   onAttributeChange(mutations: MutationRecord[]): void {
     mutations.forEach(m => {
       const attrName = m.attributeName as keyof T
       const val = this.getAttribute(attrName as string)
-      const prop = this.props[attrName] as State<unknown>
-      switch (typeof prop.v) {
-        case 'bigint': prop.v = BigInt(val); break
-        case 'number': prop.v = Number(val); break
-        case 'string': prop.v = String(val); break
-        case 'boolean': prop.v =  Boolean(val); break
-        default: console.trace(val, 'is not assignable to', name, 'of', this)
-      }
+      const prop = this.props[attrName]
+      // switch (typeof prop) {
+      //   case 'bigint': prop = BigInt(val); break
+      //   case 'number': prop = Number(val); break
+      //   case 'string': prop = String(val); break
+      //   case 'boolean': prop =  Boolean(val); break
+      //   default: console.trace(val, 'is not assignable to', name, 'of', this)
+      // }
     })
   }
 }
@@ -63,7 +58,7 @@ const t_dispatch = <E, K extends keyof E>(
 ) => dispatch(event as string, detail, opts)
 
 type RenderFunction<T, E> =
-  (host: PipeFn<ShadowRoot>, props: Props<T>, t_dispatch: TypedDispatch<E>) => PipeFn<ShadowRoot>
+  (host: PipeFn<ShadowRoot>, props: T, t_dispatch: TypedDispatch<E>) => PipeFn<ShadowRoot>
 
 export interface CustomElementConstructor<T, E> {
   new: PipeConstructor<MaryElement<T, E>>
@@ -72,7 +67,7 @@ export interface CustomElementConstructor<T, E> {
     (el: MaryElement<T, E>) => void
 
   prop: <K extends keyof T, E extends Node>(key: K, val: StateOrPlain<T[K]>) =>
-    Effect<MaryElement<T, E>, E>
+    (el: MaryElement<T, E>) => void
 }
 
 export const customElement = <T, E>(
@@ -93,10 +88,8 @@ export const customElement = <T, E>(
     prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: MaryElement<T, E>): void => {
       if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
         attr(key as string, val)(el)
-      } else if (val instanceof State) {
-        val.sub(next => el.props[key].v = next)
       } else {
-        el.props[key].v = val
+        el.props[key] = val
       }
     },
   }

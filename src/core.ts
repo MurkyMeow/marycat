@@ -1,4 +1,5 @@
-import { State, StateOrPlain, zip$ } from './state'
+import { observe, observable } from '@nx-js/observer-util'
+import { StateOrPlain, zipTemplate } from './state'
 
 type ElOrShadow = Element | ShadowRoot
 
@@ -13,25 +14,21 @@ export type Effect<T extends Node, K extends Node> =
 const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
-// TODO generalize with `repeat` somehow?
-function watch<T extends Node, K extends Node, E extends Effect<T, K>>(el: T, state: State<E>): Node[] {
+export const watch = <T extends Node, K extends Node>(
+  observable: () => Effect<T, K>,
+) => (el: T): void => {
   const hook: Node = el.appendChild(document.createComment(''))
-  const nodes: Node[] = []
-  state.sub((next: Effect<T, K>) => {
+  let nodes: Node[] = []
+  observe(() => {
     nodes.forEach(node => el.removeChild(node))
-    nodes.length = 0
-    let cur: Node = hook
-    nodes.push(...applyEffect(el, next))
-    nodes.forEach(node => {
-      cur = el.insertBefore(node, cur.nextSibling)
-    })
+    nodes = applyEffect(el, observable())
+    nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
   })
-  return nodes
 }
 
 function applyEffect<T extends Node, K extends Node>(
   el: T,
-  effect: StateOrPlain<Effect<T, K>> | StateOrPlain<Effect<T, K>>[],
+  effect: Effect<T, K> | Effect<T, K>[],
 ): Node[] {
   if (Array.isArray(effect)) {
     const res: Node[] = []
@@ -40,9 +37,6 @@ function applyEffect<T extends Node, K extends Node>(
   }
   if (isPipeFn(effect)) {
     return mount(el, effect)
-  }
-  if (effect instanceof State) {
-    return watch(el, effect)
   }
   switch (typeof effect) {
     case 'number':
@@ -58,8 +52,8 @@ function applyEffect<T extends Node, K extends Node>(
 
 export const style = (rule: string, val: StateOrPlain<string>) => (_el: ElOrShadow): void => {
   const el = filterShadow(_el) as HTMLElement
-  if (val instanceof State) {
-    val.sub(next => el.style.setProperty(rule, next))
+  if (typeof val === 'function') {
+    observe(() => el.style.setProperty(rule, val()))
   } else {
     el.style.setProperty(rule, val)
   }
@@ -92,57 +86,58 @@ export const attr = <T extends string | number | boolean>(
   const el = filterShadow(_el)
   const setAttr = (value: T): void =>
     el.setAttribute(name, val === false ? '' : String(value))
-  if (val instanceof State) val.sub(setAttr)
-  else setAttr(val)
+  if (typeof val === 'function') {
+    observe(() => setAttr(val()))
+  } else {
+    setAttr(val)
+  }
 }
 
-export const cx = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
-  attr('class', zip$(strings, ...values))
-
-export const name = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
-  attr('name', zip$(strings, ...values))
+export const cx = zipTemplate(str => attr('class', str))
+export const name = zipTemplate(str => attr('name', str))
 
 export const repeat = <T, K extends Node>(
-  items: State<T[]>,
+  items: { v: T[] },
   getKey: (el: T) => string | object,
-  render: (el: State<T>, i: State<number>) => PipeFn<K> | PipeFn<K>[],
+  render: (args: { el: T, i: number }) => PipeFn<K> | PipeFn<K>[],
 ) => (el: Node): void => {
   const hook = el.appendChild(new Comment(''))
   interface ObservedItem {
     nodes: Node[];
-    state: State<T>;
-    index: State<number>;
+    state: { el: T, i: number }
   }
   let lookup = new Map<string | object, ObservedItem>()
-  items.sub((next, prev) => {
+  let prev: T[]
+  observe(() => {
     let refNode: Node = hook
     const newLookup = new Map<string | object, ObservedItem>()
     // update existing nodes and append the new ones
-    next.forEach((item, i) => {
+    items.v.forEach((item, i) => {
       const key = getKey(item)
       let observed = lookup.get(key)
       if (observed) {
-        observed.index.v = i
-        observed.state.v = item
+        observed.state.i = i
+        observed.state.el = item
       } else {
-        const state = new State(item)
-        const index = new State(i)
-        const vnodes = render(state, index)
-        const nodes = mount(el, vnodes)
-        observed = { nodes, state, index }
+        const state = observable({ el: item, i })
+        const nodes = mount(el, render(state))
+        observed = { nodes, state }
       }
       // restore the order of the nodes
       observed.nodes.forEach(
         node => refNode = el.insertBefore(node, refNode.nextSibling))
       newLookup.set(key, observed)
     })
-    // remove nodes that are not present anymore
-    prev.forEach(item => {
-      const key = getKey(item)
-      if (newLookup.has(key)) return
-      const observed = lookup.get(key)
-      if (observed) observed.nodes.forEach(node => el.removeChild(node))
-    })
+    if (!prev) prev = [...items.v]
+    else {
+      // remove nodes that are not present anymore
+      prev.forEach(item => {
+        const key = getKey(item)
+        if (newLookup.has(key)) return
+        const observed = lookup.get(key)
+        if (observed) observed.nodes.forEach(node => el.removeChild(node))
+      })
+    }
     lookup = newLookup
   })
 }
@@ -166,8 +161,8 @@ const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
   typeof arg === 'function' && '__node' in arg
 
 /**
- * turns a vnode into a function which can be called
- * infinite amount of times adding effects to the vnode
+ * turns a node into a function which can be called
+ * infinite amount of times adding effects to the node
 */
 export function pipe<T extends Node>(node: T): PipeFn<T> {
   const fn = Object.assign(

@@ -1,27 +1,33 @@
-import { PipeFn, defAttr, State, on, styleEl, zip$, customElement, mount, TypedDispatch } from '../src/index'
+import { PipeFn, on, styleEl, customElement, mount, TypedDispatch, watch } from '../src/index'
 import { div, span } from './bindings'
+import { observable } from '@nx-js/observer-util'
 
-type ExampleDispatch =
+type Dispatch =
   TypedDispatch<{ change: number }>
 
-function viewExample(host: PipeFn<ShadowRoot>, {
-  supercool = defAttr(false),
-  logo = defAttr({ title: '', icon: '' }),
-}, t_dispatch: ExampleDispatch) {
-  const count = new State(0).sub(val => {
-    host(t_dispatch('change', val))
-  })
+interface Props {
+  supercool: boolean
+  logo: { title: string, icon: string }
+}
+
+function viewExample(host: PipeFn<ShadowRoot>, props: Props, t_dispatch: Dispatch) {
+  const state = observable({ count: 0 })
   return host
   (on('click', () => {
-    count.v++
-    logo.v = { ...logo.v, icon: '👁‍' }
+    state.count++
+    props.logo.icon = '👁‍'
+    host(t_dispatch('change', state.count))
   }))
-  (styleEl()(`
+  (styleEl(`
     span { color: red; }
   `))
-  (span()(zip$`You clicked ${count.string} times`))
-  (div()(zip$`${logo._.icon} ${logo._.title}`))
-  (supercool.and([
+  (span()
+    (watch(() => `You clicked ${state.count} times`))
+  )
+  (div()
+    (watch(() => `${props.logo.icon} ${props.logo.title}`))
+  )
+  (watch(() => props.supercool && [
     div('💫 ⭐️ 🌟 ✨'),
     div('⚡️ ☄️ 💥 🔥'),
   ]))
