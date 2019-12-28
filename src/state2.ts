@@ -4,41 +4,37 @@ type ObserverMap<T> =
 type ActionMap =
   { [x: string]: (...args: any) => any }
 
-export function store<T, A extends ActionMap>(obj: T, getActions: (store: T) => A) {
-  type FilterKeys<U> =
-    { [X in keyof T]: T[X] extends U ? X : never }[keyof T]
+type FilterKeys<T, U> =
+  { [X in keyof T]: T[X] extends U ? X : never }[keyof T]
 
+export interface Store<T> {
+  text: (key: FilterKeys<T, string | number>) => (el: Node) => void
+  attr: (key: FilterKeys<T, string | number>, attrName: string) => (el: Element) => void
+  set: <K extends keyof T>(key: K, val: T[K]) => void
+}
+
+export function makeStore<T, A extends ActionMap>(store: T, getActions: (store: T) => A): Store<T> & A {
   const observerMap: ObserverMap<T> = {}
 
-  const actionsMap = getActions(obj)
-
-  const observe = <U>(key: FilterKeys<U>, fn: (val: U) => void): void => {
+  const observe = <U>(key: FilterKeys<T, U>, fn: (val: U) => void): void => {
     const observers = observerMap[key]
-    const observer = () => fn(obj[key])
+    const observer = () => fn(store[key] as any)
+    observer()
     observerMap[key] = observers ? observers.concat(observer) : [observer]
   }
 
   return {
-    _text: (key: FilterKeys<string>) => (el: Node) => {
-      observe(key, val => el.textContent = val)
+    ...getActions(store),
+    text: key => node => {
+      observe(key, val => node.textContent = String(val))
     },
-    _attr: (attrName: string, key: FilterKeys<string>) => (el: Element) => {
-      observe(key, val => el.setAttribute(attrName, val))
+    attr: (key, attrName) => el => {
+      observe(key, val => el.setAttribute(attrName, String(val)))
     },
-    _dispatch<K extends keyof A>(action: K, ...params: Parameters<A[K]>): ReturnType<A[K]> {
-      return actionsMap[action].apply(null, params)
+    set(key, val) {
+      store[key] = val
+      const observers = observerMap[key]
+      if (observers) observers.forEach(fn => fn())
     },
   }
 }
-
-const myStore = store({
-  hello: 'hi',
-  bar: 1234,
-}, store => ({
-  setHello: (val: string) => store.hello = val,
-}))
-
-myStore._dispatch('setHello', 'ciao')
-
-myStore._text('hello')
-myStore._attr('data-stuff', 'bar') // error
