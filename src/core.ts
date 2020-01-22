@@ -1,56 +1,21 @@
 import { State, StateOrPlain, zip$ } from './state'
 
-type ElOrShadow = Element | ShadowRoot
+type EventMap = GlobalEventHandlersEventMap
 
-export type Effect<T extends Node, K extends Node> =
-  | string
-  | number
-  | boolean
-  | PipeFn<K>
-  | PipeFn<K>[]
-  | ((el: T) => void)
+type ElOrShadow = Element | ShadowRoot
 
 const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
 // TODO generalize with `repeat` somehow?
-function watch<T extends Node, K extends Node, E extends Effect<T, K>>(el: T, state: State<E>): Node[] {
+export const watch = (state: State<Node | Node[]>) => (el: Node) => {
   const hook: Node = el.appendChild(document.createComment(''))
   let nodes: Node[] = []
-  state.sub((next: Effect<T, K>) => {
+  state.sub(nodeOrNodes => {
     nodes.forEach(node => el.removeChild(node))
-    nodes = applyEffect(el, next)
+    nodes = ([] as Node[]).concat(nodeOrNodes)
     nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
-    return nodes
   })
-  return nodes
-}
-
-function applyEffect<T extends Node, K extends Node>(
-  el: T,
-  effect: StateOrPlain<Effect<T, K>> | StateOrPlain<Effect<T, K>>[],
-): Node[] {
-  if (Array.isArray(effect)) {
-    const res: Node[] = []
-    for (const m of effect) res.push(...applyEffect(el, m))
-    return res
-  }
-  if (isPipeFn(effect)) {
-    return mount(el, effect)
-  }
-  if (effect instanceof State) {
-    return watch(el, effect)
-  }
-  switch (typeof effect) {
-    case 'number':
-    case 'string': {
-      const text = document.createTextNode(String(effect))
-      return [el.appendChild(text)]
-    }
-    case 'boolean': return []
-    case 'function': return effect(el), []
-    default: return console.trace('Unexpected child', effect), []
-  }
 }
 
 export const style = (rule: string, val: StateOrPlain<string>) => (_el: ElOrShadow): void => {
@@ -62,16 +27,19 @@ export const style = (rule: string, val: StateOrPlain<string>) => (_el: ElOrShad
   }
 }
 
+export type MarycatEventListenerOptions =
+  & (AddEventListenerOptions | EventListenerOptions)
+  & { prevent?: boolean; stop?: boolean; shadow?: boolean }
+
 export const on = (
   event: string,
   handler: EventListener,
-  mods: { prevent?: boolean; stop?: boolean; shadow?: boolean } = {},
-  options?: AddEventListenerOptions | EventListenerOptions
+  options?: MarycatEventListenerOptions,
 ) => (_el: ElOrShadow): void => {
-  const el = mods.shadow ? _el : filterShadow(_el)
+  const el = options?.shadow ? _el : filterShadow(_el)
   el.addEventListener(event, (e: Event) => {
-    if (mods.prevent) e.preventDefault()
-    if (mods.stop) e.stopPropagation()
+    if (options?.prevent) e.preventDefault()
+    if (options?.stop) e.stopPropagation()
     handler(e)
   }, options)
 }
@@ -104,16 +72,23 @@ export const cx = (strings: TemplateStringsArray, ...values: StateOrPlain<string
 export const name = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
   attr('name', zip$(strings, ...values))
 
-export const repeat = <T, K extends Node>(
-  items: State<T[]>,
-  getKey: (el: T) => string | object,
-  render: (el: State<T>, i: State<number>) => PipeFn<K> | PipeFn<K>[],
+export const text = (
+  strings: TemplateStringsArray, ...values: StateOrPlain<string>[]
+) => (el: ElOrShadow) => {
+  const text = el.appendChild(document.createTextNode(''))
+  zip$(strings, ...values).sub(v => text.textContent = v)
+}
+
+export const repeat = <TItem, TNode extends PipedNode<Node, EventMap>>(
+  items: State<TItem[]>,
+  getKey: (el: TItem) => string | object,
+  render: (el: State<TItem>, i: State<number>) => TNode | TNode[],
 ) => (el: Node): void => {
   const hook = el.appendChild(new Comment(''))
   interface ObservedItem {
-    nodes: Node[];
-    state: State<T>;
-    index: State<number>;
+    nodes: Node[]
+    state: State<TItem>
+    index: State<number>
   }
   let lookup = new Map<string | object, ObservedItem>()
   items.sub((next, prev) => {
@@ -149,32 +124,44 @@ export const repeat = <T, K extends Node>(
   })
 }
 
-export function mount<T extends Node>(parent: Node, vnode: PipeFn<T> | PipeFn<T>[]): T[] {
-  if (Array.isArray(vnode)) {
-    return ([] as T[]).concat(...vnode.map(x => mount(parent, x)))
-  }
-  return [parent.appendChild(vnode.__node)]
-}
-
-export type PipeConstructor<T extends Node> =
-  <E extends Effect<T, Node>>(...effects: StateOrPlain<E>[]) => PipeFn<T>
+export const mount = <TNode extends Node>(
+  parent: Node,
+  piped: PipedNode<TNode, EventMap> | PipedNode<TNode, EventMap>[],
+): TNode[] =>
+  Array.isArray(piped)
+    ? ([] as TNode[]).concat(...piped.map(x => mount(parent, x)))
+    : [parent.appendChild(piped.__node)]
 
 // yes, this is a monkey-patched function
-export type PipeFn<T extends Node> =
-  & (<K extends Node, E extends Effect<T, K>>(...effects: StateOrPlain<E>[]) => PipeFn<T>)
-  & { __node: T }
+interface PipedNode<TNode extends Node, TEvents extends EventMap> {
+  // applies an arbitrary effect
+  (effect: (node: TNode, piped: PipedNode<TNode, TEvents>) => void): PipedNode<TNode, TEvents>
 
-const isPipeFn = <T extends Node>(arg: unknown): arg is PipeFn<T> =>
-  typeof arg === 'function' && '__node' in arg
+  // appends a child
+  <TChild extends Node, TChildEvents extends EventMap>(
+    child: PipedNode<TChild, TChildEvents>,
+  ): PipedNode<TNode, TEvents & TChildEvents>
+
+  __node: TNode
+}
+
+const isPipedNode = (arg: Function): arg is PipedNode<Node, EventMap> =>
+  '__node' in arg
 
 /**
- * turns a vnode into a function which can be called
- * infinite amount of times adding effects to the vnode
+ * turns a node into a function which can be called
+ * infinite amount of times adding effects to the node
 */
-export function pipe<T extends Node>(node: T): PipeFn<T> {
+export function pipeNode<TNode extends Node, TEvents extends EventMap>(node: TNode): PipedNode<TNode, TEvents> {
   const fn = Object.assign(
-    function<K extends Node, E extends Effect<T, K>>(...effects: StateOrPlain<E>[]) {
-      applyEffect(node, effects as Effect<T, K>)
+    function<TChild extends Node, TChildEvents extends EventMap>(
+      arg: ((node: TNode, piped: PipedNode<TNode, TEvents>) => void) | PipedNode<TChild, TChildEvents>,
+    ) {
+      if (isPipedNode(arg)) {
+        node.appendChild(arg.__node)
+      } else {
+        arg(node, fn)
+      }
       return fn
     }, {
     __node: node,
@@ -182,10 +169,13 @@ export function pipe<T extends Node>(node: T): PipeFn<T> {
   return fn
 }
 
-export const shorthand = <T extends keyof HTMLElementTagNameMap>(elName: T): PipeConstructor<HTMLElementTagNameMap[T]> =>
-  (...effects) => pipe(document.createElement(elName))(...effects)
+export const shorthand = <TNode extends Node, TEvents extends EventMap>(
+  getNode: () => TNode,
+) => (
+  effect: (el: TNode) => void,
+) =>
+  pipeNode<TNode, TEvents>(getNode())(effect)
 
-export const frag = (): PipeFn<DocumentFragment> =>
-  pipe(document.createDocumentFragment())
+export const frag = () => pipeNode(document.createDocumentFragment())
 
-export const styleEl = shorthand('style')
+export const styleEl = shorthand(() => document.createElement('style'))
