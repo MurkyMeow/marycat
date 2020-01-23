@@ -170,10 +170,6 @@ export interface PipedNode<TNode extends Node, TEvents> {
 const isPipedNode = (arg: Function): arg is PipedNode<Node, unknown> =>
   '__node' in arg
 
-/**
- * turns a node into a function which can be called
- * infinite amount of times adding effects to the node
-*/
 export function pipeNode<TNode extends Node, TEvents>(node: TNode): PipedNode<TNode, TEvents> {
   const fn = Object.assign(
     function<TChild extends Node, TChildEvents>(
@@ -191,9 +187,13 @@ export function pipeNode<TNode extends Node, TEvents>(node: TNode): PipedNode<TN
   return fn
 }
 
-export const shorthand = <TNode extends Node, TEvents>(getNode: () => TNode) => (effect: (el: TNode) => void) =>
-  pipeNode<TNode, TEvents>(getNode())(effect)
+export const shorthand = <TName extends keyof HTMLElementTagNameMap>(elName: TName) =>
+  (...effects: ((el: HTMLElementTagNameMap[TName]) => void)[]) => {
+    const pipe = pipeNode<HTMLElementTagNameMap[TName], HTMLElementEventMap>(document.createElement(elName))
+    effects.forEach(eff => pipe(eff))
+    return pipe
+  }
 
 export const frag = () => pipeNode(document.createDocumentFragment())
 
-export const styleEl = shorthand(() => document.createElement('style'))
+export const styleEl = shorthand('style')
