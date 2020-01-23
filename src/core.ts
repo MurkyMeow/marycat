@@ -6,12 +6,14 @@ const filterShadow = (el: ElOrShadow): Element =>
   el instanceof ShadowRoot ? el.host : el
 
 // TODO generalize with `repeat` somehow?
-export const watch = (state: State<Node | Node[]>) => (el: Node) => {
+export const watch = <TNode extends Node, TEvents>(
+  state: State<PipedNode<TNode, TEvents> | PipedNode<TNode, TEvents>[]>
+) => (el: Node) => {
   const hook: Node = el.appendChild(document.createComment(''))
   let nodes: Node[] = []
   state.sub(nodeOrNodes => {
     nodes.forEach(node => el.removeChild(node))
-    nodes = ([] as Node[]).concat(nodeOrNodes)
+    nodes = ([] as PipedNode<TNode, TEvents>[]).concat(nodeOrNodes).map(x => x.__node)
     nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
   })
 }
@@ -161,7 +163,7 @@ export interface PipedNode<TNode extends Node, TEvents> {
 
   // appends a child
   <TChild extends Node, TChildEvents>(
-    ...children: PipedNode<TChild, TChildEvents>[],
+    ...children: PipedNode<TChild, TChildEvents>[]
   ): PipedNode<TNode, TEvents & TChildEvents>
 
   __node: TNode
