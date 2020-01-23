@@ -48,7 +48,7 @@ export abstract class MaryElement<TProps extends object> extends HTMLElement {
   }
 }
 
-export function customElement<TProps extends object, TEvents>(
+export function customElement<TProps extends object, TEvents = unknown>(
   elName: string,
   render: (args: {
     host: PipedNode<ShadowRoot, TEvents & HTMLElementEventMap>,
