@@ -1,7 +1,5 @@
 import { State, StateOrPlain, zip$ } from './state'
 
-type EventMap = GlobalEventHandlersEventMap
-
 type ElOrShadow = Element | ShadowRoot
 
 const filterShadow = (el: ElOrShadow): Element =>
@@ -31,24 +29,47 @@ export type MarycatEventListenerOptions =
   & (AddEventListenerOptions | EventListenerOptions)
   & { prevent?: boolean; stop?: boolean; shadow?: boolean }
 
-export const on = (
-  event: string,
-  handler: EventListener,
+export const on = <
+  TElement extends ElOrShadow,
+  TEvents,
+  TName extends keyof TEvents & string,
+>(
+  event: TName,
+  handler: (evt: TEvents[TName] & { currentTarget: TElement }) => void,
   options?: MarycatEventListenerOptions,
-) => (_el: ElOrShadow): void => {
+) => (
+  _el: TElement,
+  // this is a hack to help typescript infer TEvents properly
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _: PipedNode<TElement, TEvents>,
+): void => {
   const el = options?.shadow ? _el : filterShadow(_el)
-  el.addEventListener(event, (e: Event) => {
+  el.addEventListener(event, e => {
     if (options?.prevent) e.preventDefault()
     if (options?.stop) e.stopPropagation()
-    handler(e)
+    // is it possible to prove to the compiler that the right argument is used?
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handler(e as any)
   }, options)
 }
 
-export const dispatch = <T>(
-  eventName: string, detail?: T, opts: Omit<CustomEventInit, 'detail'> = {},
-) => (el: ElOrShadow): void => {
-  const event = new CustomEvent<T>(eventName, { detail, ...opts })
-  filterShadow(el).dispatchEvent(event)
+type EventType<T> = 
+  T extends CustomEvent<infer U> ? U : T
+
+export const dispatch = <
+  TElement extends Element | ShadowRoot,
+  TEvents, TName extends keyof TEvents & string,
+>(
+  event: TName,
+  detail: EventType<TEvents[TName]>,
+  options: EventInit = {},
+) => (
+  el: TElement,
+  // this is a hack to help typescript infer TEvents properly
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _: PipedNode<TElement, TEvents>,
+) => {
+  filterShadow(el).dispatchEvent(new CustomEvent(event, { detail, ...options }))
 }
 
 export const attr = <T extends string | number | boolean>(
@@ -73,13 +94,14 @@ export const name = (strings: TemplateStringsArray, ...values: StateOrPlain<stri
   attr('name', zip$(strings, ...values))
 
 export const text = (
-  strings: TemplateStringsArray, ...values: StateOrPlain<string>[]
+  strings: TemplateStringsArray,
+  ...values: (StateOrPlain<string> | StateOrPlain<number> | StateOrPlain<boolean>)[]
 ) => (el: ElOrShadow) => {
   const text = el.appendChild(document.createTextNode(''))
-  zip$(strings, ...values).sub(v => text.textContent = v)
+  zip$(strings, ...values.map(String)).sub(v => text.textContent = v)
 }
 
-export const repeat = <TItem, TNode extends PipedNode<Node, EventMap>>(
+export const repeat = <TItem, TNode extends PipedNode<Node, unknown>>(
   items: State<TItem[]>,
   getKey: (el: TItem) => string | object,
   render: (el: State<TItem>, i: State<number>) => TNode | TNode[],
@@ -126,35 +148,35 @@ export const repeat = <TItem, TNode extends PipedNode<Node, EventMap>>(
 
 export const mount = <TNode extends Node>(
   parent: Node,
-  piped: PipedNode<TNode, EventMap> | PipedNode<TNode, EventMap>[],
+  piped: PipedNode<TNode, unknown> | PipedNode<TNode, unknown>[],
 ): TNode[] =>
   Array.isArray(piped)
     ? ([] as TNode[]).concat(...piped.map(x => mount(parent, x)))
     : [parent.appendChild(piped.__node)]
 
 // yes, this is a monkey-patched function
-interface PipedNode<TNode extends Node, TEvents extends EventMap> {
+export interface PipedNode<TNode extends Node, TEvents> {
   // applies an arbitrary effect
   (effect: (node: TNode, piped: PipedNode<TNode, TEvents>) => void): PipedNode<TNode, TEvents>
 
   // appends a child
-  <TChild extends Node, TChildEvents extends EventMap>(
+  <TChild extends Node, TChildEvents>(
     child: PipedNode<TChild, TChildEvents>,
   ): PipedNode<TNode, TEvents & TChildEvents>
 
   __node: TNode
 }
 
-const isPipedNode = (arg: Function): arg is PipedNode<Node, EventMap> =>
+const isPipedNode = (arg: Function): arg is PipedNode<Node, unknown> =>
   '__node' in arg
 
 /**
  * turns a node into a function which can be called
  * infinite amount of times adding effects to the node
 */
-export function pipeNode<TNode extends Node, TEvents extends EventMap>(node: TNode): PipedNode<TNode, TEvents> {
+export function pipeNode<TNode extends Node, TEvents>(node: TNode): PipedNode<TNode, TEvents> {
   const fn = Object.assign(
-    function<TChild extends Node, TChildEvents extends EventMap>(
+    function<TChild extends Node, TChildEvents>(
       arg: ((node: TNode, piped: PipedNode<TNode, TEvents>) => void) | PipedNode<TChild, TChildEvents>,
     ) {
       if (isPipedNode(arg)) {
@@ -169,11 +191,7 @@ export function pipeNode<TNode extends Node, TEvents extends EventMap>(node: TNo
   return fn
 }
 
-export const shorthand = <TNode extends Node, TEvents extends EventMap>(
-  getNode: () => TNode,
-) => (
-  effect: (el: TNode) => void,
-) =>
+export const shorthand = <TNode extends Node, TEvents>(getNode: () => TNode) => (effect: (el: TNode) => void) =>
   pipeNode<TNode, TEvents>(getNode())(effect)
 
 export const frag = () => pipeNode(document.createDocumentFragment())
