@@ -1,46 +1,41 @@
 import { State, StateOrPlain } from './state'
-import { PipeFn, attr, pipe, Effect, on, dispatch, PipeConstructor } from './core'
+import { PipedNode, pipeNode } from './core'
 
-type Props<T> =
-  { [key in keyof T]: State<T[key]> }
+type Props<T extends object> =
+  { [K in keyof T]: State<T[K]> }
 
+type Init<T extends object> =
+  { [K in keyof T]: StateOrPlain<T[K]> }
 
-let props: Record<string, State<unknown>>
-let keys: string[]
-
-export function defAttr<T>(defaultValue: T): State<T> {
-  const [current] = keys.slice(-1)
-  const state = new State(defaultValue)
-  props[current] = state as State<unknown>
-  return state
+function initToProps<T extends object>(init: Init<T>): Props<T> {
+  // TODO optimize
+  // it's much faster to just use the assignment (acc[key] = blabla)
+  // but typescript complains about that and i can't fix it
+  return Object.entries(init)
+    .reduce((acc, [key, val]) => ({
+      ...acc, [key]: val instanceof State ? val : new State(val),
+    }), init as Props<T>)
 }
 
-export abstract class MaryElement<T, E> extends HTMLElement {
-  root: ShadowRoot = this.attachShadow({ mode: 'open' })
-  // as props are defined using default parameters
-  // they're considered to be optional and thus nullable
-  // `Required` frees from the need of writing null checks
-  props: Required<Props<T>>
-  constructor(render: RenderFunction<T, E>) {
+export abstract class MaryElement<TProps extends object> extends HTMLElement {
+  root: ShadowRoot
+  props: Props<TProps>
+
+  constructor(init: Init<TProps>) {
     super()
-    props = {}, keys = []
-    const trap = new Proxy({}, {
-      get: (_, key: string): void => {
-        keys.push(key)
-      },
-    })
-    render(pipe(this.root), trap as Props<T>, t_dispatch)
-    this.props = props as Required<Props<T>>
+    this.root = this.attachShadow({ mode: 'open' })
+    this.props = initToProps(init)
     const observer = new MutationObserver(m => this.onAttributeChange(m))
     observer.observe(this, {
       attributes: true,
-      attributeFilter: Object.keys(props),
+      attributeFilter: Object.keys(this.props),
     })
   }
+
   onAttributeChange(mutations: MutationRecord[]): void {
     mutations.forEach(m => {
-      const attrName = m.attributeName as keyof T
-      const val = this.getAttribute(attrName as string)
+      const attrName = m.attributeName as keyof TProps & string
+      const val = this.getAttribute(attrName)
       const prop = this.props[attrName] as State<unknown>
       switch (typeof prop.v) {
         case 'bigint': prop.v = BigInt(val); break
@@ -53,51 +48,22 @@ export abstract class MaryElement<T, E> extends HTMLElement {
   }
 }
 
-export type TypedDispatch<E> =
-  <K extends keyof E>(
-    event: K, detail: E[K], opts?: Omit<CustomEventInit, 'detail'>
-  ) => (el: ShadowRoot) => void
-
-const t_dispatch = <E, K extends keyof E>(
-  event: K, detail: E[K], opts?: Omit<CustomEventInit, 'detail'>,
-) => dispatch(event as string, detail, opts)
-
-type RenderFunction<T, E> =
-  (host: PipeFn<ShadowRoot>, props: Props<T>, t_dispatch: TypedDispatch<E>) => PipeFn<ShadowRoot>
-
-export interface CustomElementConstructor<T, E> {
-  new: PipeConstructor<MaryElement<T, E>>
-
-  on: <K extends keyof E>(event: K, handler: (event: CustomEvent<E[K]>) => void) =>
-    (el: MaryElement<T, E>) => void
-
-  prop: <K extends keyof T, E extends Node>(key: K, val: StateOrPlain<T[K]>) =>
-    Effect<MaryElement<T, E>, E>
-}
-
-export const customElement = <T, E>(
-  elName: string, render: RenderFunction<T, E>,
-): CustomElementConstructor<T, E> => {
-  class CustomElement extends MaryElement<T, E> {
-    constructor() { super(render) }
+export function customElement<TProps extends object, TEvents>(
+  elName: string,
+  render: (args: {
+    host: PipedNode<ShadowRoot, TEvents>,
+    props: Props<TProps>,
+  }) => PipedNode<ShadowRoot, TEvents>,
+): (init: Init<TProps>) => PipedNode<MaryElement<TProps>, TEvents> {
+  class Component extends MaryElement<TProps> {
+    constructor(init: Init<TProps>) {
+      super(init)
+      render({
+        host: pipeNode(this.root),
+        props: this.props,
+      })
+    }
   }
-  customElements.define(elName, CustomElement)
-  return {
-    new(...effects) {
-      const el = new CustomElement()
-      return pipe(el)(...effects)
-    },
-    on<K extends keyof E>(event: K, handler: (event: CustomEvent<E[K]>) => void) {
-      return on(event as string, (e: Event) => handler(e as CustomEvent<E[K]>))
-    },
-    prop: <K extends keyof T>(key: K, val: StateOrPlain<T[K]>) => (el: MaryElement<T, E>): void => {
-      if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
-        attr(key as string, val)(el)
-      } else if (val instanceof State) {
-        val.sub(next => el.props[key].v = next)
-      } else {
-        el.props[key].v = val
-      }
-    },
-  }
+  customElements.define(elName, Component)
+  return init => pipeNode(new Component(init))
 }
