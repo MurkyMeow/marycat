@@ -157,11 +157,11 @@ export const mount = <TNode extends Node>(
 // yes, this is a monkey-patched function
 export interface PipedNode<TNode extends Node, TEvents> {
   // applies an arbitrary effect
-  (effect: (node: TNode, piped: PipedNode<TNode, TEvents>) => void): PipedNode<TNode, TEvents>
+  (...effects: ((node: TNode, piped: PipedNode<TNode, TEvents>) => void)[]): PipedNode<TNode, TEvents>
 
   // appends a child
   <TChild extends Node, TChildEvents>(
-    child: PipedNode<TChild, TChildEvents>,
+    ...children: PipedNode<TChild, TChildEvents>[],
   ): PipedNode<TNode, TEvents & TChildEvents>
 
   __node: TNode
@@ -173,12 +173,11 @@ const isPipedNode = (arg: Function): arg is PipedNode<Node, unknown> =>
 export function pipeNode<TNode extends Node, TEvents>(node: TNode): PipedNode<TNode, TEvents> {
   const fn = Object.assign(
     function<TChild extends Node, TChildEvents>(
-      arg: ((node: TNode, piped: PipedNode<TNode, TEvents>) => void) | PipedNode<TChild, TChildEvents>,
+      ...args: (((node: TNode, piped: PipedNode<TNode, TEvents>) => void) | PipedNode<TChild, TChildEvents>)[]
     ) {
-      if (isPipedNode(arg)) {
-        node.appendChild(arg.__node)
-      } else {
-        arg(node, fn)
+      for (const arg of args) {
+        if (isPipedNode(arg)) node.appendChild(arg.__node)
+        else arg(node, fn)
       }
       return fn
     }, {
@@ -188,11 +187,8 @@ export function pipeNode<TNode extends Node, TEvents>(node: TNode): PipedNode<TN
 }
 
 export const shorthand = <TName extends keyof HTMLElementTagNameMap>(elName: TName) =>
-  (...effects: ((el: HTMLElementTagNameMap[TName]) => void)[]) => {
-    const pipe = pipeNode<HTMLElementTagNameMap[TName], HTMLElementEventMap>(document.createElement(elName))
-    effects.forEach(eff => pipe(eff))
-    return pipe
-  }
+  (...effects: ((el: HTMLElementTagNameMap[TName]) => void)[]) =>
+    pipeNode<HTMLElementTagNameMap[TName], HTMLElementEventMap>(document.createElement(elName))(...effects)
 
 export const frag = () => pipeNode(document.createDocumentFragment())
 
