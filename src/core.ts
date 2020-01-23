@@ -7,24 +7,22 @@ const filterShadow = (el: ElOrShadow): Element =>
 
 // TODO generalize with `repeat` somehow?
 export const watch = <TNode extends Node, TEvents>(
-  state: State<PipedNode<TNode, TEvents> | PipedNode<TNode, TEvents>[]>
+  state: State<PipedNode<TNode, TEvents>> | State<PipedNode<TNode, TEvents>[]>
 ) => (el: Node) => {
   const hook: Node = el.appendChild(document.createComment(''))
   let nodes: Node[] = []
-  state.sub(nodeOrNodes => {
+  state.sub((nodeOrNodes: PipedNode<TNode, TEvents> | PipedNode<TNode, TEvents>[]) => {
     nodes.forEach(node => el.removeChild(node))
     nodes = ([] as PipedNode<TNode, TEvents>[]).concat(nodeOrNodes).map(x => x.__node)
     nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
   })
 }
 
-export const style = (rule: string, val: StateOrPlain<string>) => (_el: ElOrShadow): void => {
+export const style = (rule: string) => (
+  strings: TemplateStringsArray, ...values: PrimitiveStateOrPlain[]
+) => (_el: ElOrShadow): void => {
   const el = filterShadow(_el) as HTMLElement
-  if (val instanceof State) {
-    val.sub(next => el.style.setProperty(rule, next))
-  } else {
-    el.style.setProperty(rule, val)
-  }
+  zip$(strings, ...values).sub(v => el.style.setProperty(rule, v))
 }
 
 export type MarycatEventListenerOptions =
@@ -74,33 +72,25 @@ export const dispatch = <
   filterShadow(el).dispatchEvent(new CustomEvent(event, { detail, ...options }))
 }
 
-export const attr = <T extends string | number | boolean>(
-  name: string, val: StateOrPlain<T>,
+type PrimitiveStateOrPlain =
+  StateOrPlain<string> | StateOrPlain<number> | StateOrPlain<boolean>
+
+export const attr = (name: string) => (
+  strings: TemplateStringsArray, ...values: PrimitiveStateOrPlain[]
 ) => (_el: ElOrShadow): void => {
   const el = filterShadow(_el)
-  const setAttr = (value: T): void =>
-    el.setAttribute(name, val === false ? '' : String(value))
-  if (val instanceof State) val.sub(setAttr)
-  else setAttr(val)
+  zip$(strings, ...values).sub(v => el.setAttribute(name, v))
 }
 
-export const attrs = <T extends string | number | boolean>(
-  attrs: { [key: string]: StateOrPlain<T> }
-) =>
-  Object.entries(attrs).map(([key, val]) => attr(key, val))
+export const attrs = (attrs: { [key: string]: PrimitiveStateOrPlain }) =>
+  Object.entries(attrs).map(([key, val]) => attr(key)`${val}`)
 
-export const cx = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
-  attr('class', zip$(strings, ...values))
+export const cx = attr('class')
+export const name = attr('name')
 
-export const name = (strings: TemplateStringsArray, ...values: StateOrPlain<string>[]) =>
-  attr('name', zip$(strings, ...values))
-
-export const text = (
-  strings: TemplateStringsArray,
-  ...values: (StateOrPlain<string> | StateOrPlain<number> | StateOrPlain<boolean>)[]
-) => (el: ElOrShadow) => {
+export const text = (strings: TemplateStringsArray, ...values: PrimitiveStateOrPlain[]) => (el: ElOrShadow) => {
   const text = el.appendChild(document.createTextNode(''))
-  zip$(strings, ...values.map(String)).sub(v => text.textContent = v)
+  zip$(strings, ...values).sub(v => text.textContent = v)
 }
 
 export const repeat = <TItem, TNode extends PipedNode<Node, unknown>>(

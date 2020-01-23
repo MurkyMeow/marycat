@@ -74,7 +74,7 @@ export function zip<R>(
 
 export const zip$ = (
   strings: TemplateStringsArray,
-  ...keys: StateOrPlain<string>[]
+  ...keys: (StateOrPlain<string> | StateOrPlain<number> | StateOrPlain<boolean>)[]
 ): State<string> =>
   strings.reduce((acc, str, i) => {
     const state = keys[i]

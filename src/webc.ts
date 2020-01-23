@@ -41,7 +41,7 @@ export abstract class MaryElement<TProps extends object> extends HTMLElement {
         case 'bigint': prop.v = BigInt(val); break
         case 'number': prop.v = Number(val); break
         case 'string': prop.v = String(val); break
-        case 'boolean': prop.v =  Boolean(val); break
+        case 'boolean': prop.v =  val === 'true'; break
         default: console.trace(val, 'is not assignable to', name, 'of', this)
       }
     })
@@ -51,7 +51,7 @@ export abstract class MaryElement<TProps extends object> extends HTMLElement {
 export function customElement<TProps extends object, TEvents>(
   elName: string,
   render: (args: {
-    host: PipedNode<ShadowRoot, TEvents>,
+    host: PipedNode<ShadowRoot, TEvents & HTMLElementEventMap>,
     props: Props<TProps>,
   }) => PipedNode<ShadowRoot, TEvents>,
 ): (init: Init<TProps>) => PipedNode<MaryElement<TProps>, TEvents> {

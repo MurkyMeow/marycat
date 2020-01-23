@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat } from '../src/index'
+import { State, zip$, mount, attr, style, repeat, watch, text } from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
@@ -35,7 +35,7 @@ describe('state', function() {
 
   it('observe an element', function() {
     const state = new State(div())
-    const [el] = mount(document.head, div()(state))
+    const [el] = mount(document.head, div(watch(state)))
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
     state.v = h3()
     assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H3')
@@ -44,7 +44,7 @@ describe('state', function() {
   it('set a reactive attribute', function() {
     const state = new State('foo')
     const [el] = mount(document.head, div()
-      (attr('class', state))
+      (attr('class')`${state}`)
     )
     assert.strictEqual(el.className, 'foo')
     state.v = 'bar'
@@ -54,7 +54,7 @@ describe('state', function() {
   it('set a reactive attribute with template', function() {
     const state = new State('active')
     const [el] = mount(document.head, div()
-      (attr('class', zip$`type--${state}`))
+      (attr('class')`type--${state}`)
     )
     assert.strictEqual(el.className, 'type--active')
     state.v = 'disabled'
@@ -64,7 +64,7 @@ describe('state', function() {
   it('set a reactive style rule', function() {
     const state = new State('red')
     const [el] = mount(document.head, div()
-      (style('color', state))
+      (style('color')`${state}`)
     )
     assert.strictEqual(el.style.color, state.v)
     state.v = 'green'
@@ -117,12 +117,12 @@ describe('state', function() {
     const cond = new State(true)
     const [el] = mount(document.head,
       (div()
-        (cond.map(v => v ? [
-          div('then'),
-          div('then2'),
+        (watch(cond.map(v => v ? [
+          div(text`then`),
+          div(text`then2`),
         ] : [
-          div('else'),
-        ]))
+          div(text`else`),
+        ])))
       )
     )
     assert.strictEqual(el.children.length, 2)
@@ -137,7 +137,7 @@ describe('state', function() {
     const items = new State(['a', 'b', 'c'])
     const [el] = mount(document.head, div()
       (repeat(items, x => x, (x, i) =>
-        div()(zip$`${i.string} - ${x}`)
+        div()(text`${i.string} - ${x}`)
       ))
     )
     const check = (msg?: string): void => items.v.forEach((item, i) => {

@@ -1,29 +1,29 @@
 import { assert } from 'chai'
-import { State, defAttr, customElement, PipeFn, mount, TypedDispatch, on } from '../src/index'
+import { customElement, mount, on, dispatch, text } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('webc', function() {
-  type TestDispatch =
-    TypedDispatch<{ disturb: string }>
+  interface Props {
+    p1: boolean
+    p2: string
+    p3: { name: string }
+  }
+
+  interface Events {
+    disturb: CustomEvent<string>
+  }
 
   const TEST_MESSAGE = 'you fail to amuse me'
 
-  function renderTest(host: PipeFn<ShadowRoot>, {
-    p1 = defAttr(false),
-    p2 = defAttr(''),
-    p3 = defAttr({ name: '' }),
-  }, t_dispatch: TestDispatch) {
+  const Test = customElement<Props, Events>('mary-test', ({ host, props }) => {
     return host
-    (on('click', () => {
-      host(t_dispatch('disturb', TEST_MESSAGE))
-    }))
-    (div(p1.string))
-    (div(p2))
-    (div(p3._.name))
-  }
-  const test = customElement('mary-test', renderTest)
+    (on('click', () => host(dispatch('disturb', TEST_MESSAGE))))
+    (div(text`${props.p1}`))
+    (div(text`${props.p2}`))
+    (div(text`${props.p3._.name}`))
+  })
 
-  const instance = test.new()
+  const instance = Test({ p1: false, p2: '', p3: { name: '' } })
   const [el] = mount(document.head, instance)
   const [p1, p2, p3] = el.root.children
 
@@ -37,10 +37,10 @@ describe('webc', function() {
   })
 
   it('set props', async function() {
-    instance
-      (test.prop('p1', true))
-      (test.prop('p2', 'hello'))
-      (test.prop('p3', { name: 'Mary' }))
+    const { props } = instance.__node
+    props.p1.v = true
+    props.p2.v = 'hello'
+    props.p3.v = { name: 'Mary' }
     // MutationObserver appears to be asynchronous
     await new Promise(requestAnimationFrame)
     assert.strictEqual(p1.textContent, 'true')
@@ -49,24 +49,16 @@ describe('webc', function() {
   })
 
   it('respond to prop updates', async function() {
-    el.removeAttribute('p1')
+    el.setAttribute('p1', 'false')
     el.setAttribute('p2', 'world')
     await new Promise(requestAnimationFrame)
     assert.strictEqual(p1.textContent, 'false')
     assert.strictEqual(p2.textContent, 'world')
   })
 
-  it('observe a prop', function() {
-    const state = new State('zzz')
-    instance(test.prop('p2', state))
-    assert.strictEqual(p2.textContent, state.v, 'Initial value is not set')
-    state.v = 'qqqq'
-    assert.strictEqual(p2.textContent, state.v, 'Updates are not captured')
-  })
-
   it('listen to a custom event', function() {
     let text = ''
-    instance(test.on('disturb', e => text = e.detail))
+    instance(on('disturb', e => text = e.detail))
     el.click()
     assert.strictEqual(text, TEST_MESSAGE)
   })

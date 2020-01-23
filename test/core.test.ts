@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { mount, style, on, dispatch, cx, name, attrs } from '../src/index'
+import { mount, style, on, dispatch, cx, name, attrs, text } from '../src/index'
 import { div } from '../examples/bindings'
 
 describe('core', function() {
@@ -36,21 +36,20 @@ describe('core', function() {
   })
 
   it('set common attributes with their shorthands', function() {
-    const [el] = mount(document.head, div('foo')(name`baz`, cx`qux`))
-    assert.strictEqual(el.textContent, 'foo')
+    const [el] = mount(document.head, div(name`baz`, cx`qux`))
     assert.strictEqual(el.getAttribute('name'), 'baz')
     assert.strictEqual(el.getAttribute('class'), 'qux')
   })
 
   it('set text', function() {
-    const [el] = mount(document.head, div()('foobar'))
+    const [el] = mount(document.head, div()(text`foobar`))
     assert.strictEqual(el.textContent, 'foobar')
   })
 
   it('set style properties', function() {
     const [el] = mount(document.body, div() 
-      (style('color', 'red'))
-      (style('font-size', '12px'))
+      (style('color')`red`)
+      (style('font-size')`12px`)
     )
     assert.strictEqual(el.getAttribute('style'), 'color: red; font-size: 12px;')
   })
@@ -65,19 +64,15 @@ describe('core', function() {
     assert.strictEqual(count, 5)
   })
 
-  it('emit a custom event', function() {
-    let catchedEvent: CustomEvent | undefined
+  it('dispatch an event', function() {
+    let catchedEvent: Event | undefined
     const child = div()
     mount(document.head, div()
       (child)
-      (on('custom-evt', (e: Event) => catchedEvent = e as CustomEvent))
+      (on('timeupdate', e => catchedEvent = e))
     )
-    child(dispatch('custom-evt', 1234, { bubbles: true }))
-    if (catchedEvent) {
-      assert.strictEqual(catchedEvent.type, 'custom-evt')
-      assert.strictEqual(catchedEvent.detail, 1234)
-    } else {
-      assert.fail()
-    }
+    // FIXME this is so goofy
+    child(dispatch('timeupdate', new Event('timeupdate'), { bubbles: true }))
+    assert.strictEqual(catchedEvent?.type, 'timeupdate')
   })
 })
