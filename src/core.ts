@@ -85,6 +85,7 @@ export const attr = (name: string) => (
 export const attrs = (attrs: { [key: string]: PrimitiveStateOrPlain }) =>
   Object.entries(attrs).map(([key, val]) => attr(key)`${val}`)
 
+export const id = attr('id')
 export const cx = attr('class')
 export const name = attr('name')
 
@@ -95,7 +96,7 @@ export const text = (strings: TemplateStringsArray, ...values: PrimitiveStateOrP
 
 export const repeat = <TItem, TNode extends PipedNode<Node, unknown>>(
   items: State<TItem[]>,
-  getKey: (el: TItem) => string | object,
+  getKey: (el: TItem) => string | number | object,
   render: (el: State<TItem>, i: State<number>) => TNode | TNode[],
 ) => (el: Node): void => {
   const hook = el.appendChild(new Comment(''))
@@ -104,10 +105,10 @@ export const repeat = <TItem, TNode extends PipedNode<Node, unknown>>(
     state: State<TItem>
     index: State<number>
   }
-  let lookup = new Map<string | object, ObservedItem>()
+  let lookup = new Map<string | number | object, ObservedItem>()
   items.sub((next, prev) => {
     let refNode: Node = hook
-    const newLookup = new Map<string | object, ObservedItem>()
+    const newLookup = new Map<string | number | object, ObservedItem>()
     // update existing nodes and append the new ones
     next.forEach((item, i) => {
       const key = getKey(item)
