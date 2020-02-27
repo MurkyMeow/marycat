@@ -3,8 +3,8 @@
 Web components that are
 
 - functional
-- truly reactive
 - strongly typed
+- truly reactive (render function is called only once)
 
 ```ts
 interface Props {
@@ -23,6 +23,16 @@ const Profile = customElement<Props>('mary-profile', ({ host, props }) => {
     (div(cx`profile-age`)(text`${props.age}`))
   )
   (button(text`Add ${props.name} to friends`))
+})
+
+const Profile = customElement<Props>('mary-profile', ({ host, props }) => {
+  return host(
+  img(cx`profile-photo`, attr('src')`/${props.photo}`),
+  div(
+    div(cx`profile-name`, text`${props.name}`),
+    div(cx`profile-name`, text`${props.name}`),
+  ),
+  button(text`Add ${props.name} to friends`),
 })
 
 mount(document.body, (
