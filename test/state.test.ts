@@ -1,10 +1,10 @@
 import { assert } from 'chai'
-import { State, zip$, mount, attr, style, repeat, watch, text } from '../src/index'
+import * as m from '../src/index'
 import { div, h3 } from '../examples/bindings'
 
 describe('state', function() {
   it('notify state subscribers', function() {
-    const state = new State(25)
+    const state = new m.State(25)
     const values: number[] = []
     state.sub(v => values[0] = v)
     state.sub(v => values[1] = v)
@@ -14,7 +14,7 @@ describe('state', function() {
   })
 
   it('make a derivation', function() {
-    const state = new State('xx')
+    const state = new m.State('xx')
     const len = state.map(x => x.length)
     assert.strictEqual(len.v, state.v.length)
     state.v = 'xxxx'
@@ -22,10 +22,10 @@ describe('state', function() {
   })
 
   it('make a template derivation', function() {
-    const state1 = new State('foo')
-    const state2 = new State('bar')
+    const state1 = new m.State('foo')
+    const state2 = new m.State('bar')
     const plain = '>>'
-    const template = zip$`__${state1}-${state2}${plain}`
+    const template = m.zip$`__${state1}-${state2}${plain}`
     assert.strictEqual(template.v, `__foo-bar>>`)
     state1.v = 'qux'
     assert.strictEqual(template.v, `__qux-bar>>`)
@@ -34,52 +34,52 @@ describe('state', function() {
   })
 
   it('observe an element', function() {
-    const state = new State(div())
-    const [el] = mount(document.head, div(watch(state)))
-    assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'DIV')
-    state.v = h3()
-    assert.strictEqual(el.firstElementChild && el.firstElementChild.nodeName, 'H3')
+    const state = new m.State(div([]))
+    const el = div([m.watch(state)])
+    const $el = el(document.head)
+    assert.strictEqual($el.firstElementChild && $el.firstElementChild.nodeName, 'DIV')
+    state.v = h3([])
+    assert.strictEqual($el.firstElementChild && $el.firstElementChild.nodeName, 'H3')
   })
 
   it('set a reactive attribute', function() {
-    const state = new State('foo')
-    const [el] = mount(document.head, div()
-      (attr('class')`${state}`)
-    )
-    assert.strictEqual(el.className, 'foo')
+    const state = new m.State('foo')
+    const el = div([m.attr('class')`${state}`])
+    const $el = el(document.head)
+    assert.strictEqual($el.className, 'foo')
     state.v = 'bar'
-    assert.strictEqual(el.className, 'bar')
+    assert.strictEqual($el.className, 'bar')
   })
 
   it('set a reactive attribute with template', function() {
-    const state = new State('active')
-    const [el] = mount(document.head, div()
-      (attr('class')`type--${state}`)
-    )
-    assert.strictEqual(el.className, 'type--active')
+    const state = new m.State('active')
+    const el = div([
+      m.attr('class')`type--${state}`,
+    ])
+    const $el = el(document.head)
+    assert.strictEqual($el.className, 'type--active')
     state.v = 'disabled'
-    assert.strictEqual(el.className, 'type--disabled')
+    assert.strictEqual($el.className, 'type--disabled')
   })
 
   it('set a reactive style rule', function() {
-    const state = new State('red')
-    const [el] = mount(document.head, div()
-      (style('color')`${state}`)
-    )
-    assert.strictEqual(el.style.color, state.v)
+    const state = new m.State('red')
+    const el = div([m.style('color')`${state}`])
+    const $el = el(document.head)
+    assert.strictEqual($el.style.color, state.v)
     state.v = 'green'
-    assert.strictEqual(el.style.color, state.v)
+    assert.strictEqual($el.style.color, state.v)
   })
 
   it('logical operators', function() {
-    const first = new State(true)
-    const second = new State(false)
+    const first = new m.State(true)
+    const second = new m.State(false)
     assert.strictEqual(first.or(second).v, first.v || second.v, 'OR is not working')
     assert.strictEqual(first.and(second).v, first.v && second.v, 'AND is not working')
   })
 
   it('compare to primitive', function() {
-    const state = new State(25)
+    const state = new m.State(25)
 
     assert.strictEqual(state.gt(10).v, state.v > 10)
     assert.strictEqual(state.gt(25).v, state.v > 25)
@@ -98,15 +98,15 @@ describe('state', function() {
   })
 
   it('compare to other state', function() {
-    const first = new State(25)
-    const second = new State(10)
+    const first = new m.State(25)
+    const second = new m.State(10)
     assert.strictEqual(first.gt(second).v, first.v > second.v)
     assert.strictEqual(first.lt(second).v, first.v < second.v)
     assert.strictEqual(first.eq(second).v, first.v === second.v)
   })
 
   it('field reference', function() {
-    const state = new State({ foo: 1 })
+    const state = new m.State({ foo: 1 })
     const foo = state._.foo
     assert.strictEqual(foo.v, state.v.foo)
     state.v = { foo: 123 }
@@ -114,34 +114,32 @@ describe('state', function() {
   })
 
   it('conditional rendering', function() {
-    const cond = new State(true)
-    const [el] = mount(document.head,
-      (div()
-        (watch(cond.map(v => v ? [
-          div(text`then`),
-          div(text`then2`),
-        ] : [
-          div(text`else`),
-        ])))
-      )
-    )
-    assert.strictEqual(el.children.length, 2)
-    assert.strictEqual(el.children[0].textContent, 'then')
-    assert.strictEqual(el.children[1].textContent, 'then2')
+    const cond = new m.State(true)
+    const el = div([
+    ])
+    m.watch(cond.map(v => v ? [
+      div([m.text`then`]),
+      div([m.text`then2`]),
+    ] : [
+      div([m.text`else`]),
+    ]))
+    const $el = el(document.head)
+    assert.strictEqual($el.children.length, 2)
+    assert.strictEqual($el.children[0].textContent, 'then')
+    assert.strictEqual($el.children[1].textContent, 'then2')
     cond.v = false
-    assert.strictEqual(el.children.length, 1)
-    assert.strictEqual(el.children[0].textContent, 'else')
+    assert.strictEqual($el.children.length, 1)
+    assert.strictEqual($el.children[0].textContent, 'else')
   })
 
   it('keyed array rendering', function() {
-    const items = new State(['a', 'b', 'c'])
-    const [el] = mount(document.head, div()
-      (repeat(items, x => x, (x, i) =>
-        div()(text`${i.string} - ${x}`)
-      ))
-    )
+    const items = new m.State(['a', 'b', 'c'])
+    const el = div([
+      m.repeat(items, x => x, (x, i) => div([m.text`${i.string} - ${x}`]))
+    ])
+    const $el = el(document.head)
     const check = (msg?: string): void => items.v.forEach((item, i) => {
-      assert.strictEqual(el.children[i].textContent, `${i} - ${item}`, msg)
+      assert.strictEqual($el.children[i].textContent, `${i} - ${item}`, msg)
     })
     check()
     items.v = [...items.v].reverse()
