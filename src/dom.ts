@@ -1,4 +1,5 @@
 import { StateOrPlain, zip$ } from './state'
+import { Effect } from './vnode'
 
 type ElOrShadow = Element | ShadowRoot
 
@@ -28,7 +29,7 @@ export const on = <
   event: K & string,
   handler: (arg: TIntEvents[K] & { currentTarget: TNode }) => void,
   options?: MarycatEventListenerOptions,
-): Effect<Node, TEvents> => el => {
+): Effect<TNode, TEvents> => el => {
   el.addEventListener(event, e => {
     if (options?.prevent) e.preventDefault()
     if (options?.stop) e.stopPropagation()
