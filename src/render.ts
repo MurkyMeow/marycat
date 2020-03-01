@@ -2,14 +2,20 @@ import { State } from './state'
 import { VNode } from './vnode'
 
 // TODO generalize with `repeat` somehow?
-export const watch = <TVNode extends VNode<Node, unknown>>(state: State<TVNode> | State<TVNode[]>) => (el: Node) => {
-  const hook: Node = el.appendChild(document.createComment(''))
-  let nodes: Node[] = []
-  state.sub((nodeOrNodes: TVNode | TVNode[]) => {
-    nodes.forEach(node => el.removeChild(node))
-    nodes = (Array.isArray(nodeOrNodes) ? nodeOrNodes : [nodeOrNodes]).map(vnode => vnode(el))
-    nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
-  })
+export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode[]>): (el: Node) => void
+export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode>): (el: Node) => void
+export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode | TVNode[]>) {
+  return (el: Node) => {
+    const hook: Node = el.appendChild(document.createComment(''))
+    let nodes: Node[] = []
+    state.sub(nodeOrNodes => {
+      nodes.forEach(node => el.removeChild(node))
+      nodes = Array.isArray(nodeOrNodes)
+        ? nodeOrNodes.map(vnode => vnode(el))
+        : [nodeOrNodes].map(vnode => vnode(el))
+      nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
+    })
+  }
 }
 
 export const repeat = <TItem, TNode extends VNode<Node, unknown>>(

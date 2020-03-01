@@ -1,4 +1,4 @@
-import { vnodeHTML } from '../src/index'
+import { vnodeHTML, vnode } from '../src/index'
 
 export const a = vnodeHTML('a')
 export const article = vnodeHTML('article')
@@ -18,3 +18,5 @@ export const span = vnodeHTML('span')
 export const section = vnodeHTML('section')
 export const strong = vnodeHTML('strong')
 export const ul = vnodeHTML('ul')
+
+export const audio = vnode<HTMLAudioElement, HTMLMediaElementEventMap>(() => document.createElement('audio'))

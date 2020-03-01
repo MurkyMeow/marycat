@@ -35,7 +35,9 @@ describe('state', function() {
 
   it('observe an element', function() {
     const state = new m.State(div([]))
-    const el = div([m.watch(state)])
+    const el = div([
+      m.watch(state),
+    ])
     const $el = el(document.head)
     assert.strictEqual($el.firstElementChild && $el.firstElementChild.nodeName, 'DIV')
     state.v = h3([])
@@ -116,13 +118,13 @@ describe('state', function() {
   it('conditional rendering', function() {
     const cond = new m.State(true)
     const el = div([
+      m.watch(cond.map(v => v ? [
+        div([m.text`then`]),
+        div([m.text`then2`]),
+      ] : [
+        div([m.text`else`]),
+      ]))
     ])
-    m.watch(cond.map(v => v ? [
-      div([m.text`then`]),
-      div([m.text`then2`]),
-    ] : [
-      div([m.text`else`]),
-    ]))
     const $el = el(document.head)
     assert.strictEqual($el.children.length, 2)
     assert.strictEqual($el.children[0].textContent, 'then')
@@ -135,12 +137,14 @@ describe('state', function() {
   it('keyed array rendering', function() {
     const items = new m.State(['a', 'b', 'c'])
     const el = div([
-      m.repeat(items, x => x, (x, i) => div([m.text`${i.string} - ${x}`]))
+      m.repeat(items, x => x, (x, i) => div([m.text`${i} - ${x}`]))
     ])
     const $el = el(document.head)
-    const check = (msg?: string): void => items.v.forEach((item, i) => {
-      assert.strictEqual($el.children[i].textContent, `${i} - ${item}`, msg)
-    })
+    const check = (msg?: string) => {
+      items.v.forEach((item, i) => {
+        assert.strictEqual($el.children[i].textContent, `${i} - ${item}`, msg)
+      })
+    }
     check()
     items.v = [...items.v].reverse()
     check('reversing the order not working')
