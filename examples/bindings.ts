@@ -19,4 +19,4 @@ export const section = vnodeHTML('section')
 export const strong = vnodeHTML('strong')
 export const ul = vnodeHTML('ul')
 
-export const audio = vnode<HTMLAudioElement, HTMLMediaElementEventMap>(() => document.createElement('audio'))
+export const audio = vnode<HTMLAudioElement, HTMLMediaElementEventMap, Node>(() => document.createElement('audio'))

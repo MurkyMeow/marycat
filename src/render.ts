@@ -2,9 +2,9 @@ import { State } from './state'
 import { VNode } from './vnode'
 
 // TODO generalize with `repeat` somehow?
-export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode[]>): (el: Node) => void
-export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode>): (el: Node) => void
-export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode | TVNode[]>) {
+export function watch<TVNode extends VNode<Node, Node, unknown>>(state: State<TVNode[]>): (el: Node) => void
+export function watch<TVNode extends VNode<Node, Node, unknown>>(state: State<TVNode>): (el: Node) => void
+export function watch<TVNode extends VNode<Node, Node, unknown>>(state: State<TVNode | TVNode[]>) {
   return (el: Node) => {
     const hook: Node = el.appendChild(document.createComment(''))
     let nodes: Node[] = []
@@ -18,7 +18,7 @@ export function watch<TVNode extends VNode<Node, unknown>>(state: State<TVNode |
   }
 }
 
-export const repeat = <TItem, TNode extends VNode<Node, unknown>>(
+export const repeat = <TItem, TNode extends VNode<Node, Node, unknown>>(
   items: State<TItem[]>,
   getKey: (el: TItem) => string | number | object,
   render: (el: State<TItem>, i: State<number>) => TNode | TNode[],

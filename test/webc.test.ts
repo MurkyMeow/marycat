@@ -1,6 +1,7 @@
 import { assert } from 'chai'
-import { customElement, mount, on, dispatch, text } from '../src/index'
-import { div } from '../examples/bindings'
+import * as m from '../src/index'
+import * as d from '../src/dom'
+import * as h from '../examples/bindings'
 
 describe('webc', function() {
   interface Props {
@@ -15,29 +16,31 @@ describe('webc', function() {
 
   const TEST_MESSAGE = 'you fail to amuse me'
 
-  const Test = customElement<Props, Events>('mary-test', ({ host, props }) => {
-    return host
-    (on('click', () => host(dispatch('disturb', TEST_MESSAGE))))
-    (div(text`${props.p1}`))
-    (div(text`${props.p2}`))
-    (div(text`${props.p3._.name}`))
+  const Test = m.customElement<Props, Events>('mary-test', ({ host, props }) => {
+    return (
+      host([d.on('click', e => e.currentTarget.emit('disturb', TEST_MESSAGE))],
+        m.shadow([],
+          h.div([d.text`${props.p1}`]),
+          h.div([d.text`${props.p2}`]),
+          h.div([d.text`${props.p3._.name}`]),
+        )
+      )
+    )
   })
 
   const instance = Test({ p1: false, p2: '', p3: { name: '' } })
-  const [el] = mount(document.head, instance)
-  const [p1, p2, p3] = el.root.children
 
   it('create web component', function() {
-    assert.ok(
-      customElements.get('mary-test'), 'The component is not registered'
-    )
-    assert.strictEqual(
-      el.root.children.length, 3, 'Not all children are rendered'
-    )
+    const el = instance([])(document.head)
+    assert.ok(customElements.get('mary-test'), 'The component is not registered')
+    assert.strictEqual(el.shadowRoot!.children.length, 3, 'Not all children are rendered')
   })
 
   it('set props', async function() {
-    const { props } = instance.__node
+    const el = instance([])(document.head)
+    const [p1, p2, p3] = el.shadowRoot!.children
+
+    const { props } = el
     props.p1.v = true
     props.p2.v = 'hello'
     props.p3.v = { name: 'Mary' }
@@ -49,6 +52,8 @@ describe('webc', function() {
   })
 
   it('respond to prop updates', async function() {
+    const el = instance([])(document.head)
+    const [p1, p2] = el.shadowRoot!.children
     el.setAttribute('p1', 'false')
     el.setAttribute('p2', 'world')
     await new Promise(requestAnimationFrame)
@@ -58,7 +63,9 @@ describe('webc', function() {
 
   it('listen to a custom event', function() {
     let text = ''
-    instance(on('disturb', e => text = e.detail))
+    const el = instance([
+      d.on('disturb', e => text = e.detail),
+    ])(document.head)
     el.click()
     assert.strictEqual(text, TEST_MESSAGE)
   })

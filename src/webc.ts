@@ -1,5 +1,5 @@
 import { State, StateOrPlain } from './state'
-import { PipedNode, pipeNode } from './core'
+import { VNode, VNodeConstructor, vnode } from './vnode'
 
 type Props<T extends object> =
   { [K in keyof T]: State<T[K]> }
@@ -17,13 +17,11 @@ function initToProps<T extends object>(init: Init<T>): Props<T> {
     }), init as Props<T>)
 }
 
-export abstract class MaryElement<TProps extends object> extends HTMLElement {
-  root: ShadowRoot
+export abstract class MaryElement<TProps extends object, TEvents> extends HTMLElement {
   props: Props<TProps>
 
   constructor(init: Init<TProps>) {
     super()
-    this.root = this.attachShadow({ mode: 'open' })
     this.props = initToProps(init)
     const observer = new MutationObserver(m => this.onAttributeChange(m))
     observer.observe(this, {
@@ -46,24 +44,45 @@ export abstract class MaryElement<TProps extends object> extends HTMLElement {
       }
     })
   }
+
+  emit<K extends keyof TEvents>(
+    name: K & string,
+    detail: TEvents[K] extends CustomEvent<infer U> ? U : never,
+  ): boolean {
+    return this.dispatchEvent(new CustomEvent(name, { detail }))
+  }
 }
 
 export function customElement<TProps extends object, TEvents = unknown>(
   elName: string,
-  render: (args: {
-    host: PipedNode<ShadowRoot, TEvents & HTMLElementEventMap>,
-    props: Props<TProps>,
-  }) => PipedNode<ShadowRoot, TEvents>,
-): (init: Init<TProps>) => PipedNode<MaryElement<TProps>, TEvents> {
-  class Component extends MaryElement<TProps> {
+  view: (args: {
+    host: VNodeConstructor<MaryElement<TProps, TEvents>>;
+    props: Props<TProps>;
+  }) => VNode<MaryElement<TProps, TEvents>, Element, TEvents>,
+): (
+  init: Init<TProps>,
+) => VNodeConstructor<MaryElement<TProps, TEvents>, Node, TEvents> {
+  class Component extends MaryElement<TProps, TEvents> {
     constructor(init: Init<TProps>) {
       super(init)
-      render({
-        host: pipeNode(this.root),
+      const mount = view({
         props: this.props,
+        host: (effects, ...children) => () => {
+          for (const eff of effects) eff(this)
+          for (const child of children) child(this)
+          return this
+        },
       })
+      mount(this)
     }
   }
   customElements.define(elName, Component)
-  return init => pipeNode(new Component(init))
+  return init => vnode(() => new Component(init))
+}
+
+export const shadow: VNodeConstructor<ShadowRoot, Element> = (effects, ...children) => root => {
+  const node = root.attachShadow({ mode: 'open' })
+  for (const eff of effects) eff(node)
+  for (const child of children) child(node)
+  return node
 }
