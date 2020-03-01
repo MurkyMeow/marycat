@@ -1,11 +1,6 @@
 import { StateOrPlain, zip$ } from './state'
 import { Effect } from './vnode'
 
-type ElOrShadow = Element | ShadowRoot
-
-const filterShadow = (el: ElOrShadow): Element =>
-  el instanceof ShadowRoot ? el.host : el
-
 export const style = (rule: string) => (
   strings: TemplateStringsArray,
   ...values: PrimitiveStateOrPlain[]
@@ -44,8 +39,7 @@ type PrimitiveStateOrPlain =
 
 export const attr = (name: string) => (
   strings: TemplateStringsArray, ...values: PrimitiveStateOrPlain[]
-) => (_el: ElOrShadow): void => {
-  const el = filterShadow(_el)
+) => (el: Element): void => {
   zip$(strings, ...values).sub(v => el.setAttribute(name, v))
 }
 
@@ -56,7 +50,9 @@ export const id = attr('id')
 export const cx = attr('class')
 export const name = attr('name')
 
-export const text = (strings: TemplateStringsArray, ...values: PrimitiveStateOrPlain[]) => (el: ElOrShadow) => {
+export const text = (
+  strings: TemplateStringsArray, ...values: PrimitiveStateOrPlain[]
+) => (el: Node): void => {
   const text = el.appendChild(document.createTextNode(''))
   zip$(strings, ...values).sub(v => text.textContent = v)
 }
