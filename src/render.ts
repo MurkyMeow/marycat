@@ -8,11 +8,10 @@ export function watch<TVNode extends VNode<Node, Node, unknown>>(state: State<TV
   return (el: Node) => {
     const hook: Node = el.appendChild(document.createComment(''))
     let nodes: Node[] = []
-    state.sub(nodeOrNodes => {
+    state.sub(vnodes => {
       nodes.forEach(node => el.removeChild(node))
-      nodes = Array.isArray(nodeOrNodes)
-        ? nodeOrNodes.map(vnode => vnode(el))
-        : [nodeOrNodes].map(vnode => vnode(el))
+      nodes = Array.isArray(vnodes)
+        ? vnodes.map(vnode => vnode(el)) : [vnodes(el)]
       nodes.reduce((prev, node) => el.insertBefore(node, prev.nextSibling), hook)
     })
   }
