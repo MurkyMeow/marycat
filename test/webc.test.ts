@@ -29,10 +29,13 @@ describe('webc', function() {
   })
 
   const instance = Test({ p1: false, p2: '', p3: { name: '' } })
-
-  it('create web component', function() {
-    const el = instance()(document.head)
+  
+  it('register', function() {
     assert.ok(customElements.get('mary-test'), 'Not registered')
+  })
+
+  it('render', function() {
+    const el = instance()(document.head)
     assert.strictEqual(el.renderRoot.children.length, 3, 'Not all children are rendered')
     assert.strictEqual([...document.head.children].includes(el), true, 'Not inserted into the DOM')
   })
