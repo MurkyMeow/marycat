@@ -1,10 +1,5 @@
-import { id, cx, text, attr, frag, on, dispatch, State, repeat, pipeNode } from '../src/index'
-
-import {
-  a, button, div, footer, h1,
-  header, input, p, section, strong,
-  label, ul, li, span,
-} from './bindings'
+import * as m from '../src/index'
+import * as h from './bindings'
 
 interface Todo {
   id: number
@@ -12,50 +7,43 @@ interface Todo {
   completed: boolean
 }
 
-interface TodoEvents {
-  setCompleted: CustomEvent<boolean>
-  setText: CustomEvent<string>
-  destroy: CustomEvent<void>
+interface TodoProps {
+  todo: m.State<Todo>
+  onDestroy: () => void
+  onSetText: (arg: string) => void
+  onCompleted: (arg: boolean) => void
 }
 
-function viewTodo(todo: State<Todo>) {
-  const editing = new State(false)
+function viewTodo(props: TodoProps) {
+  const editing = new m.State(false)
+  const { todo } = props
 
-  const host = pipeNode<HTMLLIElement, TodoEvents>(document.createElement('li'))
-
-  return host(cx`${todo._.completed.map(v => v ? 'completed' : '' as string)}`)
-  (div(cx`view`)
-    (input(cx`toggle`, attr('type')`checkbox`)
-      (attr('checked')`${todo._.completed}`)
-      (on('change', e => host(dispatch('setCompleted', e.currentTarget.checked))))
-    )
-    (label(text`${todo._.text}`)
-      (on('dblclick', () => editing.v = true))
-    )
-    (button(cx`destroy`)
-      (on('click', () => host(dispatch('destroy', undefined))))
-    )
-  )
-  (input(cx`edit`, attr('value')`${todo._.text}`)
-    (on('input', e => host(dispatch('setText', e.currentTarget.value))))
+  return h.li([m.cx`${todo._.completed.map(v => v ? 'completed' : '')}`],
+    h.div([m.cx`view`],
+      h.input([
+        m.cx`toggle`,
+        m.attr('type')`checkbox`,
+        m.attr('checked')`${todo._.completed}`,
+        m.on('change', e => props.onCompleted(e.currentTarget.checked))
+      ]),
+      h.label([m.text`${todo._.text}`, m.on('dblclick', () => editing.v = true)]),
+      h.button([m.cx`destroy`, m.on('click', props.onDestroy)]),
+    ),
+    h.input([
+      m.cx`edit`,
+      m.attr('value')`${todo._.text}`,
+      m.on('input', e => props.onSetText(e.currentTarget.value)),
+    ]),
   )
 }
 
 function app() {
-  const todos = new State<Todo[]>([
-    {
-      id: Math.random(),
-      text: 'Create a TodoMVC template',
-      completed: false,
-    },
-    {
-      id: Math.random(),
-      text: 'Rule the web',
-      completed: true,
-    },
+  const todos = new m.State<Todo[]>([
+    { id: Math.random(), text: 'Create a TodoMVC template', completed: false },
+    { id: Math.random(), text: 'Rule the web', completed: true },
   ])
 
-  const currentFilter = new State<'All' | 'Active' | 'Completed'>('All')
+  const currentFilter = new m.State<'All' | 'Active' | 'Completed'>('All')
 
   const filters = [
     { href: '#/', text: 'All' },
@@ -64,54 +52,55 @@ function app() {
   ] as const
 
   window.addEventListener('hashchange', () => {
-    const filter = filters
-      .find(x => x.href === window.location.hash)
+    const filter = filters.find(x => x.href === window.location.hash)
     if (filter) currentFilter.v = filter.text
   })
 
-  return frag()
-  (section(cx`todoapp`)
-    (header(cx`header`)
-      (h1(text`Todos`))
-      (input(cx`new-todo`, attr('placeholder')`What needs to be done?`, attr('autofocus')``))
-    )
-  )
-  (section(cx`main`)
-    (input(id`toggle-all`, cx`toggle-all`, attr('type')`checkbox`))
-    (label(attr('for')`toggle-all`, text`Mark all as complete`))
-    (ul(cx`todo-list`)
-      (repeat(todos, todo => todo.id, todo =>
-        (viewTodo(todo)
-          (on('destroy', () => todos.v = todos.v.filter(x => x.id !== todo.v.id)))
-          (on('setText', e => todos.v = todos.v.map(x => x.id === x.id ? { ...x, text: e.detail } : x)))
-          (on('setCompleted', e => todos.v = todos.v.map(x => x.id === x.id ? { ...x, completed: e.detail } : x)))
-        )
-      ))
-    )
-  )
-  (footer(cx`footer`)
-    (span(cx`todo-count`)
-      (strong(text`${todos.map(v => v.length)}`))
-      (text` item left`)
-    )
-    (ul(cx`filters`)
-      (...filters.map(x =>
-        (li()
-          (a(cx`${currentFilter.map(v => v === x.text ? 'selected' : '' as string)}`, attr('href')`${x.href}`, text`${x.text}`))
-        )
-      ))
-    )
-    (button(cx`clear-completed`, text`Clear completed`))
-  )
-  (footer(cx`info`)
-    (p(text`Double-click to edit a todo`))
-    (p(text`Created by `)
-      (a(attr('href')`http://todomvc.com`, text`MurkyMeow`))
-    )
-    (p(text`Part of `)
-      (a(attr('href')`http://todomvc.com`, text`TodoMVC`))
+  return m.frag([],
+    h.section([m.cx`todoapp`],
+      h.header([m.cx`header`],
+        h.h1([m.text`Todos`]),
+        h.input([m.cx`new-todo`, m.attr('placeholder')`What needs to be done?`, m.attr('autofocus')``]),
+      )
+    ),
+    h.section([m.cx`main`],
+      h.input([m.id`toggle-all`, m.cx`toggle-all`, m.attr('type')`checkbox`]),
+      h.label([m.attr('for')`toggle-all`, m.text`Mark all as complete`]),
+      h.ul([m.cx`todo-list`],
+        m.repeat(todos, todo => todo.id, todo => viewTodo({
+          todo,
+          onDestroy: () => todos.v = todos.v.filter(x => x.id !== todo.v.id),
+          onSetText: e => todos.v = todos.v.map(x => x.id === x.id ? { ...x, text: e.detail } : x),
+          onCompleted: e => todos.v = todos.v.map(x => x.id === x.id ? { ...x, completed: e.detail } : x),
+        }))
+      )
+    ),
+    h.footer([m.cx`footer`],
+      h.span([m.cx`todo-count`],
+        h.strong([m.text`${todos.map(v => v.length)}`]),
+        m.text` item left`,
+      ),
+      h.ul([m.cx`filters`],
+        ...filters.map(x => h.li([],
+          h.a([
+            m.cx`${currentFilter.map(v => v === x.text ? 'selected' : '' as string)}`,
+            m.attr('href')`${x.href}`,
+            m.text`${x.text}`,
+          ]),
+        ))
+      ),
+      h.button([m.cx`clear-completed`, m.text`Clear completed`])
+    ),
+    h.footer([m.cx`info`],
+      h.p([m.text`Double-click to edit a todo`]),
+      h.p([m.text`Created by `],
+        h.a([m.attr('href')`http://todomvc.com`, m.text`MurkyMeow`]),
+      ),
+      h.p([m.text`Part of `],
+        h.a([m.attr('href')`http://todomvc.com`, m.text`TodoMVC`])
+      )
     )
   )
 }
 
-document.body.append(app().__node)
+app()(document.body)
