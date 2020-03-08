@@ -11,17 +11,9 @@ export const style = (rule: string) => (
 export type MarycatEventListenerOptions =
   (AddEventListenerOptions | EventListenerOptions) & { prevent?: boolean; stop?: boolean }
 
-type UnionToIntersection<U> =
-  (U extends unknown ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
-
-export const on = <
-  TNode extends Node,
-  TEvents,
-  TIntEvents extends UnionToIntersection<TEvents>,
-  K extends keyof TIntEvents,
->(
+export const on = <TNode extends Node, TEvents, K extends keyof TEvents>(
   event: K & string,
-  handler: (arg: TIntEvents[K] & { currentTarget: TNode }) => void,
+  handler: (arg: TEvents[K] & { currentTarget: TNode }) => void,
   options?: MarycatEventListenerOptions,
 ): Effect<TNode, TEvents> => el => {
   el.addEventListener(event, e => {
