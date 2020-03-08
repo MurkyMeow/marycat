@@ -31,13 +31,13 @@ describe('webc', function() {
   const instance = Test({ p1: false, p2: '', p3: { name: '' } })
 
   it('create web component', function() {
-    const el = instance([])(document.head)
+    const el = instance()(document.head)
     assert.ok(customElements.get('mary-test'), 'The component is not registered')
     assert.strictEqual(el.renderRoot.children.length, 3, 'Not all children are rendered')
   })
 
   it('set props', async function() {
-    const el = instance([])(document.head)
+    const el = instance()(document.head)
     const [p1, p2, p3] = el.renderRoot.children
 
     const { props } = el
@@ -52,7 +52,7 @@ describe('webc', function() {
   })
 
   it('respond to prop updates', async function() {
-    const el = instance([])(document.head)
+    const el = instance()(document.head)
     const [p1, p2] = el.renderRoot.children
     el.setAttribute('p1', 'false')
     el.setAttribute('p2', 'world')

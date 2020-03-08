@@ -9,7 +9,7 @@ type ExtractEvent<T> =
 
 export type VNodeConstructor<TNode extends Node, TRoot extends Node = Node, TEvents = GlobalEventHandlersEventMap> =
   <TChildren extends VNode<Node, TNode, unknown>[]>(
-    effects: Effect<TNode, TEvents & ExtractEvent<TChildren>>[],
+    effects?: Effect<TNode, TEvents & ExtractEvent<TChildren>>[],
     ...children: TChildren
   ) => VNode<TNode, TRoot, TEvents & ExtractEvent<TChildren>>
 
@@ -18,7 +18,7 @@ export const vnode =
     getNode: () => TNode,
   ): VNodeConstructor<TNode, TRoot, TEvents> => (effects, ...children) => root => {
     const node = getNode()
-    for (const eff of effects) eff(node)
+    for (const eff of effects || []) eff(node)
     for (const child of children) child(node)
     return root.appendChild(node)
   }

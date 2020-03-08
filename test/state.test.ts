@@ -34,13 +34,13 @@ describe('state', function() {
   })
 
   it('observe an element', function() {
-    const state = new m.State(div([]))
+    const state = new m.State(div())
     const el = div([
       m.watch(state),
     ])
     const $el = el(document.head)
     assert.strictEqual($el.firstElementChild && $el.firstElementChild.nodeName, 'DIV')
-    state.v = h3([])
+    state.v = h3()
     assert.strictEqual($el.firstElementChild && $el.firstElementChild.nodeName, 'H3')
   })
 

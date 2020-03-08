@@ -4,7 +4,7 @@ import * as h from '../examples/bindings'
 
 describe('core', function() {
   it('mount an element', function() {
-    const el = h.div([])
+    const el = h.div()
     const $el = el(document.head)
     assert.strictEqual($el.nodeName, 'DIV')
   })
@@ -21,8 +21,8 @@ describe('core', function() {
 
   it('append children', function() {
     const el = h.div([],
-      h.div([]),
-      h.div([]),
+      h.div(),
+      h.div(),
     )
     const $el = el(document.head)
     assert.strictEqual($el.children.length, 2)
@@ -75,7 +75,7 @@ describe('core', function() {
     // if i pull out this element it shouldn't compile
     h.div([m.on('encrypted', e => e.initData)],
       h.div([],
-        h.audio([]),
+        h.audio(),
       ),
     )
   })

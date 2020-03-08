@@ -72,7 +72,7 @@ export function customElement<TProps extends object, TEvents = unknown>(
       const mount = view({
         props: this.props,
         host: (effects, ...children) => () => {
-          for (const eff of effects) eff(this)
+          for (const eff of effects || []) eff(this)
           for (const child of children) child(this)
           return this
         },
@@ -86,7 +86,7 @@ export function customElement<TProps extends object, TEvents = unknown>(
 
 export const shadow: VNodeConstructor<ShadowRoot, Element> = (effects, ...children) => root => {
   const node = root.attachShadow({ mode: 'open' })
-  for (const eff of effects) eff(node)
+  for (const eff of effects || []) eff(node)
   for (const child of children) child(node)
   return node
 }
