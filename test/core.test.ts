@@ -76,6 +76,7 @@ describe('core', function() {
     h.div([m.on('encrypted', e => e.initData)],
       h.div([],
         h.audio(),
+        h.div(),
       ),
     )
   })
