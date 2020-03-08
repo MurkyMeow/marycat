@@ -30,6 +30,10 @@ export abstract class MaryElement<TProps extends object, TEvents> extends HTMLEl
     })
   }
 
+  get renderRoot(): Element | ShadowRoot {
+    return this.shadowRoot || this;
+  }
+
   onAttributeChange(mutations: MutationRecord[]): void {
     mutations.forEach(m => {
       const attrName = m.attributeName as keyof TProps & string
