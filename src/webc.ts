@@ -59,7 +59,7 @@ export abstract class MaryElement<TProps extends object, TEvents> extends HTMLEl
 
 export function customElement<TProps extends object, TEvents = unknown>(
   elName: string,
-  view: (args: {
+  render: (args: {
     host: VNodeConstructor<MaryElement<TProps, TEvents>>;
     props: Props<TProps>;
   }) => VNode<MaryElement<TProps, TEvents>, Element, TEvents>,
@@ -69,13 +69,9 @@ export function customElement<TProps extends object, TEvents = unknown>(
   class Component extends MaryElement<TProps, TEvents> {
     constructor(init: Init<TProps>) {
       super(init)
-      const mount = view({
+      const mount = render({
         props: this.props,
-        host: (effects, ...children) => () => {
-          for (const eff of effects || []) eff(this)
-          for (const child of children) child(this)
-          return this
-        },
+        host: vnode(() => this),
       })
       mount(this)
     }
@@ -84,9 +80,4 @@ export function customElement<TProps extends object, TEvents = unknown>(
   return init => vnode(() => new Component(init))
 }
 
-export const shadow: VNodeConstructor<ShadowRoot, Element> = (effects, ...children) => root => {
-  const node = root.attachShadow({ mode: 'open' })
-  for (const eff of effects || []) eff(node)
-  for (const child of children) child(node)
-  return node
-}
+export const shadow = vnode<ShadowRoot, GlobalEventHandlersEventMap, Element>(root => root.attachShadow({ mode: 'open' }))

@@ -15,10 +15,10 @@ export type VNodeConstructor<TNode extends Node, TRoot extends Node = Node, TEve
 
 export const vnode =
   <TNode extends Node, TEvents, TRoot extends Node>(
-    getNode: () => TNode,
+    getNode: (root: TRoot) => TNode,
   ): VNodeConstructor<TNode, TRoot, TEvents> => (effects, ...children) => root => {
-    const node = getNode()
+    const node = getNode(root)
     for (const eff of effects || []) eff(node)
     for (const child of children) child(node)
-    return root.appendChild(node)
+    return node
   }
