@@ -32,8 +32,9 @@ describe('webc', function() {
 
   it('create web component', function() {
     const el = instance()(document.head)
-    assert.ok(customElements.get('mary-test'), 'The component is not registered')
+    assert.ok(customElements.get('mary-test'), 'Not registered')
     assert.strictEqual(el.renderRoot.children.length, 3, 'Not all children are rendered')
+    assert.strictEqual([...document.head.children].includes(el), true, 'Not inserted into the DOM')
   })
 
   it('set props', async function() {

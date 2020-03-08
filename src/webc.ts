@@ -77,7 +77,7 @@ export function customElement<TProps extends object, TEvents = unknown>(
     }
   }
   customElements.define(elName, Component)
-  return init => vnode(() => new Component(init))
+  return init => vnode(root => root.appendChild(new Component(init)))
 }
 
 export const shadow = vnode<ShadowRoot, GlobalEventHandlersEventMap, Element>(root => root.attachShadow({ mode: 'open' }))
