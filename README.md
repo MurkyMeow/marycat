@@ -3,62 +3,85 @@
 Web components that are
 
 - functional
-- truly reactive
 - strongly typed
+- truly reactive (render function is called only once)
 
 ```ts
-function viewProfile(host: PipeFn<ShadowRoot>, {
-  name = defAttr(''),
-  photo = defAttr(''),
-  age = defAttr(0),
-}) {
+interface Props {
+  name: string
+  photo: string
+  age: number
+}
+
+const Profile = customElement<Props>('mary-profile', ({ host, props }) => {
   return host
-  (img(cx`.profile-photo`)
-    (attr('src', zip$`/${photo}`))
+  (img(cx`profile-photo`)
+    (attr('src')`/${props.photo}`))
   )
   (div()
-    (div(cx`.profile-name`)(name))
-    (div(cx`.profile-age`)(age))
+    (div(cx`profile-name`)(text`${props.name}`))
+    (div(cx`profile-age`)(text`${props.age}`))
   )
-  (button(zip$`Add ${name} to friends`))
-}
-const profile = customElement('mary-profile', viewProfile)
+  (button(text`Add ${props.name} to friends`))
+})
 
-mount(document.body,
-  (profile.new()
-    (profile.prop('name', 'Mary'))
-    (profile.prop('age', 9))
+const Profile = customElement<Props>('mary-profile', ({ host, props }) => {
+  return host(
+  img(cx`profile-photo`, attr('src')`/${props.photo}`),
+  div(
+    div(cx`profile-name`, text`${props.name}`),
+    div(cx`profile-name`, text`${props.name}`),
+  ),
+  button(text`Add ${props.name} to friends`),
+})
 
-    (profile.prop('age', '9')) // type error
-    (profile.prop('aage', 9)) // type error
-  )
-)
+mount(document.body, (
+  Profile({ name: 'Mary', age: 9 })
+))
 ```
 
 ## Typed Custom Events
 
 ```ts
-type CounterDispatch =
-  TypedDispatch<{ change: number }>
-
-function viewCounter(host: PipeFn<ShadowRoot>, {
-  count = defAttr(0),
-}, dispatch: CounterDispatch) {
-  count.sub(val => {
-    host(dispatch('change', val))
-    host(dispatch('change', val + '')) // type error
-    host(dispatch('changeee', val)) // type error
-  })
-  return host
-  (button(count)
-    (on('click', () => count.v++))
-  )
+interface Props {
+  count: number
+}
+interface Events {
+  change: CustomEvent<number>
 }
 
-const counter = customElement('mary-counter', viewCounter)
+const Counter = customElement<Props, Events>('mary-counter', ({ host, props }) => {
+  const handleClick = () => {
+    host(dispatch('change', props.count.v + 1))
+    host(dispatch('change', props.count.v + '')) // type error
+    host(dispatch('changee', props.count.v + 1)) // type error
+  }
+  return host
+  (button(text`${props.count}`)
+    (on('click', handleClick))
+  )
+})
 
-counter.new()
-  // typeof e = CustomEvent<number>
+Counter({ count: 0 })
   // error: number is not assignable to string 🎉
-  (counter.on('change', e => document.title = e.detail))
+  (on('change', e => document.title = e.detail))
+```
+
+### But that's not all!
+
+```ts
+const app = (
+div()
+  (div()
+    (Counter({ count: 0 }))
+  )
+)
+
+app
+  // The right types are inferred even when the event listener
+  // is defined on the component's parent
+  (on('change', e => console.log(e.detail + 123)))
+
+  // e.currentTarget is inferred as HTMLDivElement 🎉
+  (on('load', e => e.currentTarget))
 ```

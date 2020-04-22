@@ -1,83 +1,83 @@
 import { assert } from 'chai'
-import { mount, style, on, dispatch, cx, name, attrs } from '../src/index'
-import { div } from '../examples/bindings'
+import * as m from '../src/index'
+import * as h from '../examples/bindings'
 
 describe('core', function() {
   it('mount an element', function() {
-    const [el] = mount(document.head, div())
-    assert.strictEqual(el.nodeName, 'DIV')
+    const el = h.div()
+    const $el = el(document.head)
+    assert.strictEqual($el.nodeName, 'DIV')
   })
 
   it('add middlewares', function() {
-    const [el] = mount(document.head, div()
-      ((el: HTMLDivElement) => el.setAttribute('hidden', 'true'))
-      ((el: HTMLDivElement) => el.textContent = 'foo')
-    )
-    assert.strictEqual(el.getAttribute('hidden'), 'true')
-    assert.strictEqual(el.textContent, 'foo')
+    const el = h.div([
+      el => el.setAttribute('hidden', 'true'),
+      el => el.textContent = 'foo',
+    ])
+    const $el = el(document.head)
+    assert.strictEqual($el.getAttribute('hidden'), 'true')
+    assert.strictEqual($el.textContent, 'foo')
   })
 
   it('append children', function() {
-    const [el] = mount(document.head, div()
-      (div())
-      (div())
+    const el = h.div([],
+      h.div(),
+      h.div(),
     )
-    assert.strictEqual(el.children.length, 2)
+    const $el = el(document.head)
+    assert.strictEqual($el.children.length, 2)
   })
 
   it('set multiple attributes', function() {
     const obj = { id: 'foo', hidden: true, 'data-stuff': 1234 }
-    const [el] = mount(document.head, div()
-      (...attrs(obj))
-    )
+    const el = h.div(m.attrs(obj))
+    const $el = el(document.head)
     Object.entries(obj).forEach(([key, val]) => {
-      assert.strictEqual(el.getAttribute(key), val.toString())
+      assert.strictEqual($el.getAttribute(key), val.toString())
     })
   })
 
   it('set common attributes with their shorthands', function() {
-    const [el] = mount(document.head, div('foo')(name`baz`, cx`qux`))
-    assert.strictEqual(el.textContent, 'foo')
-    assert.strictEqual(el.getAttribute('name'), 'baz')
-    assert.strictEqual(el.getAttribute('class'), 'qux')
+    const el = h.div([m.name`baz`, m.cx`qux`])
+    const $el = el(document.head)
+    assert.strictEqual($el.getAttribute('name'), 'baz')
+    assert.strictEqual($el.getAttribute('class'), 'qux')
   })
 
   it('set text', function() {
-    const [el] = mount(document.head, div()('foobar'))
-    assert.strictEqual(el.textContent, 'foobar')
+    const el = h.div([m.text`foobar`])
+    const $el = el(document.head)
+    assert.strictEqual($el.textContent, 'foobar')
   })
 
   it('set style properties', function() {
-    const [el] = mount(document.body, div() 
-      (style('color', 'red'))
-      (style('font-size', '12px'))
-    )
-    assert.strictEqual(el.getAttribute('style'), 'color: red; font-size: 12px;')
+    const el = h.div([
+      m.style('color')`red`,
+      m.style('font-size')`12px`,
+    ])
+    const $el = el(document.head)
+    assert.strictEqual($el.getAttribute('style'), 'color: red; font-size: 12px;')
   })
 
   it('register events', function() {
     let count = 0
-    const [el] = mount(document.head, div()
-      (on('click', () => count += 2))
-      (on('click', () => count += 3))
-    )
-    el.click()
+    const el = h.div([
+      m.on('click', () => count += 2),
+      m.on('click', () => count += 3),
+    ])
+    el(document.head).click()
     assert.strictEqual(count, 5)
   })
 
-  it('emit a custom event', function() {
-    let catchedEvent: CustomEvent | undefined
-    const child = div()
-    mount(document.head, div()
-      (child)
-      (on('custom-evt', (e: Event) => catchedEvent = e as CustomEvent))
+  // no assertions here, just checking if it compiles
+  it('subscribes to a bubbling event', function() {
+    // `encrypted` is specific to the `audio` element
+    // if i pull out this element it shouldn't compile
+    h.div([m.on('encrypted', e => e.initData)],
+      h.div([],
+        h.audio(),
+        h.div(),
+      ),
     )
-    child(dispatch('custom-evt', 1234, { bubbles: true }))
-    if (catchedEvent) {
-      assert.strictEqual(catchedEvent.type, 'custom-evt')
-      assert.strictEqual(catchedEvent.detail, 1234)
-    } else {
-      assert.fail()
-    }
   })
 })
